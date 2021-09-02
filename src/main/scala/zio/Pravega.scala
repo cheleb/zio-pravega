@@ -62,31 +62,28 @@ object Pravega {
           settings: ReaderSettings[A]
         ): ZStream[Any, Throwable, A] = {
           case class QueuedReader(queue: Queue[A], reader: EventStreamReader[A])
-          def next(qr: QueuedReader): RIO[Any, Unit] =
-            for {
-              m <- ZIO.attemptBlocking(qr.reader.readNextEvent(settings.timeout).getEvent())
-              _ <- ZIO.unless(m == null)(qr.queue.offer(m))
-              _ <- next(qr)
-            } yield ()
 
-          val reader = for {
-            queue <- ZQueue.bounded[A](10)
-            reader <- ZIO.attemptBlocking(
-                       eventStreamClientFactory
-                         .createReader(
-                           settings.readerId.getOrElse(UUID.randomUUID().toString),
-                           readerGroupName,
-                           settings.serializer,
-                           settings.readerConfig
-                         )
-                     )
-            qr = QueuedReader(queue, reader)
-            _  <- next(qr).fork
+          val reader = ZIO.attemptBlocking(
+            eventStreamClientFactory
+              .createReader(
+                settings.readerId.getOrElse(UUID.randomUUID().toString),
+                readerGroupName,
+                settings.serializer,
+                settings.readerConfig
+              )
+          )
 
-          } yield qr
           ZStream
-            .acquireReleaseWith(reader)(qr => ZIO.attemptBlocking(qr.reader.close()).ignore)
-            .flatMap(qr => ZStream.fromQueueWithShutdown(qr.queue))
+            .acquireReleaseWith(reader)(reader => ZIO.attemptBlocking(reader.close()).ignore)
+            .flatMap(reader =>
+              ZStream.repeatZIOChunk(
+                ZIO(reader.readNextEvent(settings.timeout).getEvent() match {
+                  case null => Chunk.empty
+                  case a    => Chunk.single(a)
+                })
+              )
+            )
+
         }
 
         override def pravegaSink[A](
