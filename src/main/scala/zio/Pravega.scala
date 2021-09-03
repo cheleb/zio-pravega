@@ -77,9 +77,12 @@ object Pravega {
             .acquireReleaseWith(reader)(reader => ZIO.attemptBlocking(reader.close()).ignore)
             .flatMap(reader =>
               ZStream.repeatZIOChunk(
-                ZIO(reader.readNextEvent(settings.timeout).getEvent() match {
-                  case null => Chunk.empty
-                  case a    => Chunk.single(a)
+                ZIO(reader.readNextEvent(settings.timeout) match {
+                  case eventRead if eventRead.isCheckpoint => Chunk.empty
+                  case eventRead =>
+                    val event = eventRead.getEvent()
+                    if (event == null) Chunk.empty
+                    else Chunk.single(event)
                 })
               )
             )
