@@ -11,23 +11,22 @@ Proof of concept to use [Pravega](https://www.pravega.io) with [ZIO](https://www
 
 #### Scope and Stream
 
-Can be manager through StreamManager:
+Can be managed through StreamManager:
 
 ```scala
-def initScopeAndStream: ZIO[Has[Console], Throwable, Boolean] = PravegaAdmin.streamManager(clientConfig).use {
-    streamManager =>
-      ZIO.attemptBlocking(streamManager.createScope("zio-scope")) *> ZIO
-        .attemptBlocking(
-          streamManager.createStream(
-            "zio-scope",
-            "zio-stream",
-            StreamConfiguration.builder
-              .scalingPolicy(ScalingPolicy.fixed(8))
-              .build
-          )
-        ) <* printLine("Scope and stream inited")
-
-  }
+def initScopeAndStream: ZIO[Has[StreamManager] with Has[Console], Throwable, Unit] =
+    for {
+      scopeCreated <- PravegaAdmin.createScope(scope)
+      _            <- ZIO.when(scopeCreated)(printLine(s"Scope $scope just created"))
+      streamCreated <- PravegaAdmin.createStream(
+                        streamName,
+                        StreamConfiguration.builder
+                          .scalingPolicy(ScalingPolicy.fixed(8))
+                          .build,
+                        scope
+                      )
+      _ <- ZIO.when(streamCreated)(printLine(s"Stream $streamName just created"))
+    } yield ()
 ```
 
 ### WriterSettings
@@ -63,7 +62,7 @@ private val writeToAndConsumeStream: ZIO[Has[Clock] with Has[Console] with Has[S
     _    <- testStream(0, 10).run(sink)
 
     // Reader group will be created if not already existing.
-    _ <- readerGroup(group, readerSettings, "zio-stream")
+    _ <- PravegaAdmin.readerGroup("zio-scope", group, readerSettings, "zio-stream")
 
     // Make a source stream
     stream <- pravegaStream(group, readerSettings)

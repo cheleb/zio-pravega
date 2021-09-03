@@ -6,8 +6,59 @@ import io.pravega.client.admin.ReaderGroupManager
 import java.net.URI
 
 import scala.jdk.CollectionConverters._
+import io.pravega.client.stream.StreamConfiguration
+import zio.pravega.ReaderSettings
+import io.pravega.client.stream.ReaderGroupConfig
+import io.pravega.client.stream.Stream
 
 object PravegaAdmin {
+
+  def readerGroup[A](
+    scope: String,
+    readerGroupName: String,
+    readerSettings: ReaderSettings[A],
+    streamNames: String*
+  ): ZIO[Any, Throwable, Unit] = {
+    def config() = {
+      val builder = ReaderGroupConfig.builder()
+      streamNames.foreach(name => builder.stream(Stream.of(scope, name)))
+      builder.build()
+    }
+
+    PravegaAdmin.readerGroupManager(scope, readerSettings.clientConfig).use { manager =>
+      ZIO.attemptBlocking {
+        manager.createReaderGroup(
+          readerGroupName,
+          config()
+        )
+      }
+    }
+
+  }
+
+  def createScope(scope: String): ZIO[Has[StreamManager], Throwable, Boolean] =
+    for {
+      manager <- ZIO.service[StreamManager]
+      exists  <- ZIO.attemptBlocking(manager.checkScopeExists(scope))
+      created <- exists match {
+                  case true  => ZIO.succeed(false)
+                  case false => ZIO.attemptBlocking(manager.createScope(scope))
+                }
+    } yield created
+
+  def createStream(
+    streamName: String,
+    config: StreamConfiguration,
+    scope: String
+  ): ZIO[Has[StreamManager], Throwable, Boolean] =
+    for {
+      manager <- ZIO.service[StreamManager]
+      exists  <- ZIO.attemptBlocking(manager.checkStreamExists(scope, streamName))
+      created <- exists match {
+                  case true  => ZIO.succeed(false)
+                  case false => ZIO.attemptBlocking(manager.createStream(scope, streamName, config))
+                }
+    } yield created
 
   def readerGroupManager(
     scope: String,

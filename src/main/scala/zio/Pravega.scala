@@ -10,8 +10,6 @@ import zio.stream.ZStream
 
 import zio.stream.Sink
 import zio.stream.ZSink
-import io.pravega.client.stream.ReaderGroupConfig
-import io.pravega.client
 
 import zio.pravega._
 
@@ -19,11 +17,6 @@ object Pravega {
 
   trait Service extends AutoCloseable {
     def pravegaSink[A](streamName: String, settings: WriterSettings[A]): Sink[Any, A, A, Unit]
-    def readerGroup[A](
-      groupName: String,
-      readerSettings: ReaderSettings[A],
-      streamNames: String*
-    ): ZIO[Any, Throwable, Unit]
     def pravegaStream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
@@ -32,30 +25,8 @@ object Pravega {
 
   object Service {
 
-    def live(scope: String, eventStreamClientFactory: EventStreamClientFactory) =
+    def live(eventStreamClientFactory: EventStreamClientFactory) =
       new Service {
-
-        def readerGroup[A](
-          readerGroupName: String,
-          readerSettings: ReaderSettings[A],
-          streamNames: String*
-        ): ZIO[Any, Throwable, Unit] = {
-          def config() = {
-            val builder = ReaderGroupConfig.builder()
-            streamNames.foreach(name => builder.stream(client.stream.Stream.of(scope, name)))
-            builder.build()
-          }
-
-          PravegaAdmin.readerGroupManager(scope, readerSettings.clientConfig).use { manager =>
-            ZIO.attemptBlocking {
-              manager.createReaderGroup(
-                readerGroupName,
-                config()
-              )
-            }
-          }
-
-        }
 
         override def pravegaStream[A](
           readerGroupName: String,
@@ -111,7 +82,7 @@ object Pravega {
   def live(scope: String, clientConfig: ClientConfig): ZLayer[Any, Throwable, Has[Service]] =
     ZIO
       .attempt(EventStreamClientFactory.withScope(scope, clientConfig))
-      .map(eventStreamClientFactory => Pravega.Service.live(scope, eventStreamClientFactory))
+      .map(eventStreamClientFactory => Pravega.Service.live(eventStreamClientFactory))
       .toManagedAuto
       .toLayer
 
@@ -126,15 +97,5 @@ object Pravega {
     readerSettings: ReaderSettings[A]
   ): ZIO[Has[Service], Throwable, ZStream[Has[Service], Throwable, A]] =
     ZIO.access[Has[Service]](p => p.get.pravegaStream(readerGroup, readerSettings))
-
-  def readerGroup[A](
-    groupName: String,
-    readerSettings: ReaderSettings[A],
-    streamNames: String*
-  ): ZIO[Has[Service], Throwable, Unit] =
-    for {
-      pravega <- ZIO.access[Has[Service]](_.get)
-      _       <- pravega.readerGroup(groupName, readerSettings, streamNames: _*)
-    } yield ()
 
 }
