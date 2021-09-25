@@ -2,7 +2,7 @@ import java.net.URI
 import zio._
 import zio.Console._
 
-object ReleaseReader extends App {
+object ReleaseReader extends ZIOAppDefault {
 
   val program = for {
     n <- PravegaAdmin
@@ -15,7 +15,6 @@ object ReleaseReader extends App {
     _ <- printLine(s"Offined $n reader(s).")
   } yield ()
 
-  override def run(args: List[String]): URIO[ZEnv, ExitCode] =
-    program.exitCode
+  override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs], Any, Any] = program.exitCode
 
 }
