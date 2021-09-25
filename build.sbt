@@ -4,7 +4,7 @@ lazy val scala213  = "2.13.6"
 lazy val mainScala = scala213
 lazy val allScala  = Seq(scala211, scala212, mainScala)
 
-lazy val zioVersion     = "2.0.0-M2"
+lazy val zioVersion     = "2.0.0-M3"
 lazy val pravegaVersion = "0.9.1"
 
 // Allows to silence scalac compilation warnings selectively by code block or file path
@@ -46,7 +46,7 @@ inThisBuild(
   )
 )
 
-val zioConfig = Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d => "dev.zio" %% d % "1.0.6")
+val zioConfig = Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d => "dev.zio" %% d % "1.0.10")
 
 lazy val pravega =
   project
@@ -77,16 +77,16 @@ lazy val pravega =
     .settings(
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       libraryDependencies ++= Seq(
-        "dev.zio"                    %% "zio-streams"             % zioVersion,
-        "dev.zio"                    %% "zio-test"                % zioVersion % Test,
-        "dev.zio"                    %% "zio-test-sbt"            % zioVersion % Test,
-        "io.pravega"                 % "pravega-client"           % pravegaVersion,
-        "org.testcontainers"         % "testcontainers"           % "1.16.0" % Test,
-        "dev.zio"                    %% "zio-zmx"                 % "0.0.7" % Test,
-        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
-        "ch.qos.logback"             % "logback-classic"          % "1.2.3" % "test",
-        "org.scala-lang.modules"     %% "scala-collection-compat" % "2.4.3",
-        compilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full)
+        "dev.zio"            %% "zio-streams"   % zioVersion,
+        "dev.zio"            %% "zio-test"      % zioVersion % Test,
+        "dev.zio"            %% "zio-test-sbt"  % zioVersion % Test,
+        "io.pravega"         % "pravega-client" % pravegaVersion,
+        "org.testcontainers" % "testcontainers" % "1.16.0" % Test,
+        "dev.zio"            %% "zio-zmx"       % "0.0.8" % Test,
+//        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
+        "ch.qos.logback"         % "logback-classic"          % "1.2.6" % "test",
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0",
+        compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
       ) ++ zioConfig,
       testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
     )

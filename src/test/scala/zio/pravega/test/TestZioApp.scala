@@ -11,7 +11,9 @@ import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import io.pravega.client.admin.StreamManager
 
-object TestZioApp extends App {
+object TestZioApp extends ZIOAppDefault {
+
+  override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs], Any, Any] = program.exitCode
 
   val scope      = "zio-scope"
   val streamName = "zio-stream"
@@ -70,6 +72,4 @@ object TestZioApp extends App {
               .provideCustomLayer(Pravega.live(scope, writterSettings.clientConfig))
   } yield count
 
-  override def run(args: List[String]): URIO[ZEnv, ExitCode] =
-    program.exitCode
 }

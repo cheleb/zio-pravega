@@ -64,13 +64,15 @@ object Pravega {
           streamName: String,
           settings: WriterSettings[A]
         ): Sink[Any, A, A, Unit] = {
-          val writer = ZIO
+          val writerManaged = ZIO
             .attemptBlocking(
               eventStreamClientFactory.createEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
             )
             .toManagedWith(w => ZIO.attemptBlocking(w.close()).ignore)
+            .map(writer => ZSink.foreach((a: A) => ZIO.fromCompletableFuture(writer.writeEvent(a))))
+
           ZSink
-            .managed(writer)(writer => ZSink.foreach((a: A) => ZIO.fromCompletableFuture(writer.writeEvent(a))))
+            .unwrapManaged(writerManaged)
 
         }
 
