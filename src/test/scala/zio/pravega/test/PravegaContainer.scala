@@ -6,7 +6,7 @@ import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import org.testcontainers.containers.wait.strategy.Wait
 
-class PravegaContainer(dockerImageName: DockerImageName = DockerImageName.parse("pravega/pravega:0.9.1.0"))
+class PravegaContainer(dockerImageName: DockerImageName = DockerImageName.parse("pravega/pravega:0.10.1"))
     extends GenericContainer[PravegaContainer](dockerImageName) {
 
 //  withNetworkMode("host")
@@ -16,7 +16,7 @@ class PravegaContainer(dockerImageName: DockerImageName = DockerImageName.parse(
   withStartupTimeout(Duration.ofMinutes(2))
   addFixedExposedPort(9090, 9090)
   addFixedExposedPort(12345, 12345)
-  waitingFor(Wait.forLogMessage(".*Starting gRPC server listening on port: 9090.*", 1))
+  waitingFor(Wait.forLogMessage(".*Pravega Sandbox is running locally now. You could access it at 127.0.0.1:9090.*", 1))
   withCommand("standalone")
 
 }

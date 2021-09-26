@@ -52,9 +52,8 @@ object TestZioApp extends ZIOAppDefault {
     for {
       sink <- pravegaSink(streamName, writterSettings)
       _    <- testStream(0, 10).run(sink)
-      _ <- (ZIO.sleep(2.seconds) *> printLine("(( Re-start producing ))") *>
-            testStream(10, 20).run(sink)).fork
-      _ <- PravegaAdmin.readerGroup(scope, groupName, readerSettings, streamName)
+      _    <- (ZIO.sleep(2.seconds) *> printLine("(( Re-start producing ))") *> testStream(10, 20).run(sink)).fork
+      _    <- PravegaAdmin.readerGroup(scope, groupName, readerSettings, streamName)
 
       stream <- pravegaStream(groupName, readerSettings)
       _      <- printLine("Consuming...")

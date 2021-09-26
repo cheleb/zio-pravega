@@ -18,7 +18,7 @@ object PravegaAdmin {
     readerGroupName: String,
     readerSettings: ReaderSettings[A],
     streamNames: String*
-  ): ZIO[Any, Throwable, Unit] = {
+  ): ZIO[Any, Throwable, Boolean] = {
     def config() = {
       val builder = ReaderGroupConfig.builder()
       streamNames.foreach(name => builder.stream(Stream.of(scope, name)))
