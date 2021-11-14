@@ -7,8 +7,9 @@ object TestContainer {
   type Pravega = Has[PravegaContainer]
 
   def pravega(
-    imageName: DockerImageName = DockerImageName.parse("pravega/pravega:0.10.1")
-  ): ZLayer[Any, Nothing, Pravega] =
+      imageName: DockerImageName =
+        DockerImageName.parse("pravega/pravega:0.10.1")
+  ): ZServiceBuilder[Any, Nothing, Pravega] =
     ZManaged.acquireReleaseWith {
       ZIO.attemptBlocking {
         val container = new PravegaContainer(
@@ -17,5 +18,5 @@ object TestContainer {
         container.start()
         container
       }.orDie
-    }(container => ZIO.attemptBlocking(container.stop()).orDie).toLayer
+    }(container => ZIO.attemptBlocking(container.stop()).orDie).toServiceBuilder
 }
