@@ -13,7 +13,7 @@ import io.pravega.client.admin.StreamManager
 
 object TestZioApp extends ZIOAppDefault {
 
-  override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs], Any, Any] =
+  override def run: ZIO[Environment with ZEnv with ZIOAppArgs, Any, Any] =
     program.exitCode
 
   val scope = "zio-scope"
@@ -32,8 +32,7 @@ object TestZioApp extends ZIOAppDefault {
 
   val clientConfig = writterSettings.clientConfig
 
-  def initScopeAndStream
-      : ZIO[Has[StreamManager] with Has[Console], Throwable, Unit] =
+  def initScopeAndStream: ZIO[StreamManager with Console, Throwable, Unit] =
     for {
       scopeCreated <- PravegaAdmin.createScope(scope)
       _ <- ZIO.when(scopeCreated)(printLine(s"Scope $scope just created"))
@@ -52,9 +51,8 @@ object TestZioApp extends ZIOAppDefault {
   def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
-  private val writeToAndConsumeStream: ZIO[Has[Clock] with Has[
-    Console
-  ] with Has[Service] with Has[Console], Any, Int] =
+  private val writeToAndConsumeStream
+      : ZIO[Clock with Console with Service, Any, Int] =
     for {
       sink <- pravegaSink(streamName, writterSettings)
       _ <- testStream(0, 10).run(sink)
@@ -79,11 +77,11 @@ object TestZioApp extends ZIOAppDefault {
     } yield count
 
   val program = for {
-    _ <- initScopeAndStream.provideCustomServices(
-      PravegaAdmin.streamManager(clientConfig).toServiceBuilder
+    _ <- initScopeAndStream.provideCustom(
+      PravegaAdmin.streamManager(clientConfig).toLayer
     )
     count <- writeToAndConsumeStream
-      .provideCustomServices(Pravega.live(scope, writterSettings.clientConfig))
+      .provideCustom(Pravega.live(scope, writterSettings.clientConfig))
   } yield count
 
 }

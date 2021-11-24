@@ -1,10 +1,10 @@
-lazy val scala211  = "2.11.12"
-lazy val scala212  = "2.12.13"
-lazy val scala213  = "2.13.7"
+lazy val scala211 = "2.11.12"
+lazy val scala212 = "2.12.13"
+lazy val scala213 = "2.13.7"
 lazy val mainScala = scala213
-lazy val allScala  = Seq(scala211, scala212, mainScala)
+lazy val allScala = Seq(scala211, scala212, mainScala)
 
-lazy val zioVersion     = "2.0.0-M5"
+lazy val zioVersion = "2.0.0-M6-2"
 lazy val pravegaVersion = "0.10.1"
 
 // Allows to silence scalac compilation warnings selectively by code block or file path
@@ -15,7 +15,9 @@ inThisBuild(
   List(
     organization := "dev.zio",
     homepage := Some(url("https://github.com/cheleb/zio-pravega")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    licenses := List(
+      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
+    ),
     useCoursier := false,
     scalaVersion := mainScala,
     crossScalaVersions := allScala,
@@ -26,7 +28,10 @@ inThisBuild(
     pgpSecretRing := file("/tmp/secret.asc"),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     scmInfo := Some(
-      ScmInfo(url("https://github.com/zio/zio-kafka/"), "scm:git:git@github.com:zio/zio-kafka.git")
+      ScmInfo(
+        url("https://github.com/zio/zio-kafka/"),
+        "scm:git:git@github.com:zio/zio-kafka.git"
+      )
     ),
     developers := List(
       Developer(
@@ -36,7 +41,7 @@ inThisBuild(
         url("https://github.com/cheleb")
       )
     ),
-    semanticdbEnabled := true,                        // enable SemanticDB
+    semanticdbEnabled := true, // enable SemanticDB
     semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
     scalacOptions ++= Seq(
       "-Wunused:imports",
@@ -46,7 +51,10 @@ inThisBuild(
   )
 )
 
-val zioConfig = Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d => "dev.zio" %% d % "1.0.10")
+val zioConfig =
+  Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
+    "dev.zio" %% d % "1.0.10"
+  )
 
 lazy val pravega =
   project
@@ -66,30 +74,53 @@ lazy val pravega =
         }
       }.value,
       Compile / doc / scalacOptions ++= {
-        if (scalaBinaryVersion.value == "2.13") Seq("-P:silencer:globalFilters=[import scala.collection.compat._]")
+        if (scalaBinaryVersion.value == "2.13")
+          Seq("-P:silencer:globalFilters=[import scala.collection.compat._]")
         else Seq.empty
       }
     )
     .settings(
-      buildInfoKeys := Seq[BuildInfoKey](organization, name, version, scalaVersion, sbtVersion, isSnapshot),
+      buildInfoKeys := Seq[BuildInfoKey](
+        organization,
+        name,
+        version,
+        scalaVersion,
+        sbtVersion,
+        isSnapshot
+      ),
       buildInfoPackage := "zio.pravega"
     )
     .settings(
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       libraryDependencies ++= Seq(
-        "dev.zio"            %% "zio-streams"   % zioVersion,
-        "dev.zio"            %% "zio-test"      % zioVersion % Test,
-        "dev.zio"            %% "zio-test-sbt"  % zioVersion % Test,
-        "io.pravega"         % "pravega-client" % pravegaVersion,
+        "dev.zio" %% "zio-streams" % zioVersion,
+        "dev.zio" %% "zio-test" % zioVersion % Test,
+        "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+        "io.pravega" % "pravega-client" % pravegaVersion,
         "org.testcontainers" % "testcontainers" % "1.16.2" % Test,
-        "dev.zio"            %% "zio-zmx"       % "0.0.11" % Test,
+        "dev.zio" %% "zio-zmx" % "0.0.11" % Test,
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
-        "ch.qos.logback"         % "logback-classic"          % "1.2.6" % "test",
-        "org.scala-lang.modules" %% "scala-collection-compat" % "2.5.0",
-        compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
+        "ch.qos.logback" % "logback-classic" % "1.2.6" % "test",
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
+        compilerPlugin(
+          "org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full
+        )
       ) ++ zioConfig,
       testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
     )
 
+lazy val docs = project // new documentation project
+  .in(file("projects-docs")) // important: it must not be docs/
+  .dependsOn(pravega)
+  .settings(
+    mdocVariables := Map(
+      "VERSION" -> version.value
+    )
+  )
+  .enablePlugins(MdocPlugin)
+
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+addCommandAlias(
+  "check",
+  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
+)

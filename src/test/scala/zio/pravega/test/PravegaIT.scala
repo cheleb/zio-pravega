@@ -11,7 +11,7 @@ import zio.test.TestExecutor
 
 object ITSpec {
   type ITEnv =
-    TestEnvironment with Has[PravegaContainer] // with Logging with Postgres
+    TestEnvironment with PravegaContainer // with Logging with Postgres
 }
 import ITSpec.ITEnv
 
@@ -34,6 +34,6 @@ abstract class PravegaIT extends RunnableSpec[ITEnv, Any] {
 
   val pravega = TestContainer.pravega()
 
-  val itLayer: UServiceBuilder[ITEnv] =
+  val itLayer: Layer[Nothing, ITEnv] =
     testEnvironment ++ pravega
 }

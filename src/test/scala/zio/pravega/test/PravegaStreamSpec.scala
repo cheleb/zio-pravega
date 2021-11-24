@@ -17,8 +17,7 @@ import io.pravega.client.stream.ScalingPolicy
 import zio.stream.ZStream
 //import zio.pravega._
 import zio.Pravega._
-import zio.ZIO
-import zio.Has
+
 import zio.PravegaAdmin
 
 // Pravega docker container only works under linux
@@ -40,8 +39,7 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
 
   val clientConfig = writterSettings.clientConfig
 
-  def initScopeAndStream
-      : ZIO[Has[StreamManager] with Has[Console], Throwable, Unit] =
+  def initScopeAndStream: ZIO[StreamManager with Console, Throwable, Unit] =
     for {
       scopeCreated <- PravegaAdmin.createScope(scope)
       _ <- ZIO.when(scopeCreated)(printLine(s"Scope $scope just created"))
@@ -86,22 +84,22 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
     } yield count
 
   val program = for {
-    _ <- initScopeAndStream.provideCustomServices(
-      PravegaAdmin.streamManager(clientConfig).toServiceBuilder
+    _ <- initScopeAndStream.provideCustom(
+      PravegaAdmin.streamManager(clientConfig).toLayer
     )
     count <- writeToAndConsumeStream
     //  .provideCustomLayer(Pravega.live(scope, writterSettings.clientConfig))
 
   } yield count
 
-  val spec: Spec[Has[Clock] with Has[Console] with Has[System] with Has[
-    Random
-  ], TestFailure[Any], TestSuccess] =
+  val spec: Spec[Clock with Console with System with Random, TestFailure[
+    Any
+  ], TestSuccess] =
     suite("Prvavega")(
       zio.test.test("publish and consume") {
 
         assertM(
-          program.provideCustomServices(
+          program.provideCustom(
             Pravega.live(
               scope,
               writterSettings.clientConfig

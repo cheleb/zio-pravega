@@ -96,19 +96,19 @@ object Pravega {
   def live(
       scope: String,
       clientConfig: ClientConfig
-  ): ZServiceBuilder[Any, Throwable, Has[Service]] =
+  ): ZLayer[Any, Throwable, Service] =
     ZIO
       .attempt(EventStreamClientFactory.withScope(scope, clientConfig))
       .map(eventStreamClientFactory =>
         Pravega.Service.live(eventStreamClientFactory)
       )
       .toManagedAuto
-      .toServiceBuilder
+      .toLayer
 
   def pravegaSink[A](
       streamName: String,
       writterSettings: WriterSettings[A]
-  ): ZIO[Has[Service], Throwable, ZSink[
+  ): ZIO[Service, Throwable, ZSink[
     Any,
     Throwable,
     A,
@@ -116,13 +116,13 @@ object Pravega {
     Nothing,
     Unit
   ]] =
-    ZIO.access(p => p.get.pravegaSink[A](streamName, writterSettings))
+    ZIO.environmentWith(p => p.get.pravegaSink[A](streamName, writterSettings))
 
   def pravegaStream[A](
       readerGroup: String,
       readerSettings: ReaderSettings[A]
-  ): ZIO[Has[Service], Throwable, ZStream[Has[Service], Throwable, A]] =
-    ZIO.access[Has[Service]](p =>
+  ): ZIO[Service, Throwable, ZStream[Service, Throwable, A]] =
+    ZIO.environmentWith[Service](p =>
       p.get.pravegaStream(readerGroup, readerSettings)
     )
 

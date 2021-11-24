@@ -37,7 +37,7 @@ object PravegaAdmin {
 
   }
 
-  def createScope(scope: String): ZIO[Has[StreamManager], Throwable, Boolean] =
+  def createScope(scope: String): ZIO[StreamManager, Throwable, Boolean] =
     for {
       manager <- ZIO.service[StreamManager]
       exists <- ZIO.attemptBlocking(manager.checkScopeExists(scope))
@@ -51,7 +51,7 @@ object PravegaAdmin {
       streamName: String,
       config: StreamConfiguration,
       scope: String
-  ): ZIO[Has[StreamManager], Throwable, Boolean] =
+  ): ZIO[StreamManager, Throwable, Boolean] =
     for {
       manager <- ZIO.service[StreamManager]
       exists <- ZIO.attemptBlocking(
@@ -78,12 +78,12 @@ object PravegaAdmin {
 
   def streamManager(
       clientConfig: ClientConfig
-  ): ZManaged[Has[Console], Throwable, StreamManager] =
+  ): ZManaged[Console, Throwable, StreamManager] =
     ZIO.attemptBlocking(StreamManager.create(clientConfig)).toManagedAuto
 
   def readerOffline(
       groupName: String
-  ): ZIO[Has[ReaderGroupManager], Throwable, Int] =
+  ): ZIO[ReaderGroupManager, Throwable, Int] =
     for {
       groupManager <- ZIO.service[ReaderGroupManager]
       freed <- ZIO
