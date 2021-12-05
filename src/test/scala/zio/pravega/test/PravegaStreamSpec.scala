@@ -93,11 +93,10 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
   } yield count
 
   val spec: Spec[Clock with Console with System with Random, TestFailure[
-    Any
+    Throwable
   ], TestSuccess] =
     suite("Prvavega")(
       zio.test.test("publish and consume") {
-
         assertM(
           program.provideCustom(
             Pravega.live(

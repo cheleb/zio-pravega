@@ -100,7 +100,7 @@ lazy val pravega =
         "org.testcontainers" % "testcontainers" % "1.16.2" % Test,
         "dev.zio" %% "zio-zmx" % "0.0.11" % Test,
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
-        "ch.qos.logback" % "logback-classic" % "1.2.6" % "test",
+        "ch.qos.logback" % "logback-classic" % "1.2.7" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
         compilerPlugin(
           "org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full
