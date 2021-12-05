@@ -1,5 +1,6 @@
-package zio
+package zio.pravega
 
+import zio._
 import io.pravega.client.ClientConfig
 import io.pravega.client.admin.StreamManager
 import io.pravega.client.admin.ReaderGroupManager
@@ -10,6 +11,42 @@ import io.pravega.client.stream.StreamConfiguration
 import zio.pravega.ReaderSettings
 import io.pravega.client.stream.ReaderGroupConfig
 import io.pravega.client.stream.Stream
+
+trait PravegaAdmin {
+  def readerGroup[A](
+      scope: String,
+      readerGroupName: String,
+      readerSettings: ReaderSettings[A],
+      streamNames: String*
+  ): ZIO[Any, Throwable, Boolean]
+
+  def createScope(scope: String): ZIO[StreamManager, Throwable, Boolean]
+
+  def createStream(
+      streamName: String,
+      config: StreamConfiguration,
+      scope: String
+  ): ZIO[StreamManager, Throwable, Boolean]
+
+  def readerGroupManager(
+      scope: String,
+      clientConfig: ClientConfig
+  ): ZManaged[Any, Throwable, ReaderGroupManager]
+
+  def readerGroupManager(
+      scope: String,
+      controllerURI: URI
+  ): ZManaged[Any, Throwable, ReaderGroupManager]
+
+  def streamManager(
+      clientConfig: ClientConfig
+  ): ZManaged[Console, Throwable, StreamManager]
+
+  def readerOffline(
+      groupName: String
+  ): ZIO[ReaderGroupManager, Throwable, Int]
+
+}
 
 object PravegaAdmin {
 

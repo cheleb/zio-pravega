@@ -1,24 +1,25 @@
 package zio.pravega.test
 
-import zio.test.TestClock
 import zio.test.Assertion._
 import zio.pravega.WriterSettingsBuilder
 import io.pravega.client.stream.impl.UTF8StringSerializer
 import zio.pravega.ReaderSettingsBuilder
 
 import zio.stream._
-import zio._
+
 import zio.test._
+import zio.test.TestClock._
 import zio.Console
 import zio.Console._
 import io.pravega.client.admin.StreamManager
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import zio.stream.ZStream
-//import zio.pravega._
-import zio.Pravega._
+import zio.pravega._
 
-import zio.PravegaAdmin
+import zio._
+
+import zio.Random
 
 // Pravega docker container only works under linux
 object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
@@ -59,38 +60,39 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
   private val writeToAndConsumeStream =
-    // : ZIO[Has[TestClock] with Has[Console] with Has[Service] with Has[Console], Any, Int] =
     for {
-      sink <- pravegaSink(streamName, writterSettings)
+      sink <- PravegaService(_.pravegaSink(streamName, writterSettings))
       _ <- testStream(0, 10).run(sink)
       _ <- (ZIO.sleep(2.seconds) *> printLine(
         "(( Re-start producing ))"
       ) *> testStream(10, 20).run(sink)).fork
-      _ <- TestClock.adjust(2.seconds)
+      _ <- adjust(2.seconds)
       _ <- PravegaAdmin.readerGroup(
         scope,
         groupName,
         readerSettings,
         streamName
       )
-      stream <- pravegaStream(groupName, readerSettings)
+      stream <- PravegaService(_.pravegaStream(groupName, readerSettings))
       _ <- printLine("Consuming...")
       count <- stream
         .take(n.toLong * 2)
         .tap(e => printLine(s"ZStream of [$e]"))
         .runFold(0)((s, _) => s + 1)
+
       _ <- printLine(s"Consumed $count messages")
 
     } yield count
 
-  val program = for {
-    _ <- initScopeAndStream.provideCustom(
-      PravegaAdmin.streamManager(clientConfig).toLayer
-    )
-    count <- writeToAndConsumeStream
-    //  .provideCustomLayer(Pravega.live(scope, writterSettings.clientConfig))
+  val program
+      : ZIO[zio.ZEnv with PravegaService with TestClock, Throwable, Int] =
+    for {
+      _ <- initScopeAndStream.provideCustom(
+        PravegaAdmin.streamManager(clientConfig).toLayer
+      )
+      count <- writeToAndConsumeStream
 
-  } yield count
+    } yield count
 
   val spec: Spec[Clock with Console with System with Random, TestFailure[
     Throwable
@@ -99,7 +101,7 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
       zio.test.test("publish and consume") {
         assertM(
           program.provideCustom(
-            Pravega.live(
+            Pravega.layer(
               scope,
               writterSettings.clientConfig
             ) ++ zio.test.testEnvironment

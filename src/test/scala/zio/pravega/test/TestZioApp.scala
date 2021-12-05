@@ -6,7 +6,7 @@ import zio.Console._
 import zio._
 import zio.stream._
 import zio.pravega._
-import zio.Pravega._
+
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import io.pravega.client.admin.StreamManager
@@ -52,9 +52,9 @@ object TestZioApp extends ZIOAppDefault {
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
   private val writeToAndConsumeStream
-      : ZIO[Clock with Console with Service, Any, Int] =
+      : ZIO[Clock with Console with PravegaService, Any, Int] =
     for {
-      sink <- pravegaSink(streamName, writterSettings)
+      sink <- PravegaService(_.pravegaSink(streamName, writterSettings))
       _ <- testStream(0, 10).run(sink)
       _ <- (ZIO.sleep(2.seconds) *> printLine(
         "(( Re-start producing ))"
@@ -66,7 +66,7 @@ object TestZioApp extends ZIOAppDefault {
         streamName
       )
 
-      stream <- pravegaStream(groupName, readerSettings)
+      stream <- PravegaService(_.pravegaStream(groupName, readerSettings))
       _ <- printLine("Consuming...")
       count <- stream
         .take(n.toLong * 2)
@@ -81,7 +81,7 @@ object TestZioApp extends ZIOAppDefault {
       PravegaAdmin.streamManager(clientConfig).toLayer
     )
     count <- writeToAndConsumeStream
-      .provideCustom(Pravega.live(scope, writterSettings.clientConfig))
+      .provideCustom(Pravega.layer(scope, writterSettings.clientConfig))
   } yield count
 
 }

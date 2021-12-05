@@ -1,6 +1,7 @@
 import java.net.URI
 import zio._
 import zio.Console._
+import zio.pravega.PravegaAdmin
 
 object ReleaseReader extends ZIOAppDefault {
 
