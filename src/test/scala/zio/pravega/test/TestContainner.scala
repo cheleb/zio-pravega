@@ -4,10 +4,11 @@ import zio._
 import org.testcontainers.utility.DockerImageName
 
 object TestContainer {
-  type Pravega = Has[PravegaContainer]
+  type Pravega = PravegaContainer
 
   def pravega(
-    imageName: DockerImageName = DockerImageName.parse("pravega/pravega")
+      imageName: DockerImageName =
+        DockerImageName.parse("pravega/pravega:0.10.1")
   ): ZLayer[Any, Nothing, Pravega] =
     ZManaged.acquireReleaseWith {
       ZIO.attemptBlocking {
