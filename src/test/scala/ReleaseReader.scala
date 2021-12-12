@@ -1,22 +1,19 @@
-import java.net.URI
 import zio._
 import zio.Console._
 import zio.pravega.PravegaAdmin
+import zio.pravega.PravegaAdminService
+import io.pravega.client.ClientConfig
 
 object ReleaseReader extends ZIOAppDefault {
 
   val program = for {
-    n <- PravegaAdmin
-      .readerOffline("coco1")
-      .provideCustom(
-        PravegaAdmin
-          .readerGroupManager("zio-scope", new URI("tcp://localhost:9090"))
-          .toLayer
-      )
+    n <- PravegaAdminService(_.readerOffline("zio-scope", "coco1"))
     _ <- printLine(s"Offined $n reader(s).")
   } yield ()
 
   override def run: ZIO[Environment with ZEnv with ZIOAppArgs, Any, Any] =
-    program.exitCode
+    program
+      .provideCustom(PravegaAdmin.layer(ClientConfig.builder().build()))
+      .exitCode
 
 }
