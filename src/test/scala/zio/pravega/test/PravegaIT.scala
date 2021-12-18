@@ -19,14 +19,7 @@ abstract class PravegaIT extends RunnableSpec[ITEnv, Any] {
 
   type ITSpec = ZSpec[ITEnv, Any]
 
-  override def aspects: List[TestAspect.WithOut[
-    Nothing,
-    Environment,
-    Nothing,
-    Any,
-    ({ type OutEnv[Env] = Env })#OutEnv,
-    ({ type OutErr[Err] = Err })#OutErr
-  ]] =
+  override def aspects: List[TestAspectAtLeastR[Environment]] =
     List(TestAspect.timeout(60.seconds))
 
   override def runner: TestRunner[ITEnv, Any] =

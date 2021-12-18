@@ -4,7 +4,7 @@ lazy val scala213 = "2.13.7"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala211, scala212, mainScala)
 
-lazy val zioVersion = "2.0.0-M6-2"
+lazy val zioVersion = "2.0.0-RC1"
 lazy val pravegaVersion = "0.10.1"
 
 // Allows to silence scalac compilation warnings selectively by code block or file path
@@ -100,7 +100,7 @@ lazy val pravega =
         "org.testcontainers" % "testcontainers" % "1.16.2" % Test,
         "dev.zio" %% "zio-zmx" % "0.0.11" % Test,
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
-        "ch.qos.logback" % "logback-classic" % "1.2.7" % Test,
+        "ch.qos.logback" % "logback-classic" % "1.2.10" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
         compilerPlugin(
           "org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full

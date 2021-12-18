@@ -12,7 +12,7 @@ trait PravegaService {
   def pravegaSink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Throwable, Nothing, Unit]]
+  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]]
   def pravegaStream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
@@ -27,7 +27,7 @@ case class Pravega(eventStreamClientFactory: EventStreamClientFactory)
   override def pravegaSink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Throwable, Nothing, Unit]] = {
+  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]] = {
     val writerManaged = ZIO
       .attemptBlocking(
         eventStreamClientFactory.createEventWriter(
@@ -52,7 +52,6 @@ case class Pravega(eventStreamClientFactory: EventStreamClientFactory)
       readerGroupName: String,
       settings: ReaderSettings[A]
   ): Task[ZStream[Any, Throwable, A]] = {
-    case class QueuedReader(queue: Queue[A], reader: EventStreamReader[A])
 
     val reader = ZIO.attemptBlocking(
       eventStreamClientFactory
