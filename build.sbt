@@ -1,6 +1,6 @@
 lazy val scala211 = "2.11.12"
 lazy val scala212 = "2.12.13"
-lazy val scala213 = "2.13.7"
+lazy val scala213 = "2.13.8"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala211, scala212, mainScala)
 
@@ -53,7 +53,7 @@ inThisBuild(
 
 val zioConfig =
   Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
-    "dev.zio" %% d % "1.0.10"
+    "dev.zio" %% d % "2.0.0"
   )
 
 lazy val pravega =

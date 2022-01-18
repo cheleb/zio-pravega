@@ -4,7 +4,7 @@ import zio._
 import zio.stream._
 import zio.Accessible
 import io.pravega.client.ClientConfig
-import io.pravega.client.stream.EventStreamReader
+
 import java.util.UUID
 import io.pravega.client.EventStreamClientFactory
 
