@@ -1,7 +1,11 @@
-package zio.pravega
+/*
+ * Copyright (C) since 2016 Lightbend Inc. <https://www.lightbend.com>
+ */
 
+package zio.pravega
 import java.net.URI
 import java.time.Duration
+
 import com.typesafe.config.Config
 import io.pravega.client.stream.{EventWriterConfig, ReaderConfig, Serializer}
 import io.pravega.client.ClientConfig
@@ -9,6 +13,7 @@ import io.pravega.client.ClientConfig.ClientConfigBuilder
 import io.pravega.client.stream.EventWriterConfig.EventWriterConfigBuilder
 import io.pravega.client.stream.ReaderConfig.ReaderConfigBuilder
 import io.pravega.client.tables.KeyValueTableClientConfiguration
+import io.pravega.client.tables.TableKey
 import com.typesafe.config.ConfigFactory
 
 private[pravega] abstract class WithClientConfig(
@@ -19,7 +24,7 @@ private[pravega] abstract class WithClientConfig(
     ] = None
 ) {
 
-  def handleClientConfig() = {
+  protected def handleClientConfig(): ClientConfig = {
     val rawClientConfig =
       clientConfig.getOrElse(
         ConfigHelper.buildClientConfigFromTypeSafeConfig(config)
@@ -43,7 +48,6 @@ class ReaderSettingsBuilder(
     readerConfigBuilder: ReaderConfigBuilder,
     readerConfigCustomizer: Option[ReaderConfigBuilder => ReaderConfigBuilder] =
       None,
-    groupName: Option[String],
     timeout: Duration,
     readerId: Option[String]
 ) extends WithClientConfig(config, clientConfig, clientConfigCustomization) {
@@ -53,14 +57,14 @@ class ReaderSettingsBuilder(
 
   def clientConfigBuilder(
       clientConfigCustomization: ClientConfigBuilder => ClientConfigBuilder
-  ) =
+  ): ReaderSettingsBuilder =
     copy(clientConfigCustomization = Some(clientConfigCustomization))
 
-  def readerConfigBuilder(f: ReaderConfigBuilder => ReaderConfigBuilder) =
+  def readerConfigBuilder(
+      f: ReaderConfigBuilder => ReaderConfigBuilder
+  ): ReaderSettingsBuilder =
     copy(readerConfigCustomizer = Some(f))
 
-  def withGroupName(name: String): ReaderSettingsBuilder =
-    copy(groupName = Some(name))
   def withReaderId(id: String): ReaderSettingsBuilder =
     copy(readerId = Some(id))
 
@@ -82,9 +86,6 @@ class ReaderSettingsBuilder(
     new ReaderSettings[Message](
       handleClientConfig(),
       readerConfigBuilder.build(),
-      groupName.getOrElse(
-        throw new IllegalStateException("group-name is mandatory")
-      ),
       timeout.toMillis,
       serializer,
       readerId
@@ -100,7 +101,6 @@ class ReaderSettingsBuilder(
       readerConfigCustomizer: Option[
         ReaderConfigBuilder => ReaderConfigBuilder
       ] = readerConfigCustomizer,
-      groupName: Option[String] = groupName,
       timeout: Duration = timeout,
       readerId: Option[String] = readerId
   ) =
@@ -110,7 +110,6 @@ class ReaderSettingsBuilder(
       clientConfigCustomization,
       readerConfigBuilder,
       readerConfigCustomizer,
-      groupName,
       timeout,
       readerId
     )
@@ -131,23 +130,22 @@ class ReaderSettingsBuilder(
 class ReaderSettings[Message] private[pravega] (
     val clientConfig: ClientConfig,
     val readerConfig: ReaderConfig,
-    val groupName: String,
     val timeout: Long,
     val serializer: Serializer[Message],
     val readerId: Option[String]
 )
 
 object ReaderSettingsBuilder {
+
   val configPath = "zio.pravega.reader"
 
-  def apply(): ReaderSettingsBuilder = apply(
-    ConfigFactory.load.getConfig(ReaderSettingsBuilder.configPath)
-  )
+  def apply(): ReaderSettingsBuilder =
+    apply(ConfigFactory.load().getConfig(configPath))
 
   /** Create settings from a configuration with the same layout as the default
-    * configuration `akka.alpakka.pravega.reader`.
+    * configuration `zio.pravega.reader`.
     */
-  def apply(implicit config: Config): ReaderSettingsBuilder = {
+  def apply[Message](implicit config: Config): ReaderSettingsBuilder = {
 
     import ConfigHelper._
 
@@ -164,7 +162,6 @@ object ReaderSettingsBuilder {
       None,
       readerConfigBuilder,
       None,
-      readerBasicSetting.groupName,
       readerBasicSetting.timeout,
       readerBasicSetting.readerId
     )
@@ -254,10 +251,10 @@ object WriterSettingsBuilder {
   import ConfigHelper._
 
   def apply[Message](): WriterSettingsBuilder[Message] =
-    apply(ConfigFactory.load.getConfig(WriterSettingsBuilder.configPath))
+    apply(ConfigFactory.load().getConfig(configPath))
 
   /** Create settings from a configuration with the same layout as the default
-    * configuration `akka.alpakka.pravega`.
+    * configuration `zio.pravega`.
     */
   def apply[Message](config: Config): WriterSettingsBuilder[Message] =
     new WriterSettingsBuilder(
@@ -289,8 +286,11 @@ object WriterSettingsBuilder {
 
 }
 
-class TableSettingsBuilder[K, V](
+class TableReaderSettingsBuilder[K, V](
     config: Config,
+    keySerializer: Serializer[K],
+    valueSerializer: Serializer[V],
+    tableKeyExtractor: Option[K => TableKey],
     clientConfig: Option[ClientConfig] = None,
     clientConfigModifier: Option[ClientConfigBuilder => ClientConfigBuilder] =
       None,
@@ -303,25 +303,26 @@ class TableSettingsBuilder[K, V](
 ) extends WithClientConfig(config, clientConfig, clientConfigModifier) {
   def keyValueTableClientConfigurationBuilder(
       f: KeyValueTableClientConfiguration.KeyValueTableClientConfigurationBuilder => KeyValueTableClientConfiguration.KeyValueTableClientConfigurationBuilder
-  ): TableSettingsBuilder[K, V] =
+  ): TableReaderSettingsBuilder[K, V] =
     copy(keyValueTableClientConfigurationBuilderCustomizer = Some(f))
 
   def withClientConfigModifier(clientConfig: ClientConfig) =
     copy(clientConfig = Some(clientConfig))
 
-  def withMaximumInflightMessages(i: Int): TableSettingsBuilder[K, V] =
+  def withMaximumInflightMessages(i: Int): TableReaderSettingsBuilder[K, V] =
     copy(maximumInflightMessages = i)
 
-  def withMaxEntriesAtOnce(i: Int): TableSettingsBuilder[K, V] =
+  def withMaxEntriesAtOnce(i: Int): TableReaderSettingsBuilder[K, V] =
     copy(maxEntriesAtOnce = i)
 
   def clientConfigBuilder(
       clientConfigModifier: ClientConfigBuilder => ClientConfigBuilder
-  ): TableSettingsBuilder[K, V] =
+  ): TableReaderSettingsBuilder[K, V] =
     copy(clientConfigModifier = Some(clientConfigModifier))
 
   private def copy(
       clientConfig: Option[ClientConfig] = clientConfig,
+      tableKeyExtractor: Option[K => TableKey] = tableKeyExtractor,
       clientConfigModifier: Option[ClientConfigBuilder => ClientConfigBuilder] =
         clientConfigModifier,
       keyValueTableClientConfigurationBuilderCustomizer: Option[
@@ -329,9 +330,12 @@ class TableSettingsBuilder[K, V](
       ] = keyValueTableClientConfigurationBuilderCustomizer,
       maximumInflightMessages: Int = maximumInflightMessages,
       maxEntriesAtOnce: Int = maxEntriesAtOnce
-  ): TableSettingsBuilder[K, V] =
-    new TableSettingsBuilder(
+  ): TableReaderSettingsBuilder[K, V] =
+    new TableReaderSettingsBuilder(
       config,
+      keySerializer,
+      valueSerializer,
+      tableKeyExtractor,
       clientConfig,
       clientConfigModifier,
       keyValueTableClientConfigurationBuilder,
@@ -342,21 +346,26 @@ class TableSettingsBuilder[K, V](
 
   /** Build the settings.
     */
-  def withKVSerializers(
-      keySerializer: Serializer[K],
-      valueSerializer: Serializer[V]
-  ): TableSettings[K, V] = {
+  def withTableKey(
+      extractor: K => TableKey
+  ): TableReaderSettingsBuilder[K, V] =
+    copy(tableKeyExtractor = Some(extractor))
+
+  def build(): TableReaderSettings[K, V] = {
 
     keyValueTableClientConfigurationBuilderCustomizer.foreach(
       _(keyValueTableClientConfigurationBuilder)
     )
 
     val clientConfig = keyValueTableClientConfigurationBuilder.build()
-    new TableSettings[K, V](
+    new TableReaderSettings[K, V](
       handleClientConfig(),
       clientConfig,
       keySerializer,
       valueSerializer,
+      tableKeyExtractor.getOrElse(k =>
+        new TableKey(keySerializer.serialize(k))
+      ),
       maximumInflightMessages,
       maxEntriesAtOnce
     )
@@ -364,15 +373,21 @@ class TableSettingsBuilder[K, V](
 
 }
 
-object TableSettingsBuilder {
-  val configPath = "akka.alpakka.pravega.table"
+object TableReaderSettingsBuilder {
 
   /** Create settings from a configuration with the same layout as the default
-    * configuration `akka.alpakka.pravega`.
+    * configuration `zio.pravega`.
     */
-  def apply[K, V](config: Config): TableSettingsBuilder[K, V] =
-    new TableSettingsBuilder(
+  def apply[K, V](
+      config: Config,
+      keySerializer: Serializer[K],
+      valueSerializer: Serializer[V]
+  ): TableReaderSettingsBuilder[K, V] =
+    new TableReaderSettingsBuilder(
       config,
+      keySerializer,
+      valueSerializer,
+      None,
       None,
       None,
       tableClientConfiguration(config),
@@ -398,6 +413,9 @@ object TableSettingsBuilder {
 
 class TableWriterSettingsBuilder[K, V](
     config: Config,
+    keySerializer: Serializer[K],
+    valueSerializer: Serializer[V],
+    tableKeyExtractor: Option[K => TableKey],
     clientConfig: Option[ClientConfig] = None,
     clientConfigCustomization: Option[
       ClientConfigBuilder => ClientConfigBuilder
@@ -430,6 +448,7 @@ class TableWriterSettingsBuilder[K, V](
     copy(maxEntriesAtOnce = i)
 
   private def copy(
+      tableKeyExtractor: Option[K => TableKey] = tableKeyExtractor,
       clientConfig: Option[ClientConfig] = clientConfig,
       clientConfigCustomization: Option[
         ClientConfigBuilder => ClientConfigBuilder
@@ -442,6 +461,9 @@ class TableWriterSettingsBuilder[K, V](
   ): TableWriterSettingsBuilder[K, V] =
     new TableWriterSettingsBuilder(
       config,
+      keySerializer,
+      valueSerializer,
+      tableKeyExtractor,
       clientConfig,
       clientConfigCustomization,
       keyValueTableClientConfigurationBuilder,
@@ -453,9 +475,11 @@ class TableWriterSettingsBuilder[K, V](
   /** Build the settings.
     */
   def withSerializers(
-      keySerializer: Serializer[K],
-      valueSerializer: Serializer[V]
-  ): TableWriterSettings[K, V] = {
+      extractor: K => TableKey
+  ): TableWriterSettingsBuilder[K, V] =
+    copy(tableKeyExtractor = Some(extractor))
+
+  def build(): TableWriterSettings[K, V] = {
 
     keyValueTableClientConfigurationBuilderCustomizer.foreach(
       _(keyValueTableClientConfigurationBuilder)
@@ -467,22 +491,30 @@ class TableWriterSettingsBuilder[K, V](
       eventWriterConfig,
       keySerializer,
       valueSerializer,
-      maximumInflightMessages,
-      maxEntriesAtOnce
+      tableKeyExtractor.getOrElse(k =>
+        new TableKey(keySerializer.serialize(k))
+      ),
+      maximumInflightMessages
     )
   }
 
 }
 
 object TableWriterSettingsBuilder {
-  val configPath = "akka.alpakka.pravega.table"
 
   /** Create settings from a configuration with the same layout as the default
-    * configuration `akka.alpakka.pravega`.
+    * configuration `zio.pravega`.
     */
-  def apply[K, V](config: Config): TableWriterSettingsBuilder[K, V] =
+  def apply[K, V](
+      config: Config,
+      keySerializer: Serializer[K],
+      valueSerializer: Serializer[V]
+  ): TableWriterSettingsBuilder[K, V] =
     new TableWriterSettingsBuilder(
       config,
+      keySerializer,
+      valueSerializer,
+      None,
       None,
       None,
       tableClientConfiguration(config),
@@ -517,8 +549,7 @@ private[pravega] class ReaderBasicSetting(
 }
 
 /** Writer settings that must be provided to @see Sink
-  * [[akka.stream.alpakka.pravega.scaladsl.Pravega#sink]] or @see Flow
-  * [[akka.stream.alpakka.pravega.scaladsl.Pravega#flow]]
+  * [[zio.pravega.Pravega#sink]] or @see Flow [[zio.pravega.Pravega#flow]]
   *
   * Built with @see [[WriterSettingsBuilder]]
   *
@@ -537,8 +568,8 @@ class WriterSettings[Message](
 )
 
 /** Table Writer settings that must be provided to @see Sink
-  * [[akka.stream.alpakka.pravega.scaladsl.Pravega#tableSink]] or @see Flow
-  * [[akka.stream.alpakka.pravega.scaladsl.Pravega#tableflow]]
+  * [[zio.pravega.PravegaTable.sink]] or @see Flow
+  * [[zio.pravega.PravegaTable.writeFlow]]
   *
   * Built with @see [[WriterSettingsBuilder]]
   */
@@ -547,24 +578,41 @@ class TableWriterSettings[K, V](
     keyValueTableClientConfiguration: KeyValueTableClientConfiguration,
     keySerializer: Serializer[K],
     valueSerializer: Serializer[V],
-    maximumInflightMessages: Int,
-    maxEntriesAtOnce: Int
+    tableKey: K => TableKey,
+    maximumInflightMessages: Int
 ) extends TableSettings(
       clientConfig,
-      keyValueTableClientConfiguration,
       keySerializer,
       valueSerializer,
-      maximumInflightMessages,
-      maxEntriesAtOnce
+      tableKey,
+      keyValueTableClientConfiguration,
+      maximumInflightMessages
     )
 
-class TableSettings[K, V](
+class TableReaderSettings[K, V](
+    clientConfig: ClientConfig,
+    keyValueTableClientConfiguration: KeyValueTableClientConfiguration,
+    keySerializer: Serializer[K],
+    valueSerializer: Serializer[V],
+    tableKey: K => TableKey,
+    maximumInflightMessages: Int,
+    val maxEntriesAtOnce: Int
+) extends TableSettings(
+      clientConfig,
+      keySerializer,
+      valueSerializer,
+      tableKey,
+      keyValueTableClientConfiguration,
+      maximumInflightMessages
+    )
+
+protected abstract class TableSettings[K, V](
     val clientConfig: ClientConfig,
-    val keyValueTableClientConfiguration: KeyValueTableClientConfiguration,
     val keySerializer: Serializer[K],
     val valueSerializer: Serializer[V],
-    val maximumInflightMessages: Int,
-    val maxEntriesAtOnce: Int
+    val tableKey: K => TableKey,
+    val keyValueTableClientConfiguration: KeyValueTableClientConfiguration,
+    val maximumInflightMessages: Int
 )
 
 private[pravega] object ConfigHelper {
@@ -583,7 +631,9 @@ private[pravega] object ConfigHelper {
     val builder = ClientConfig.builder()
 
     implicit val c = config.getConfig("client-config")
-    extractString("controller-uri")(uri => builder.controllerURI(new URI(uri)))
+    extractString("controller-uri") { uri =>
+      builder.controllerURI(new URI(uri))
+    }
     extractBoolean("enable-tls-to-controller")(builder.enableTlsToController)
     extractBoolean("enable-tls-to-segment-store")(
       builder.enableTlsToSegmentStore
@@ -597,29 +647,25 @@ private[pravega] object ConfigHelper {
     builder.build()
   }
 
-  def extractString[Builder](
+  def extractString(
       path: String
-  )(f: String => Builder)(implicit config: Config): Unit =
+  )(f: String => Any)(implicit config: Config): Unit =
     if (config.hasPath(path))
       f(config.getString(path)): Unit
-  def extractBoolean[Builder](
+  def extractBoolean(
       path: String
-  )(f: Boolean => Builder)(implicit config: Config): Unit =
+  )(f: Boolean => Any)(implicit config: Config): Unit =
     if (config.hasPath(path))
       f(config.getBoolean(path)): Unit
-  def extractInt[Builder](
-      path: String
-  )(f: Int => Builder)(implicit config: Config): Unit =
+  def extractInt(path: String)(f: Int => Any)(implicit config: Config): Unit =
     if (config.hasPath(path))
       f(config.getInt(path)): Unit
-  def extractLong[Builder](
-      path: String
-  )(f: Long => Builder)(implicit config: Config): Unit =
+  def extractLong(path: String)(f: Long => Any)(implicit config: Config): Unit =
     if (config.hasPath(path))
       f(config.getLong(path)): Unit
-  def extractDuration[Builder](
+  def extractDuration(
       path: String
-  )(f: Duration => Builder)(implicit config: Config): Unit =
+  )(f: Duration => Unit)(implicit config: Config): Unit =
     if (config.hasPath(path))
-      f(config.getDuration(path)): Unit
+      f(config.getDuration(path))
 }

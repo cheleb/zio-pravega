@@ -70,7 +70,7 @@ object TestZioApp extends ZIOAppDefault {
     for {
       sink <- PravegaService(_.pravegaSink(streamName, writterSettings))
       _ <- testStream(0, 10).run(sink)
-      _ <- (ZIO.sleep(2.seconds) *> printLine(
+      _ <- (ZIO.sleep(10.seconds) *> printLine(
         "(( Re-start producing ))"
       ) *> testStream(10, 20).run(sink)).fork
       _ <- PravegaAdminService(
