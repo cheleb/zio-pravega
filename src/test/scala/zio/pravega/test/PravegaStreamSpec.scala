@@ -62,12 +62,12 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
   private val writeToAndConsumeStream: ZIO[
-    PravegaService with PravegaAdminService with Console with TestClock with Clock,
+    PravegaStreamService with PravegaAdminService with Console with TestClock with Clock,
     Throwable,
     Int
   ] =
     for {
-      sink <- PravegaService(_.pravegaSink(streamName, writterSettings))
+      sink <- PravegaService(_.sink(streamName, writterSettings))
       _ <- testStream(0, 10).run(sink)
       _ <- (ZIO.sleep(2.seconds) *> printLine(
         "(( Re-start producing ))"
@@ -80,7 +80,7 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
           streamName
         )
       )
-      stream <- PravegaService(_.pravegaStream(groupName, readerSettings))
+      stream <- PravegaService(_.stream(groupName, readerSettings))
       _ <- printLine("Consuming...")
       count <- stream
         .take(n.toLong * 2)
@@ -92,7 +92,7 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
     } yield count
 
   val program: ZIO[
-    zio.ZEnv with PravegaService with PravegaAdminService with Console with TestClock with Clock with Random,
+    zio.ZEnv with PravegaStreamService with PravegaAdminService with Console with TestClock with Clock with Random,
     Throwable,
     Int
   ] =
@@ -109,7 +109,7 @@ object PravegaStreamSpec extends PravegaIT { // */ DefaultRunnableSpec {
     ],
     TestSuccess
   ] =
-    suite("Prvavega")(
+    suite("Pravega")(
       zio.test.test("publish and consume") {
         assertM(
           program.provideCustom(

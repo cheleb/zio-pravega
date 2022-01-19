@@ -1,30 +1,30 @@
 package zio.pravega
 
+import io.pravega.client.ClientConfig
+import io.pravega.client.EventStreamClientFactory
+import zio.Accessible
 import zio._
 import zio.stream._
-import zio.Accessible
-import io.pravega.client.ClientConfig
 
 import java.util.UUID
-import io.pravega.client.EventStreamClientFactory
 
-trait PravegaService {
-  def pravegaSink[A](
+trait PravegaStreamService {
+  def sink[A](
       streamName: String,
       settings: WriterSettings[A]
   ): Task[ZSink[Any, Throwable, A, Nothing, Unit]]
-  def pravegaStream[A](
+  def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
   ): Task[ZStream[Any, Throwable, A]]
 }
 
-object PravegaService extends Accessible[PravegaService]
+object PravegaService extends Accessible[PravegaStreamService]
 
-case class Pravega(eventStreamClientFactory: EventStreamClientFactory)
-    extends PravegaService {
+case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
+    extends PravegaStreamService {
 
-  override def pravegaSink[A](
+  override def sink[A](
       streamName: String,
       settings: WriterSettings[A]
   ): Task[ZSink[Any, Throwable, A, Nothing, Unit]] = {
@@ -48,7 +48,7 @@ case class Pravega(eventStreamClientFactory: EventStreamClientFactory)
 
   }
 
-  override def pravegaStream[A](
+  override def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
   ): Task[ZStream[Any, Throwable, A]] = {
@@ -86,13 +86,14 @@ case class Pravega(eventStreamClientFactory: EventStreamClientFactory)
 }
 
 object Pravega {
-  def apply(eventStreamClientFactory: EventStreamClientFactory) = new Pravega(
-    eventStreamClientFactory
-  )
+  def apply(eventStreamClientFactory: EventStreamClientFactory) =
+    new PravegaStream(
+      eventStreamClientFactory
+    )
   def layer(
       scope: String,
       clientConfig: ClientConfig
-  ): ZLayer[Any, Throwable, PravegaService] = ZIO
+  ): ZLayer[Any, Throwable, PravegaStreamService] = ZIO
     .attempt(EventStreamClientFactory.withScope(scope, clientConfig))
     .map(eventStreamClientFactory => Pravega(eventStreamClientFactory))
     .toManagedWith(pravega => UIO(pravega.eventStreamClientFactory.close()))

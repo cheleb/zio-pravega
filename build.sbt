@@ -29,8 +29,8 @@ inThisBuild(
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     scmInfo := Some(
       ScmInfo(
-        url("https://github.com/zio/zio-kafka/"),
-        "scm:git:git@github.com:zio/zio-kafka.git"
+        url("https://github.com/cheleb/zio-pravega/"),
+        "scm:git:git@github.com:cheleb/zio-pravega.git"
       )
     ),
     developers := List(

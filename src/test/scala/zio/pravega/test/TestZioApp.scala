@@ -63,12 +63,12 @@ object TestZioApp extends ZIOAppDefault {
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
   private val writeToAndConsumeStream: ZIO[
-    Clock with Console with PravegaService with PravegaAdminService,
+    Clock with Console with PravegaStreamService with PravegaAdminService,
     Any,
     Int
   ] =
     for {
-      sink <- PravegaService(_.pravegaSink(streamName, writterSettings))
+      sink <- PravegaService(_.sink(streamName, writterSettings))
       _ <- testStream(0, 10).run(sink)
       _ <- (ZIO.sleep(10.seconds) *> printLine(
         "(( Re-start producing ))"
@@ -81,7 +81,7 @@ object TestZioApp extends ZIOAppDefault {
         )
       )
 
-      stream <- PravegaService(_.pravegaStream(groupName, readerSettings))
+      stream <- PravegaService(_.stream(groupName, readerSettings))
       _ <- printLine("Consuming...")
       count <- stream
         .take(n.toLong * 2)
