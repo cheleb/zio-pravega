@@ -302,7 +302,7 @@ class TableReaderSettingsBuilder[K, V](
   ): TableReaderSettingsBuilder[K, V] =
     copy(keyValueTableClientConfigurationBuilderCustomizer = Some(f))
 
-  def withClientConfigModifier(clientConfig: ClientConfig) =
+  def withClientConfig(clientConfig: ClientConfig) =
     copy(clientConfig = Some(clientConfig))
 
   def withMaximumInflightMessages(i: Int): TableReaderSettingsBuilder[K, V] =
@@ -342,7 +342,7 @@ class TableReaderSettingsBuilder[K, V](
 
   /** Build the settings.
     */
-  def withTableKey(
+  def withKeyExtractor(
       extractor: K => TableKey
   ): TableReaderSettingsBuilder[K, V] =
     copy(tableKeyExtractor = Some(extractor))
@@ -354,14 +354,15 @@ class TableReaderSettingsBuilder[K, V](
     )
 
     val clientConfig = keyValueTableClientConfigurationBuilder.build()
+
     new TableReaderSettings[K, V](
       handleClientConfig(),
       clientConfig,
       keySerializer,
       valueSerializer,
-      tableKeyExtractor.getOrElse(k =>
+      tableKeyExtractor.getOrElse { k =>
         new TableKey(keySerializer.serialize(k))
-      ),
+      },
       maximumInflightMessages,
       maxEntriesAtOnce
     )
@@ -370,6 +371,18 @@ class TableReaderSettingsBuilder[K, V](
 }
 
 object TableReaderSettingsBuilder {
+
+  val configPath = "zio.pravega.table"
+
+  def apply[K, V](
+      keySerializer: Serializer[K],
+      valueSerializer: Serializer[V]
+  ): TableReaderSettingsBuilder[K, V] =
+    apply(
+      ConfigFactory.load().getConfig(configPath),
+      keySerializer,
+      valueSerializer
+    )
 
   /** Create settings from a configuration with the same layout as the default
     * configuration `zio.pravega`.
@@ -420,8 +433,7 @@ class TableWriterSettingsBuilder[K, V](
     keyValueTableClientConfigurationBuilderCustomizer: Option[
       KeyValueTableClientConfiguration.KeyValueTableClientConfigurationBuilder => KeyValueTableClientConfiguration.KeyValueTableClientConfigurationBuilder
     ] = None,
-    maximumInflightMessages: Int,
-    maxEntriesAtOnce: Int
+    maximumInflightMessages: Int
 ) extends WithClientConfig(config, clientConfig, clientConfigCustomization) {
 
   def keyValueTableClientConfigurationBuilder(
@@ -440,9 +452,6 @@ class TableWriterSettingsBuilder[K, V](
   def withMaximumInflightMessages(i: Int): TableWriterSettingsBuilder[K, V] =
     copy(maximumInflightMessages = i)
 
-  def withMaxEntriesAtOnce(i: Int): TableWriterSettingsBuilder[K, V] =
-    copy(maxEntriesAtOnce = i)
-
   private def copy(
       tableKeyExtractor: Option[K => TableKey] = tableKeyExtractor,
       clientConfig: Option[ClientConfig] = clientConfig,
@@ -452,8 +461,7 @@ class TableWriterSettingsBuilder[K, V](
       keyValueTableClientConfigurationBuilderCustomizer: Option[
         KeyValueTableClientConfiguration.KeyValueTableClientConfigurationBuilder => KeyValueTableClientConfiguration.KeyValueTableClientConfigurationBuilder
       ] = keyValueTableClientConfigurationBuilderCustomizer,
-      maximumInflightMessages: Int = maximumInflightMessages,
-      maxEntriesAtOnce: Int = maxEntriesAtOnce
+      maximumInflightMessages: Int = maximumInflightMessages
   ): TableWriterSettingsBuilder[K, V] =
     new TableWriterSettingsBuilder(
       config,
@@ -464,13 +472,12 @@ class TableWriterSettingsBuilder[K, V](
       clientConfigCustomization,
       keyValueTableClientConfigurationBuilder,
       keyValueTableClientConfigurationBuilderCustomizer,
-      maximumInflightMessages,
-      maxEntriesAtOnce
+      maximumInflightMessages
     )
 
   /** Build the settings.
     */
-  def withSerializers(
+  def withKeyExtractor(
       extractor: K => TableKey
   ): TableWriterSettingsBuilder[K, V] =
     copy(tableKeyExtractor = Some(extractor))
@@ -498,9 +505,21 @@ class TableWriterSettingsBuilder[K, V](
 
 object TableWriterSettingsBuilder {
 
+  val configPath = "zio.pravega.table"
+
   /** Create settings from a configuration with the same layout as the default
     * configuration `zio.pravega`.
     */
+  def apply[K, V](
+      keySerializer: Serializer[K],
+      valueSerializer: Serializer[V]
+  ): TableWriterSettingsBuilder[K, V] =
+    apply(
+      ConfigFactory.load().getConfig(configPath),
+      keySerializer,
+      valueSerializer
+    )
+
   def apply[K, V](
       config: Config,
       keySerializer: Serializer[K],
@@ -515,8 +534,7 @@ object TableWriterSettingsBuilder {
       None,
       tableClientConfiguration(config),
       None,
-      config.getInt("maximum-inflight-messages"),
-      config.getInt("max-entries-at-once")
+      config.getInt("maximum-inflight-messages")
     )
 
   private def tableClientConfiguration(implicit config: Config) = {

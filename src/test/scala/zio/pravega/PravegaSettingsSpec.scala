@@ -10,10 +10,17 @@ import java.net.URI
 import scala.concurrent.duration.DurationInt
 
 import scala.language.postfixOps
+import io.pravega.client.tables.TableKey
+import java.nio.ByteBuffer
 
 class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
-  "Prvega settings builders" must {
+  private val clientConfig = ClientConfig
+    .builder()
+    .controllerURI(new URI("tcp://localhost:9090:"))
+    .build()
+
+  "Pravega stream settings builders" must {
 
     "Allows reader to set client config" in {
 
@@ -32,11 +39,6 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
     }
 
     "Allows writer to set client config" in {
-
-      val clientConfig = ClientConfig
-        .builder()
-        .controllerURI(new URI("tcp://localhost:9090:"))
-        .build()
 
       val writterSettings = WriterSettingsBuilder()
         .withClientConfig(clientConfig)
@@ -64,6 +66,67 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
       readerSettings.clientConfig.isEnableTlsToController() mustBe true
       readerSettings.readerConfig.getBufferSize() mustEqual 1024
       readerSettings.readerId mustEqual Some("dummy")
+
+    }
+  }
+
+  "Pravega table setting builder" must {
+    "Allow table reader settings" in {
+      val tableReaderSettings = TableReaderSettingsBuilder(
+        new UTF8StringSerializer,
+        new UTF8StringSerializer
+      )
+        .withClientConfig(clientConfig)
+        .clientConfigBuilder(_.enableTlsToSegmentStore(true))
+        .withMaximumInflightMessages(10)
+        .keyValueTableClientConfigurationBuilder(_.backoffMultiple(2))
+        .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes())))
+        .withMaxEntriesAtOnce(1000)
+        .build()
+
+      tableReaderSettings.maximumInflightMessages mustEqual 10
+      tableReaderSettings.maxEntriesAtOnce mustEqual 1000
+
+      val tableReaderSettingsDefault = TableReaderSettingsBuilder(
+        new UTF8StringSerializer,
+        new UTF8StringSerializer
+      )
+        .withClientConfig(clientConfig)
+        .clientConfigBuilder(_.enableTlsToSegmentStore(true))
+        .withMaximumInflightMessages(10)
+        .keyValueTableClientConfigurationBuilder(_.backoffMultiple(2))
+        .withMaxEntriesAtOnce(1000)
+        .build()
+
+      tableReaderSettingsDefault.maximumInflightMessages mustEqual 10
+      tableReaderSettingsDefault.maxEntriesAtOnce mustEqual 1000
+
+    }
+    "Allow table writter settings" in {
+      val tableWritterSettings = TableWriterSettingsBuilder(
+        new UTF8StringSerializer,
+        new UTF8StringSerializer
+      ).withClientConfig(clientConfig)
+        .withMaximumInflightMessages(100)
+        .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes())))
+        .keyValueTableClientConfigurationBuilder(_.retryAttempts(3))
+        .clientConfigBuilder(_.enableTlsToController(true))
+        .build()
+
+      tableWritterSettings.clientConfig.isEnableTlsToController mustBe true
+      tableWritterSettings.maximumInflightMessages mustEqual 100
+
+      val tableWritterSettingsDefaultExtractor = TableWriterSettingsBuilder(
+        new UTF8StringSerializer,
+        new UTF8StringSerializer
+      ).withClientConfig(clientConfig)
+        .withMaximumInflightMessages(100)
+        .keyValueTableClientConfigurationBuilder(_.retryAttempts(3))
+        .clientConfigBuilder(_.enableTlsToController(true))
+        .build()
+
+      tableWritterSettingsDefaultExtractor.clientConfig.isEnableTlsToController mustBe true
+      tableWritterSettingsDefaultExtractor.maximumInflightMessages mustEqual 100
 
     }
   }
