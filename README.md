@@ -2,6 +2,7 @@
 
 Proof of concept to use [Pravega](https://www.pravega.io) with [ZIO](https://www.zio.dev)
 
+[![codecov](https://codecov.io/gh/cheleb/zio-pravega/branch/master/graph/badge.svg?token=9IW44171RJ)](https://codecov.io/gh/cheleb/zio-pravega)
 
 # Usage
 

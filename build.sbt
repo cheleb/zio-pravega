@@ -4,7 +4,7 @@ lazy val scala213 = "2.13.8"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala211, scala212, mainScala)
 
-lazy val zioVersion = "2.0.0-RC1"
+lazy val zioVersion = "2.0.0-RC2"
 lazy val pravegaVersion = "0.10.1"
 
 // Allows to silence scalac compilation warnings selectively by code block or file path
@@ -96,8 +96,9 @@ lazy val pravega =
         "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-test" % zioVersion % Test,
         "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+        "org.scalatest" %% "scalatest" % "3.2.11" % Test,
         "io.pravega" % "pravega-client" % pravegaVersion,
-        "org.testcontainers" % "testcontainers" % "1.16.2" % Test,
+        "org.testcontainers" % "testcontainers" % "1.16.3" % Test,
         "dev.zio" %% "zio-zmx" % "0.0.11" % Test,
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
         "ch.qos.logback" % "logback-classic" % "1.2.10" % Test,
@@ -106,7 +107,7 @@ lazy val pravega =
           "org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full
         )
       ) ++ zioConfig,
-      testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+      testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
     )
 
 lazy val docs = project // new documentation project
