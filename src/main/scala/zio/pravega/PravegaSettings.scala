@@ -68,10 +68,6 @@ class ReaderSettingsBuilder(
   def withReaderId(id: String): ReaderSettingsBuilder =
     copy(readerId = Some(id))
 
-  // JavaDSL
-  def withTimeout(timeout: java.time.Duration): ReaderSettingsBuilder =
-    copy(timeout = timeout)
-  // ScalaDSL
   def withTimeout(
       timeout: scala.concurrent.duration.Duration
   ): ReaderSettingsBuilder =
