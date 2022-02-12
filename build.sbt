@@ -111,14 +111,20 @@ lazy val pravega =
     )
 
 lazy val docs = project // new documentation project
-  .in(file("projects-docs")) // important: it must not be docs/
+  .in(file("zio-pravega-docs")) // important: it must not be docs/
   .dependsOn(pravega)
   .settings(
+    moduleName := "zio-pravega-docs",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(pravega),
+    ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+    cleanFiles += (ScalaUnidoc / unidoc / target ).value,
+    docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
+    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value,
     mdocVariables := Map(
       "VERSION" -> version.value
     )
   )
-  .enablePlugins(MdocPlugin)
+  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias(

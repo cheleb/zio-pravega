@@ -22,7 +22,7 @@ import zio._
 import zio.Random
 
 // Pravega docker container only works under linux
-object PravegaStreamSpec extends PravegaIT { // */ extends DefaultRunnableSpec {
+object PravegaStreamSpec extends PravegaIT { //  DefaultRunnableSpec {
 
   val scope = "zio-scope"
   val streamName = "zio-stream"

@@ -1,7 +1,3 @@
-/*
- * Copyright (C) since 2016 Lightbend Inc. <https://www.lightbend.com>
- */
-
 package zio.pravega
 import java.net.URI
 import java.time.Duration
@@ -111,13 +107,13 @@ class ReaderSettingsBuilder(
     )
 }
 
-/** Reader settings that must be provided to @see [[zio.pravega.Pravega#source]]
+/** Reader settings that must be provided to @see
+  * [[zio.pravega.PravegaStream#stream]]
   *
   * Built with @see [[ReaderSettingsBuilder]]
   *
   * @param clientConfig
   * @param readerConfig
-  * @param groupName
   * @param timeout
   * @param serializer
   * @param readerId
@@ -563,7 +559,7 @@ private[pravega] class ReaderBasicSetting(
 }
 
 /** Writer settings that must be provided to @see Sink
-  * [[zio.pravega.Pravega#sink]] or @see Flow [[zio.pravega.Pravega#flow]]
+  * [[zio.pravega.PravegaStream#sink]]
   *
   * Built with @see [[WriterSettingsBuilder]]
   *
@@ -582,10 +578,7 @@ class WriterSettings[Message](
 )
 
 /** Table Writer settings that must be provided to @see Sink
-  * [[zio.pravega.PravegaTable.sink]] or @see Flow
-  * [[zio.pravega.PravegaTable.writeFlow]]
-  *
-  * Built with @see [[WriterSettingsBuilder]]
+  * [[zio.pravega.PravegaStream.sink]] Built with @see [[WriterSettingsBuilder]]
   */
 class TableWriterSettings[K, V](
     clientConfig: ClientConfig,
