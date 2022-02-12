@@ -1,12 +1,11 @@
-# My Project
+---
+sidebar_position: 1
+---
 
-To install my project
+# Installation
+
+To install the dependency
 
 ```scala
 libraryDependencies += "dev.zio" % "zio-pravega" % "@VERSION@"
-```
-
-```scala mdoc
-val x = 1
-List(x, x)
 ```
