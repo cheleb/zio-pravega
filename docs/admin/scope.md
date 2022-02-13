@@ -1,3 +1,6 @@
+---
+sidebar_position: 1
+---
 # Scopes
 Scopes are namespaces for [Streams](stream.md), they must be created before being referenced (no automatic creation).
 

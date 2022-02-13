@@ -1,3 +1,6 @@
+---
+sidebar_position: 1
+---
 # Stream
 
 Central Pravega abstraction, must be explictly created, in a [Scope](scope.md).
