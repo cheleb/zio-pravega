@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[754],{4947:function(a){a.exports=JSON.parse('{"allTagsPath":"/zio-pravega/blog/tags","slug":"/zio-pravega/blog/tags/facebook","name":"facebook","count":1,"permalink":"/zio-pravega/blog/tags/facebook"}')}}]);
