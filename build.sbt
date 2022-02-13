@@ -111,14 +111,15 @@ lazy val pravega =
     )
 
 lazy val docs = project // new documentation project
-  .in(file("projects-docs")) // important: it must not be docs/
+  .in(file("zio-pravega-docs")) // important: it must not be docs/
   .dependsOn(pravega)
   .settings(
+    moduleName := "zio-pravega-docs",
     mdocVariables := Map(
       "VERSION" -> version.value
     )
   )
-  .enablePlugins(MdocPlugin)
+  .enablePlugins(MdocPlugin, DocusaurusPlugin)
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias(
