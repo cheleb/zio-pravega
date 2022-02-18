@@ -25,7 +25,9 @@ abstract class PravegaIT extends RunnableSpec[ITEnv, Any] {
   override def runner: TestRunner[ITEnv, Any] =
     TestRunner(TestExecutor.default(itLayer))
 
-  val pravega = TestContainer.pravega()
+  val pravega = TestContainer.pravega(
+    sys.env.getOrElse("PRAVEGA_IMAGE", "pravega/pravega:0.10.1")
+  )
 
   val itLayer: Layer[Nothing, ITEnv] =
     testEnvironment ++ pravega
