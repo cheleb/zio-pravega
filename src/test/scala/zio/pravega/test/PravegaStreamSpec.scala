@@ -72,7 +72,7 @@ object PravegaStreamSpec extends PravegaIT { // DefaultRunnableSpec {
       _ <- (ZIO.sleep(2.seconds) *> printLine(
         "(( Re-start producing ))"
       ) *> testStream(10, 20).run(sink)).fork
-      _ <- adjust(2.seconds)
+
       _ <- PravegaAdminService(
         _.readerGroup(
           scope,
@@ -84,7 +84,10 @@ object PravegaStreamSpec extends PravegaIT { // DefaultRunnableSpec {
       _ <- printLine("Consuming...")
       count <- stream
         .take(n.toLong * 2)
-        .tap(e => printLine(s"ZStream of [$e]"))
+        .tap(e =>
+          adjust(200.millis) *>
+            printLine(s"ZStream of [$e]")
+        )
         .runFold(0)((s, _) => s + 1)
 
       _ <- printLine(s"Consumed $count messages")
