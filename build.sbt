@@ -1,8 +1,7 @@
-lazy val scala211 = "2.11.12"
-lazy val scala212 = "2.12.13"
 lazy val scala213 = "2.13.8"
+lazy val scala31 =  "3.1.1"
 lazy val mainScala = scala213
-lazy val allScala = Seq(scala211, scala212, mainScala)
+lazy val allScala = Seq(scala31, mainScala)
 
 lazy val zioVersion = "2.0.0-RC2"
 lazy val pravegaVersion = "0.10.1"
@@ -44,9 +43,9 @@ inThisBuild(
     semanticdbEnabled := true, // enable SemanticDB
     semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
     scalacOptions ++= Seq(
-      "-Wunused:imports",
-      "-Wunused",
-      "-Wconf:cat=unused:info"
+//      "-Wunused:imports",
+//      "-Wunused",
+//      "-Wconf:cat=unused:info"
     )
   )
 )
@@ -103,9 +102,9 @@ lazy val pravega =
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
         "ch.qos.logback" % "logback-classic" % "1.2.10" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.6.0",
-        compilerPlugin(
-          "org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full
-        )
+        // compilerPlugin(
+        //   "org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full
+        // )
       ) ++ zioConfig,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
     )
