@@ -7,13 +7,12 @@ object TestContainer {
   type Pravega = PravegaContainer
 
   def pravega(
-      imageName: DockerImageName =
-        DockerImageName.parse("pravega/pravega:0.10.1")
+      imageName: String
   ): ZLayer[Any, Nothing, Pravega] =
     ZManaged.acquireReleaseWith {
       ZIO.attemptBlocking {
         val container = new PravegaContainer(
-          dockerImageName = imageName
+          dockerImageName = DockerImageName.parse(imageName)
         )
         container.start()
         container
