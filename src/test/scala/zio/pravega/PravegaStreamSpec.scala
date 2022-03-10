@@ -19,11 +19,10 @@ import zio.pravega._
 
 import zio._
 
-import zio.Random
-import zio.pravega.test.PravegaIT
+import zio.pravega.test.PravegaContainer
 
 // Pravega docker container only works under linux
-object PravegaStreamSpec extends PravegaIT { // DefaultRunnableSpec {
+object PravegaStreamSpec extends DefaultRunnableSpec {
 
   val scope = "zio-scope"
   val streamName = "zio-stream"
@@ -96,7 +95,7 @@ object PravegaStreamSpec extends PravegaIT { // DefaultRunnableSpec {
     } yield count
 
   val program: ZIO[
-    zio.ZEnv with PravegaStreamService with PravegaAdminService with Console with TestClock with Clock with Random,
+    PravegaStreamService with PravegaAdminService with Console with TestClock with Clock,
     Throwable,
     Int
   ] =
@@ -106,26 +105,18 @@ object PravegaStreamSpec extends PravegaIT { // DefaultRunnableSpec {
 
     } yield count
 
-  val spec: Spec[
-    Clock with TestClock with Console with System with Random,
-    TestFailure[
-      Throwable
-    ],
-    TestSuccess
-  ] =
+  val spec =
     suite("Pravega")(
       zio.test.test("publish and consume") {
         assertM(
-          program.provideCustom(
-            Pravega.layer(
-              scope,
-              writterSettings.clientConfig
-            ) ++ PravegaAdmin.layer(
-              writterSettings.clientConfig
-            ) ++ zio.test.testEnvironment
-          )
+          program
         )(equalTo(20))
       }
+    ).provideCustom(
+      PravegaContainer.pravega,
+      PravegaContainer.clientConfig,
+      PravegaAdmin.layer,
+      Pravega.layer(scope)
     )
 
 }

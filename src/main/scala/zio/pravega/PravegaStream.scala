@@ -91,11 +91,15 @@ object Pravega {
       eventStreamClientFactory
     )
   def layer(
-      scope: String,
-      clientConfig: ClientConfig
-  ): ZLayer[Any, Throwable, PravegaStreamService] = ZIO
-    .attempt(EventStreamClientFactory.withScope(scope, clientConfig))
-    .map(eventStreamClientFactory => Pravega(eventStreamClientFactory))
-    .toManagedWith(pravega => UIO(pravega.eventStreamClientFactory.close()))
-    .toLayer
+      scope: String
+  ): ZLayer[ClientConfig, Nothing, PravegaStreamService] = (for {
+    clientConfig <- ZIO.environment[ClientConfig].toManaged
+    l <- ZIO
+      .attemptBlocking(
+        EventStreamClientFactory.withScope(scope, clientConfig.get)
+      )
+      .map(eventStreamClientFactory => Pravega(eventStreamClientFactory))
+      .toManagedWith(pravega => UIO(pravega.eventStreamClientFactory.close()))
+  } yield l).toLayer.orDie
+
 }

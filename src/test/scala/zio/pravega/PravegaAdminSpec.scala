@@ -1,30 +1,26 @@
 package zio.pravega
 
-import zio.pravega.test.PravegaIT
-
 import zio.test._
+import zio.test.TestAspect._
 import zio.test.Assertion._
+import zio.pravega.test.PravegaContainer
 
-object PravegaAdminSpec extends PravegaIT {
+object PravegaAdminSpec extends DefaultRunnableSpec {
 
-  val clientConfig = PravegaClientConfigBuilder().build()
-
-  val program = for {
-    first <- PravegaAdminService(_.createScope("scope-a"))
-    second <- PravegaAdminService(_.createScope("scope-a"))
-  } yield first && !second
   override def spec =
     suite("Pravega Admin")(
-      zio.test.test("Scope created once")(
-        for {
-          first <- program.provideCustomLayer(
-            PravegaAdmin.layer(
-              clientConfig
-            )
-          )
-
-        } yield assert(first)(isTrue)
+      test("Scope created once")(
+        PravegaAdminService(_.createScope("scope-a"))
+          .map(once => assert(once)(isTrue))
+      ),
+      test("Scope skip twice")(
+        PravegaAdminService(_.createScope("scope-a"))
+          .map(twice => assert(twice)(isFalse))
       )
-    )
+    ).provideShared(
+      PravegaContainer.pravega,
+      PravegaContainer.clientConfig,
+      PravegaAdmin.layer
+    ) @@ sequential
 
 }
