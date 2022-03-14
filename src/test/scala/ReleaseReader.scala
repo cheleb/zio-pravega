@@ -13,7 +13,11 @@ object ReleaseReader extends ZIOAppDefault {
 
   override def run: ZIO[Environment with ZEnv with ZIOAppArgs, Any, Any] =
     program
-      .provideCustom(PravegaAdmin.layer(ClientConfig.builder().build()))
+      .provide(
+        ZEnv.live,
+        ZLayer.succeed(ClientConfig.builder().build()),
+        PravegaAdmin.layer
+      )
       .exitCode
 
 }

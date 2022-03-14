@@ -35,6 +35,31 @@ private[pravega] abstract class WithClientConfig(
 
 }
 
+class PravegaClientConfigBuilder(
+    config: Config,
+    clientConfig: Option[ClientConfig] = None,
+    clientConfigCustomization: Option[
+      ClientConfigBuilder => ClientConfigBuilder
+    ] = None
+) extends WithClientConfig(config, clientConfig, clientConfigCustomization) {
+  def build() = handleClientConfig()
+}
+
+object PravegaClientConfigBuilder {
+  val configPath = "zio.pravega.defaults"
+
+  def apply(
+      clientConfig: Option[ClientConfig] = None,
+      clientConfigCustomization: Option[
+        ClientConfigBuilder => ClientConfigBuilder
+      ] = None
+  ) = new PravegaClientConfigBuilder(
+    ConfigFactory.load().getConfig(configPath),
+    clientConfig,
+    clientConfigCustomization
+  )
+}
+
 class ReaderSettingsBuilder(
     config: Config,
     clientConfig: Option[ClientConfig] = None,
