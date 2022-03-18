@@ -6,7 +6,7 @@ import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import org.testcontainers.containers.wait.strategy.Wait
 import zio._
-import zio.managed._
+
 import zio.pravega.PravegaClientConfigBuilder
 import io.pravega.client.ClientConfig
 
@@ -28,9 +28,9 @@ class PravegaContainer(
 }
 
 object PravegaContainer {
-  def pravega: ZLayer[Any, Nothing, PravegaContainer] = {
+  def pravega: ZLayer[Scope, Nothing, PravegaContainer] = {
     val imageName = sys.env.getOrElse("PRAVEGA_IMAGE", "pravega/pravega:0.10.1")
-    ZManaged.acquireReleaseWith {
+    ZIO.acquireRelease {
       ZIO.attemptBlocking {
         val container = new PravegaContainer(
           dockerImageName = DockerImageName.parse(imageName)

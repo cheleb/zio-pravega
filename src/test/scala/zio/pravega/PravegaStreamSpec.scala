@@ -62,7 +62,7 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
   private val writeToAndConsumeStream: ZIO[
-    PravegaStreamService with PravegaAdminService with Console with TestClock with Clock,
+    Scope & PravegaStreamService & PravegaAdminService & Console & TestClock & Clock,
     Throwable,
     Int
   ] =
@@ -95,7 +95,7 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
     } yield count
 
   val program: ZIO[
-    PravegaStreamService with PravegaAdminService with Console with TestClock with Clock,
+    Scope & PravegaStreamService & PravegaAdminService & Console & TestClock & Clock,
     Throwable,
     Int
   ] =
@@ -112,11 +112,12 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
           program
         )(equalTo(20))
       }
-    ).provideCustom(
-      PravegaContainer.pravega,
-      PravegaContainer.clientConfig,
-      PravegaAdmin.layer,
-      Pravega.layer(scope).mapError(t => TestFailure.die(t))
     )
-
+      .provideCustom(
+        Scope.default,
+        PravegaContainer.pravega,
+        PravegaContainer.clientConfig,
+        PravegaAdmin.layer,
+        PravegaStream.layer(scope).mapError(t => TestFailure.die(t))
+      )
 }

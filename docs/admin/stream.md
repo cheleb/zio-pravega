@@ -16,7 +16,7 @@ import io.pravega.client.stream.ScalingPolicy
 
 ```scala mdoc
 def initStream(streamName: String, scope: String)
-: ZIO[PravegaAdminService with Console,Throwable,Unit] =
+: ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
     for {
       streamCreated <- PravegaAdminService(
         _.createStream(
