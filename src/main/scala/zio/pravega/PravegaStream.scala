@@ -2,8 +2,9 @@ package zio.pravega
 
 import io.pravega.client.ClientConfig
 import io.pravega.client.EventStreamClientFactory
-import zio.Accessible
+
 import zio._
+import zio.managed._
 import zio.stream._
 
 import java.util.UUID
@@ -41,7 +42,7 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
         ZSink.foreach((a: A) => ZIO.fromCompletableFuture(writer.writeEvent(a)))
       )
 
-    Task(
+    Task.attempt(
       ZSink
         .unwrapManaged(writerManaged)
     )
@@ -63,14 +64,14 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
         )
     )
 
-    Task(
+    Task.attempt(
       ZStream
         .acquireReleaseWith(reader)(reader =>
           ZIO.attemptBlocking(reader.close()).ignore
         )
         .flatMap(reader =>
           ZStream.repeatZIOChunk(
-            ZIO(reader.readNextEvent(settings.timeout) match {
+            ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
               case eventRead if eventRead.isCheckpoint => Chunk.empty
               case eventRead =>
                 val event = eventRead.getEvent()
@@ -92,14 +93,16 @@ object Pravega {
     )
   def layer(
       scope: String
-  ): ZLayer[ClientConfig, Nothing, PravegaStreamService] = (for {
+  ): ZLayer[ClientConfig, Throwable, PravegaStreamService] = (for {
     clientConfig <- ZIO.environment[ClientConfig].toManaged
     l <- ZIO
       .attemptBlocking(
         EventStreamClientFactory.withScope(scope, clientConfig.get)
       )
       .map(eventStreamClientFactory => Pravega(eventStreamClientFactory))
-      .toManagedWith(pravega => UIO(pravega.eventStreamClientFactory.close()))
-  } yield l).toLayer.orDie
+      .toManagedWith(pravega =>
+        URIO.attemptBlocking(pravega.eventStreamClientFactory.close()).ignore
+      )
+  } yield l).toLayer
 
 }

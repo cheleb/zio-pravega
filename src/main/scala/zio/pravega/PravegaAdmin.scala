@@ -1,6 +1,7 @@
 package zio.pravega
 
 import zio._
+import zio.managed._
 import io.pravega.client.ClientConfig
 import io.pravega.client.admin.StreamManager
 import io.pravega.client.admin.ReaderGroupManager
@@ -106,13 +107,17 @@ case class PravegaAdmin(clientConfig: ClientConfig)
   def readerGroupManager(
       scope: String
   ): ZManaged[Any, Throwable, ReaderGroupManager] =
-    ZIO(ReaderGroupManager.withScope(scope, clientConfig)).toManagedAuto
+    ZIO
+      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+      .toManagedAuto
 
   def readerGroupManager(
       scope: String,
       clientConfig: ClientConfig
   ): ZManaged[Any, Throwable, ReaderGroupManager] =
-    ZIO(ReaderGroupManager.withScope(scope, clientConfig)).toManagedAuto
+    ZIO
+      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+      .toManagedAuto
 
   def streamManager(): ZManaged[Any, Throwable, StreamManager] =
     ZIO.attemptBlocking(StreamManager.create(clientConfig)).toManagedAuto
@@ -129,7 +134,7 @@ case class PravegaAdmin(clientConfig: ClientConfig)
             .toManagedAuto
             .use { group =>
               ZIO.foreach(group.getOnlineReaders().asScala.toSeq)(id =>
-                ZIO(group.readerOffline(id, null))
+                ZIO.attemptBlocking(group.readerOffline(id, null))
               )
             }
         } yield freed.size

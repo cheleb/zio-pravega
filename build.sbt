@@ -3,7 +3,7 @@ lazy val scala31 =  "3.1.1"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala31, mainScala)
 
-lazy val zioVersion = "2.0.0-RC2"
+lazy val zioVersion = "2.0.0-RC3"
 lazy val pravegaVersion = "0.10.1"
 
 // Allows to silence scalac compilation warnings selectively by code block or file path
@@ -93,6 +93,7 @@ lazy val pravega =
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-streams" % zioVersion,
+        "dev.zio" %% "zio-managed" % zioVersion,
         "dev.zio" %% "zio-test" % zioVersion % Test,
         "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
         "org.scalatest" %% "scalatest" % "3.2.11" % Test,

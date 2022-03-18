@@ -116,7 +116,7 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
       PravegaContainer.pravega,
       PravegaContainer.clientConfig,
       PravegaAdmin.layer,
-      Pravega.layer(scope)
+      Pravega.layer(scope).mapError(t => TestFailure.die(t))
     )
 
 }

@@ -6,6 +6,7 @@ import org.testcontainers.utility.DockerImageName
 import java.time.Duration
 import org.testcontainers.containers.wait.strategy.Wait
 import zio._
+import zio.managed._
 import zio.pravega.PravegaClientConfigBuilder
 import io.pravega.client.ClientConfig
 
