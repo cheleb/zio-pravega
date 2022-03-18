@@ -4,16 +4,17 @@ import io.pravega.client.ClientConfig
 import io.pravega.client.EventStreamClientFactory
 
 import zio._
-import zio.managed._
+
 import zio.stream._
 
 import java.util.UUID
+import io.pravega.client.stream.EventStreamWriter
 
 trait PravegaStreamService {
   def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]]
+  ): RIO[Scope, ZSink[Any, Throwable, A, Nothing, Unit]]
   def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
@@ -28,8 +29,8 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
   override def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]] = {
-    val writerManaged = ZIO
+  ): RIO[Scope, ZSink[Any, Throwable, A, Nothing, Unit]] = {
+    val acquireWriter = ZIO
       .attemptBlocking(
         eventStreamClientFactory.createEventWriter(
           streamName,
@@ -37,14 +38,17 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
           settings.eventWriterConfig
         )
       )
-      .toManagedWith(w => ZIO.attemptBlocking(w.close()).ignore)
+    def release(writer: EventStreamWriter[A]) =
+      ZIO.attemptBlocking(writer.close()).ignore
+
+    val si = ZIO
+      .acquireRelease(acquireWriter)(release)
       .map(writer =>
         ZSink.foreach((a: A) => ZIO.fromCompletableFuture(writer.writeEvent(a)))
       )
 
-    Task.attempt(
-      ZSink
-        .unwrapManaged(writerManaged)
+    RIO.attempt(
+      ZSink.unwrapScoped(si)
     )
 
   }
@@ -86,23 +90,31 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
 
 }
 
-object Pravega {
-  def apply(eventStreamClientFactory: EventStreamClientFactory) =
-    new PravegaStream(
-      eventStreamClientFactory
-    )
+object PravegaStream {
+
+  def service(
+      scope: String
+  ): ZIO[ClientConfig & Scope, Throwable, PravegaStreamService] = {
+
+    def acquire(clientConfig: ClientConfig) = ZIO
+      .attemptBlocking(
+        EventStreamClientFactory.withScope(scope, clientConfig)
+      )
+
+    def release(fac: EventStreamClientFactory) =
+      URIO.attemptBlocking(fac.close()).ignore
+
+    for {
+      clientConfig <- ZIO.service[ClientConfig]
+      clientFactory <- ZIO
+        .acquireRelease(acquire(clientConfig))(release)
+    } yield PravegaStream(clientFactory)
+  }
+
   def layer(
       scope: String
-  ): ZLayer[ClientConfig, Throwable, PravegaStreamService] = (for {
-    clientConfig <- ZIO.environment[ClientConfig].toManaged
-    l <- ZIO
-      .attemptBlocking(
-        EventStreamClientFactory.withScope(scope, clientConfig.get)
-      )
-      .map(eventStreamClientFactory => Pravega(eventStreamClientFactory))
-      .toManagedWith(pravega =>
-        URIO.attemptBlocking(pravega.eventStreamClientFactory.close()).ignore
-      )
-  } yield l).toLayer
+  ): ZLayer[ClientConfig & Scope, Throwable, PravegaStreamService] = service(
+    scope
+  ).toLayer
 
 }

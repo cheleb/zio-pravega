@@ -63,20 +63,6 @@ lazy val pravega =
       name := "zio-pravega",
       scalafmtOnCompile := true,
       fork := true,
-      // workaround for bad constant pool issue
-      (Compile / doc) := Def.taskDyn {
-        val default = (Compile / doc).taskValue
-        if (scalaBinaryVersion.value == "2.11") {
-          (Compile / doc / target).toTask
-        } else {
-          Def.task(default.value)
-        }
-      }.value,
-      Compile / doc / scalacOptions ++= {
-        if (scalaBinaryVersion.value == "2.13")
-          Seq("-P:silencer:globalFilters=[import scala.collection.compat._]")
-        else Seq.empty
-      }
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](
@@ -93,7 +79,6 @@ lazy val pravega =
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       libraryDependencies ++= Seq(
         "dev.zio" %% "zio-streams" % zioVersion,
-        "dev.zio" %% "zio-managed" % zioVersion,
         "dev.zio" %% "zio-test" % zioVersion % Test,
         "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
         "org.scalatest" %% "scalatest" % "3.2.11" % Test,

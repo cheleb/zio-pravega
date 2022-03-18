@@ -15,6 +15,7 @@ object ReleaseReader extends ZIOAppDefault {
     program
       .provide(
         ZEnv.live,
+        Scope.default,
         ZLayer.succeed(ClientConfig.builder().build()),
         PravegaAdmin.layer
       )

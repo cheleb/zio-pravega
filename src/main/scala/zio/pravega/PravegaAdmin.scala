@@ -1,7 +1,7 @@
 package zio.pravega
 
 import zio._
-import zio.managed._
+
 import io.pravega.client.ClientConfig
 import io.pravega.client.admin.StreamManager
 import io.pravega.client.admin.ReaderGroupManager
@@ -19,29 +19,29 @@ trait PravegaAdminService {
       streamNames: String*
   ): ZIO[Any, Throwable, Boolean]
 
-  def createScope(scope: String): ZIO[Any, Throwable, Boolean]
+  def createScope(scope: String): RIO[Scope, Boolean]
 
   def createStream(
       streamName: String,
       config: StreamConfiguration,
       scope: String
-  ): ZIO[Any, Throwable, Boolean]
+  ): RIO[Scope, Boolean]
 
   def readerGroupManager(
       scope: String
-  ): ZManaged[Any, Throwable, ReaderGroupManager]
+  ): RIO[Scope, ReaderGroupManager]
 
   def readerGroupManager(
       scope: String,
       clientConfig: ClientConfig
-  ): ZManaged[Any, Throwable, ReaderGroupManager]
+  ): RIO[Scope, ReaderGroupManager]
 
-  def streamManager(): ZManaged[Console, Throwable, StreamManager]
+  def streamManager(): RIO[Scope, StreamManager]
 
   def readerOffline(
       scope: String,
       groupName: String
-  ): ZIO[Any, Throwable, Int]
+  ): RIO[Scope, Int]
 
 }
 
@@ -54,91 +54,92 @@ case class PravegaAdmin(clientConfig: ClientConfig)
       scope: String,
       readerGroupName: String,
       streamNames: String*
-  ): ZIO[Any, Throwable, Boolean] = {
-    def config() = {
-      val builder = ReaderGroupConfig.builder()
-      streamNames.foreach(name => builder.stream(Stream.of(scope, name)))
-      builder.build()
-    }
+  ): ZIO[Any, Throwable, Boolean] = ZIO.scoped {
 
-    readerGroupManager(scope).use { manager =>
-      ZIO.attemptBlocking {
+    def config = streamNames
+      .foldLeft(ReaderGroupConfig.builder()) { case (builder, streamName) =>
+        builder.stream(Stream.of(scope, streamName))
+      }
+
+    for {
+      manager <- readerGroupManager(scope)
+      created <- ZIO.attemptBlocking {
         manager.createReaderGroup(
           readerGroupName,
-          config()
+          config.build()
         )
       }
-    }
+    } yield created
 
   }
 
-  def createScope(scope: String): ZIO[Any, Throwable, Boolean] =
-    streamManager().use(streamManager =>
-      for {
-        exists <- ZIO.attemptBlocking(streamManager.checkScopeExists(scope))
-        created <- exists match {
-          case true  => ZIO.succeed(false)
-          case false => ZIO.attemptBlocking(streamManager.createScope(scope))
-        }
-      } yield created
-    )
+  def createScope(scope: String): RIO[Scope, Boolean] =
+    for {
+      streamManager <- streamManager()
+      exists <- ZIO.attemptBlocking(streamManager.checkScopeExists(scope))
+      created <- exists match {
+        case true  => ZIO.succeed(false)
+        case false => ZIO.attemptBlocking(streamManager.createScope(scope))
+      }
+    } yield created
 
   def createStream(
       streamName: String,
       config: StreamConfiguration,
       scope: String
-  ): ZIO[Any, Throwable, Boolean] =
-    streamManager().use(streamManager =>
-      for {
+  ): RIO[Scope, Boolean] =
+    for {
+      streamManager <- streamManager()
 
-        exists <- ZIO.attemptBlocking(
-          streamManager.checkStreamExists(scope, streamName)
-        )
-        created <- exists match {
-          case true => ZIO.succeed(false)
-          case false =>
-            ZIO.attemptBlocking(
-              streamManager.createStream(scope, streamName, config)
-            )
-        }
-      } yield created
-    )
+      exists <- ZIO.attemptBlocking(
+        streamManager.checkStreamExists(scope, streamName)
+      )
+      created <- exists match {
+        case true => ZIO.succeed(false)
+        case false =>
+          ZIO.attemptBlocking(
+            streamManager.createStream(scope, streamName, config)
+          )
+      }
+    } yield created
 
   def readerGroupManager(
       scope: String
-  ): ZManaged[Any, Throwable, ReaderGroupManager] =
-    ZIO
-      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
-      .toManagedAuto
+  ): RIO[Scope, ReaderGroupManager] =
+    ZIO.fromAutoCloseable(
+      ZIO
+        .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+    )
 
   def readerGroupManager(
       scope: String,
       clientConfig: ClientConfig
-  ): ZManaged[Any, Throwable, ReaderGroupManager] =
-    ZIO
-      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
-      .toManagedAuto
+  ): RIO[Scope, ReaderGroupManager] =
+    ZIO.fromAutoCloseable(
+      ZIO
+        .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+    )
 
-  def streamManager(): ZManaged[Any, Throwable, StreamManager] =
-    ZIO.attemptBlocking(StreamManager.create(clientConfig)).toManagedAuto
+  def streamManager(): RIO[Scope, StreamManager] =
+    ZIO.fromAutoCloseable(
+      ZIO.attemptBlocking(StreamManager.create(clientConfig))
+    )
 
   def readerOffline(
       scope: String,
       groupName: String
-  ): ZIO[Any, Throwable, Int] =
-    readerGroupManager(scope, clientConfig)
-      .use(groupManager =>
-        for {
-          freed <- ZIO
-            .attemptBlocking(groupManager.getReaderGroup(groupName))
-            .toManagedAuto
-            .use { group =>
-              ZIO.foreach(group.getOnlineReaders().asScala.toSeq)(id =>
-                ZIO.attemptBlocking(group.readerOffline(id, null))
-              )
-            }
-        } yield freed.size
+  ): RIO[Scope, Int] =
+    for {
+      groupManager <- readerGroupManager(scope, clientConfig)
+      group <- ZIO.fromAutoCloseable(
+        ZIO.attemptBlocking(groupManager.getReaderGroup(groupName))
       )
+      freed <-
+        ZIO.foreach(group.getOnlineReaders().asScala.toSeq)(id =>
+          ZIO.attemptBlocking(group.readerOffline(id, null))
+        )
+
+    } yield freed.size
 
 }
 
