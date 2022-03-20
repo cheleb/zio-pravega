@@ -11,6 +11,8 @@ import io.pravega.client.stream.StreamConfiguration
 
 import io.pravega.client.stream.ReaderGroupConfig
 import io.pravega.client.stream.Stream
+import io.pravega.client.tables.KeyValueTableConfiguration
+import io.pravega.client.admin.KeyValueTableManager
 
 trait PravegaAdminService {
   def readerGroup[A](
@@ -37,6 +39,14 @@ trait PravegaAdminService {
   ): RIO[Scope, ReaderGroupManager]
 
   def streamManager(): RIO[Scope, StreamManager]
+
+  def keyValueTableManager(): RIO[Scope, KeyValueTableManager]
+
+  def createTable(
+      tableName: String,
+      config: KeyValueTableConfiguration,
+      scope: String
+  ): RIO[Scope, Boolean]
 
   def readerOffline(
       scope: String,
@@ -124,6 +134,23 @@ case class PravegaAdmin(clientConfig: ClientConfig)
     ZIO.fromAutoCloseable(
       ZIO.attemptBlocking(StreamManager.create(clientConfig))
     )
+
+  override def keyValueTableManager(): RIO[Scope, KeyValueTableManager] =
+    ZIO.fromAutoCloseable(
+      ZIO.attemptBlocking(KeyValueTableManager.create(clientConfig))
+    )
+
+  override def createTable(
+      tableName: String,
+      config: KeyValueTableConfiguration,
+      scope: String
+  ): RIO[Scope, Boolean] =
+    for {
+      keyValueTableManager <- keyValueTableManager()
+      created <- ZIO.attemptBlocking(
+        keyValueTableManager.createKeyValueTable(scope, tableName, config)
+      )
+    } yield created
 
   def readerOffline(
       scope: String,
