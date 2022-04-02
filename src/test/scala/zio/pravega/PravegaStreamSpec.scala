@@ -9,7 +9,7 @@ import zio.stream._
 
 import zio.test._
 import zio.test.TestClock._
-import zio.Console
+
 import zio.Console._
 
 import io.pravega.client.stream.StreamConfiguration
@@ -22,7 +22,7 @@ import zio._
 import zio.pravega.test.PravegaContainer
 
 // Pravega docker container only works under linux
-object PravegaStreamSpec extends DefaultRunnableSpec {
+object PravegaStreamSpec extends ZIOSpecDefault {
 
   val scope = "zio-scope"
   val streamName = "zio-stream"
@@ -62,7 +62,7 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
   private val writeToAndConsumeStream: ZIO[
-    Scope & PravegaStreamService & PravegaAdminService & Console & TestClock & Clock,
+    Scope & PravegaStreamService & PravegaAdminService & TestClock,
     Throwable,
     Int
   ] =
@@ -95,7 +95,7 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
     } yield count
 
   val program: ZIO[
-    Scope & PravegaStreamService & PravegaAdminService & Console & TestClock & Clock,
+    Scope & PravegaStreamService & PravegaAdminService & TestClock,
     Throwable,
     Int
   ] =
@@ -105,7 +105,9 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
 
     } yield count
 
-  val spec =
+  val spec: Spec[Annotations with Live with Sized with TestConfig, TestFailure[
+    Throwable
+  ], TestSuccess] =
     suite("Pravega")(
       zio.test.test("publish and consume") {
         assertM(
@@ -114,6 +116,7 @@ object PravegaStreamSpec extends DefaultRunnableSpec {
       }
     )
       .provideCustom(
+        TestClock.default,
         Scope.default,
         PravegaContainer.pravega,
         PravegaContainer.clientConfig,

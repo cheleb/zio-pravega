@@ -11,10 +11,9 @@ object ReleaseReader extends ZIOAppDefault {
     _ <- printLine(s"Offined $n reader(s).")
   } yield ()
 
-  override def run: ZIO[Environment with ZEnv with ZIOAppArgs, Any, Any] =
+  override def run: URIO[Any, ExitCode] =
     program
       .provide(
-        ZEnv.live,
         Scope.default,
         ZLayer.succeed(ClientConfig.builder().build()),
         PravegaAdmin.layer

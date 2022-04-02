@@ -1,16 +1,19 @@
 package zio.pravega
 
+import zio._
 import zio.test._
 import zio.test.TestAspect._
 import zio.test.Assertion._
 import zio.pravega.test.PravegaContainer
-import zio.Scope
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 
-object PravegaAdminSpec extends DefaultRunnableSpec {
+object PravegaAdminSpec extends ZIOSpec[PravegaAdminService] {
 
-  override def spec =
+  val layer: ZLayer[Scope, Nothing, PravegaAdminService] =
+    (PravegaContainer.pravega >>> PravegaContainer.clientConfig >>> PravegaAdmin.layer)
+
+  def spec =
     suite("Pravega Admin")(
       test("Scope created once")(
         PravegaAdminService(_.createScope("scope-a"))
@@ -44,11 +47,6 @@ object PravegaAdminSpec extends DefaultRunnableSpec {
         )
           .map(twice => assert(twice)(isFalse))
       )
-    ).provideShared(
-      Scope.default,
-      PravegaContainer.pravega,
-      PravegaContainer.clientConfig,
-      PravegaAdmin.layer
     ) @@ sequential
 
 }
