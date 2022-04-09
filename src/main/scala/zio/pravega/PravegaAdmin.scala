@@ -145,10 +145,9 @@ case class PravegaAdmin(clientConfig: ClientConfig)
 
 object PravegaAdmin {
   def layer: ZLayer[ClientConfig, Nothing, PravegaAdmin] =
-    (for {
+    ZLayer(for {
       clientConfig <- ZIO.service[ClientConfig]
       l <- ZIO.succeed(new PravegaAdmin(clientConfig))
 
-    } yield l).toLayer
-
+    } yield l)
 }

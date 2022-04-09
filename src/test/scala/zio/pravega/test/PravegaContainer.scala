@@ -37,7 +37,7 @@ object PravegaContainer {
         container.start()
         container
       }.orDie
-    }(container => ZIO.attemptBlocking(container.stop()).orDie).toLayer
+    }(container => ZIO.attemptBlocking(container.stop()).orDie))
   }
   def clientConfig: ZLayer[PravegaContainer, Nothing, ClientConfig] =
     ZLayer.succeed(PravegaClientConfigBuilder().build())
