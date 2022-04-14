@@ -13,7 +13,6 @@ import io.pravega.client.ClientConfig
 class PravegaContainer(
     dockerImageName: DockerImageName
 ) extends GenericContainer[PravegaContainer](dockerImageName) {
-  withEnv("HOST_IP", "localdocker")
   withStartupTimeout(Duration.ofMinutes(2))
   addFixedExposedPort(9090, 9090)
   addFixedExposedPort(12345, 12345)
