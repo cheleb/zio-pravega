@@ -9,3 +9,4 @@ website/i18n/*
 website/.docusaurus
 website/.cache-loader
 website/static/api
+.idea/
