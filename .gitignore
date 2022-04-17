@@ -1,5 +1,7 @@
 target/
 
+.idea/
+
 website/translated_docs
 website/build/
 website/yarn.lock

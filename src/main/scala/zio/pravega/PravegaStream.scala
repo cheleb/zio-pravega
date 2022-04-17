@@ -113,8 +113,10 @@ object PravegaStream {
 
   def layer(
       scope: String
-  ): ZLayer[ClientConfig & Scope, Throwable, PravegaStreamService] = service(
-    scope
-  ).toLayer
+  ): ZLayer[ClientConfig & Scope, Throwable, PravegaStreamService] = ZLayer(
+    service(
+      scope
+    )
+  )
 
 }

@@ -1,8 +1,9 @@
 import zio._
 import zio.Console._
-import zio.pravega.PravegaAdmin
+
 import zio.pravega.PravegaAdminService
 import io.pravega.client.ClientConfig
+import zio.pravega.PravegaAdmin
 
 object ReleaseReader extends ZIOAppDefault {
 
@@ -11,10 +12,9 @@ object ReleaseReader extends ZIOAppDefault {
     _ <- printLine(s"Offined $n reader(s).")
   } yield ()
 
-  override def run: ZIO[Environment with ZEnv with ZIOAppArgs, Any, Any] =
+  override def run: URIO[Any, ExitCode] =
     program
       .provide(
-        ZEnv.live,
         Scope.default,
         ZLayer.succeed(ClientConfig.builder().build()),
         PravegaAdmin.layer
