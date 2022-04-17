@@ -10,7 +10,6 @@ import zio.stream._
 import zio._
 import zio.test._
 import zio.test.TestAspect._
-import zio.test.TestClock._
 
 import zio.Console._
 
@@ -56,8 +55,8 @@ object PravegaITs extends ZIOSpec[PravegaStreamService & PravegaAdminService] {
   ] =
     for {
       sink <- PravegaService(_.sink(pravegaStreamName, writterSettings))
-      _ <- testStream(0, 10).run(sink)
-      _ <- (ZIO.sleep(2.seconds) *> printLine(
+      _ <- testStream(0, 10).run(sink).fork
+      _ <- (ZIO.attemptBlocking(Thread.sleep(3000)) *> printLine(
         "(( Re-start producing ))"
       ) *> testStream(10, 20).run(sink)).fork
 
@@ -72,10 +71,7 @@ object PravegaITs extends ZIOSpec[PravegaStreamService & PravegaAdminService] {
       _ <- printLine("Consuming...")
       count <- stream
         .take(n.toLong * 2)
-        .tap(e =>
-          adjust(200.millis) *>
-            printLine(s"ZStream of [$e]")
-        )
+        .tap(e => printLine(s"ZStream of [$e]"))
         .runFold(0)((s, _) => s + 1)
 
       _ <- printLine(s"Consumed $count messages")
