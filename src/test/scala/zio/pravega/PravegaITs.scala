@@ -12,25 +12,27 @@ import zio.test._
 import zio.test.TestAspect._
 import zio.test.TestClock._
 
-import zio.Console._
-
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import zio.stream.ZStream
 import zio.pravega._
 
 import zio.pravega.test.PravegaContainer
+import io.pravega.client.tables.KeyValueTableConfiguration
 
 object PravegaITs extends ZIOSpec[PravegaStreamService & PravegaAdminService] {
 
   val pravegaScope = "zio-scope"
   val pravegaStreamName = "zio-stream"
+  val pravegaTableName = "ziotable"
 
   val layer: ZLayer[Scope, TestFailure[
     Nothing
   ], PravegaAdmin & PravegaStreamService] =
     PravegaContainer.pravega >>> PravegaContainer.clientConfig >>> (PravegaAdmin.layer ++
-      PravegaStream.layer(pravegaScope).mapError(t => TestFailure.die(t)))
+      PravegaStreamLayer
+        .fromScope(pravegaScope)
+        .mapError(t => TestFailure.die(t)))
 
   val groupName = "coco1"
 
@@ -46,6 +48,12 @@ object PravegaITs extends ZIOSpec[PravegaStreamService & PravegaAdminService] {
 
   val clientConfig = writterSettings.clientConfig
 
+  val tableConfig = KeyValueTableConfiguration
+    .builder()
+    .partitionCount(2)
+    .primaryKeyLength(6)
+    .build()
+
   def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
     Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
@@ -55,9 +63,9 @@ object PravegaITs extends ZIOSpec[PravegaStreamService & PravegaAdminService] {
     Int
   ] =
     for {
-      sink <- PravegaService(_.sink(pravegaStreamName, writterSettings))
+      sink <- PravegaStream(_.sink(pravegaStreamName, writterSettings))
       _ <- testStream(0, 10).run(sink)
-      _ <- (ZIO.sleep(2.seconds) *> printLine(
+      _ <- (ZIO.sleep(2.seconds) *> ZIO.logDebug(
         "(( Re-start producing ))"
       ) *> testStream(10, 20).run(sink)).fork
 
@@ -68,17 +76,17 @@ object PravegaITs extends ZIOSpec[PravegaStreamService & PravegaAdminService] {
           pravegaStreamName
         )
       )
-      stream <- PravegaService(_.stream(groupName, readerSettings))
-      _ <- printLine("Consuming...")
+      stream <- PravegaStream(_.stream(groupName, readerSettings))
+      _ <- ZIO.logDebug("Consuming...")
       count <- stream
         .take(n.toLong * 2)
         .tap(e =>
           adjust(200.millis) *>
-            printLine(s"ZStream of [$e]")
+            ZIO.logDebug(s"ZStream of [$e]")
         )
         .runFold(0)((s, _) => s + 1)
 
-      _ <- printLine(s"Consumed $count messages")
+      _ <- ZIO.logDebug(s"Consumed $count messages")
 
     } yield count
 
@@ -119,6 +127,16 @@ object PravegaITs extends ZIOSpec[PravegaStreamService & PravegaAdminService] {
       test("publish and consume")(
         writeToAndConsumeStream
           .map(count => assert(count)(equalTo(20)))
+      ),
+      test(s"Create table $pravegaTableName")(
+        PravegaAdminService(
+          _.createTable(
+            pravegaTableName,
+            tableConfig,
+            pravegaScope
+          )
+        )
+          .map(created => assert(created)(isTrue))
       )
     ) @@ sequential
 

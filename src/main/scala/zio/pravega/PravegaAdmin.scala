@@ -116,29 +116,25 @@ case class PravegaAdmin(clientConfig: ClientConfig)
   def readerGroupManager(
       scope: String
   ): RIO[Scope, ReaderGroupManager] =
-    ZIO.fromAutoCloseable(
-      ZIO
-        .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
-    )
+    ZIO
+      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+      .withFinalizerAuto
 
   def readerGroupManager(
       scope: String,
       clientConfig: ClientConfig
   ): RIO[Scope, ReaderGroupManager] =
-    ZIO.fromAutoCloseable(
-      ZIO
-        .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
-    )
+    ZIO
+      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+      .withFinalizerAuto
 
   def streamManager(): RIO[Scope, StreamManager] =
-    ZIO.fromAutoCloseable(
-      ZIO.attemptBlocking(StreamManager.create(clientConfig))
-    )
+    ZIO.attemptBlocking(StreamManager.create(clientConfig)).withFinalizerAuto
 
   override def keyValueTableManager(): RIO[Scope, KeyValueTableManager] =
-    ZIO.fromAutoCloseable(
-      ZIO.attemptBlocking(KeyValueTableManager.create(clientConfig))
-    )
+    ZIO
+      .attemptBlocking(KeyValueTableManager.create(clientConfig))
+      .withFinalizerAuto
 
   override def createTable(
       tableName: String,
