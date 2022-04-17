@@ -1,8 +1,9 @@
 import zio._
 import zio.Console._
-import zio.pravega.PravegaAdmin
+
 import zio.pravega.PravegaAdminService
 import io.pravega.client.ClientConfig
+import zio.pravega.PravegaAdmin
 
 object ReleaseReader extends ZIOAppDefault {
 
