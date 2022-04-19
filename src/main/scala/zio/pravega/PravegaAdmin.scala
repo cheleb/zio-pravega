@@ -154,9 +154,9 @@ case class PravegaAdmin(clientConfig: ClientConfig)
   ): RIO[Scope, Int] =
     for {
       groupManager <- readerGroupManager(scope, clientConfig)
-      group <- ZIO.fromAutoCloseable(
-        ZIO.attemptBlocking(groupManager.getReaderGroup(groupName))
-      )
+      group <- ZIO
+        .attemptBlocking(groupManager.getReaderGroup(groupName))
+        .withFinalizerAuto
       freed <-
         ZIO.foreach(group.getOnlineReaders().asScala.toSeq)(id =>
           ZIO.attemptBlocking(group.readerOffline(id, null))
