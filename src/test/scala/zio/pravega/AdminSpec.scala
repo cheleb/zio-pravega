@@ -23,15 +23,15 @@ trait AdminSpec { this: ZIOSpec[_] =>
   ): Spec[PravegaAdminService with Scope, TestFailure[Throwable], TestSuccess] =
     suite("Admin")(
       test("Scope created once")(
-        PravegaAdminService(_.createScope(pravegaScope))
+        PravegaAdmin(_.createScope(pravegaScope))
           .map(once => assert(once)(isTrue))
       ),
       test("Scope skip twice")(
-        PravegaAdminService(_.createScope(pravegaScope))
+        PravegaAdmin(_.createScope(pravegaScope))
           .map(twice => assert(twice)(isFalse))
       ),
       test("Stream created once")(
-        PravegaAdminService(
+        PravegaAdmin(
           _.createStream(
             pravegaStreamName,
             StreamConfiguration.builder
@@ -43,7 +43,7 @@ trait AdminSpec { this: ZIOSpec[_] =>
           .map(once => assert(once)(isTrue))
       ),
       test("Stream creation skiped")(
-        PravegaAdminService(
+        PravegaAdmin(
           _.createStream(
             pravegaStreamName,
             StreamConfiguration.builder
@@ -55,7 +55,7 @@ trait AdminSpec { this: ZIOSpec[_] =>
           .map(twice => assert(twice)(isFalse))
       ),
       test("Group")(
-        PravegaAdminService(
+        PravegaAdmin(
           _.readerGroup(
             pravegaScope,
             groupName,
@@ -68,7 +68,7 @@ trait AdminSpec { this: ZIOSpec[_] =>
   def adminSuite2(pravegaScope: String, pravegaTableName: String) =
     suite("Pravega KVP Table")(
       test(s"Create table $pravegaTableName")(
-        PravegaAdminService(
+        PravegaAdmin(
           _.createTable(
             pravegaTableName,
             tableConfig,
@@ -82,7 +82,7 @@ trait AdminSpec { this: ZIOSpec[_] =>
   def adminCleanSpec =
     suite("Admin clean")(
       test("Clean reader")(
-        PravegaAdminService(_.readerOffline("zio-scope", "coco1"))
+        PravegaAdmin(_.readerOffline("zio-scope", "coco1"))
           .map(n => assert(n)(equalTo(0)))
       )
     )

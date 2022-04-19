@@ -15,7 +15,7 @@ import zio.pravega._
 
 def initScope(scope: String): ZIO[Scope & PravegaAdminService & Console,Throwable,Unit] =
     for {
-      scopeCreated <- PravegaAdminService(_.createScope(scope))
+      scopeCreated <- PravegaAdmin(_.createScope(scope))
       _ <- ZIO.when(scopeCreated)(printLine(s"Scope $scope just created"))
     } yield ()
 

@@ -22,7 +22,7 @@ object PravegaITs
   val layer: ZLayer[Scope, TestFailure[
     Nothing
   ], PravegaAdmin & PravegaStreamService & PravegaTableService] =
-    PravegaContainer.pravega >>> PravegaContainer.clientConfig >>> (PravegaAdmin.layer ++
+    PravegaContainer.pravega >>> PravegaContainer.clientConfig >>> (PravegaAdminLayer.layer ++
       PravegaStreamLayer
         .fromScope(pravegaScope)
         .mapError(t => TestFailure.die(t)) ++

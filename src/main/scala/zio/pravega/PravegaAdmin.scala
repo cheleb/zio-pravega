@@ -55,7 +55,7 @@ trait PravegaAdminService {
 
 }
 
-object PravegaAdminService extends Accessible[PravegaAdminService]
+object PravegaAdmin extends Accessible[PravegaAdminService]
 
 case class PravegaAdmin(clientConfig: ClientConfig)
     extends PravegaAdminService {
@@ -166,7 +166,7 @@ case class PravegaAdmin(clientConfig: ClientConfig)
 
 }
 
-object PravegaAdmin {
+object PravegaAdminLayer {
   def layer: ZLayer[ClientConfig, Nothing, PravegaAdmin] =
     ZLayer(for {
       clientConfig <- ZIO.service[ClientConfig]

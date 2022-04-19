@@ -15,15 +15,15 @@ object TestMe extends ZIOAppDefault {
     ZIO
       .scoped {
         for {
-          _ <- PravegaAdminService(_.createScope("pravegaScope"))
-          _ <- PravegaAdminService(
+          _ <- PravegaAdmin(_.createScope("pravegaScope"))
+          _ <- PravegaAdmin(
             _.createTable("pravegaTableName", tableConfig, "pravegaScope")
           )
         } yield ()
       }
       .provide(
         ZLayer(ZIO.succeed(PravegaClientConfigBuilder().build())),
-        PravegaAdmin.layer
+        PravegaAdminLayer.layer
       )
 
 }
