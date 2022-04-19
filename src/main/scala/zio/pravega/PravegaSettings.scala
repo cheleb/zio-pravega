@@ -526,7 +526,7 @@ class TableWriterSettingsBuilder[K, V](
 
 object TableWriterSettingsBuilder {
 
-  val configPath = "zio.pravega.table"
+  private val configPath = "zio.pravega.table"
 
   /** Create settings from a configuration with the same layout as the default
     * configuration `zio.pravega`.

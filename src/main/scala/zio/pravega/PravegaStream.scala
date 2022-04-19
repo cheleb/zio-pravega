@@ -21,7 +21,7 @@ trait PravegaStreamService {
   ): Task[ZStream[Any, Throwable, A]]
 }
 
-object PravegaService extends Accessible[PravegaStreamService]
+object PravegaStream extends Accessible[PravegaStreamService]
 
 case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
     extends PravegaStreamService {
@@ -90,7 +90,7 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
 
 }
 
-object PravegaStream {
+object PravegaStreamLayer {
 
   def service(
       scope: String
@@ -111,7 +111,7 @@ object PravegaStream {
     } yield PravegaStream(clientFactory)
   }
 
-  def layer(
+  def fromScope(
       scope: String
   ): ZLayer[ClientConfig & Scope, Throwable, PravegaStreamService] = ZLayer(
     service(

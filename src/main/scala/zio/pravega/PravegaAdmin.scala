@@ -11,6 +11,8 @@ import io.pravega.client.stream.StreamConfiguration
 
 import io.pravega.client.stream.ReaderGroupConfig
 import io.pravega.client.stream.Stream
+import io.pravega.client.tables.KeyValueTableConfiguration
+import io.pravega.client.admin.KeyValueTableManager
 
 trait PravegaAdminService {
   def readerGroup[A](
@@ -37,6 +39,14 @@ trait PravegaAdminService {
   ): RIO[Scope, ReaderGroupManager]
 
   def streamManager(): RIO[Scope, StreamManager]
+
+  def keyValueTableManager(): RIO[Scope, KeyValueTableManager]
+
+  def createTable(
+      tableName: String,
+      config: KeyValueTableConfiguration,
+      scope: String
+  ): RIO[Scope, Boolean]
 
   def readerOffline(
       scope: String,
@@ -106,24 +116,37 @@ case class PravegaAdmin(clientConfig: ClientConfig)
   def readerGroupManager(
       scope: String
   ): RIO[Scope, ReaderGroupManager] =
-    ZIO.fromAutoCloseable(
-      ZIO
-        .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
-    )
+    ZIO
+      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+      .withFinalizerAuto
 
   def readerGroupManager(
       scope: String,
       clientConfig: ClientConfig
   ): RIO[Scope, ReaderGroupManager] =
-    ZIO.fromAutoCloseable(
-      ZIO
-        .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
-    )
+    ZIO
+      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+      .withFinalizerAuto
 
   def streamManager(): RIO[Scope, StreamManager] =
-    ZIO.fromAutoCloseable(
-      ZIO.attemptBlocking(StreamManager.create(clientConfig))
-    )
+    ZIO.attemptBlocking(StreamManager.create(clientConfig)).withFinalizerAuto
+
+  override def keyValueTableManager(): RIO[Scope, KeyValueTableManager] =
+    ZIO
+      .attemptBlocking(KeyValueTableManager.create(clientConfig))
+      .withFinalizerAuto
+
+  override def createTable(
+      tableName: String,
+      config: KeyValueTableConfiguration,
+      scope: String
+  ): RIO[Scope, Boolean] =
+    for {
+      keyValueTableManager <- keyValueTableManager()
+      created <- ZIO.attemptBlocking(
+        keyValueTableManager.createKeyValueTable(scope, tableName, config)
+      )
+    } yield created
 
   def readerOffline(
       scope: String,
@@ -131,9 +154,9 @@ case class PravegaAdmin(clientConfig: ClientConfig)
   ): RIO[Scope, Int] =
     for {
       groupManager <- readerGroupManager(scope, clientConfig)
-      group <- ZIO.fromAutoCloseable(
-        ZIO.attemptBlocking(groupManager.getReaderGroup(groupName))
-      )
+      group <- ZIO
+        .attemptBlocking(groupManager.getReaderGroup(groupName))
+        .withFinalizerAuto
       freed <-
         ZIO.foreach(group.getOnlineReaders().asScala.toSeq)(id =>
           ZIO.attemptBlocking(group.readerOffline(id, null))

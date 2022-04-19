@@ -16,7 +16,7 @@
 
 
 
-    <logger name="zio.pravega" level="debug" />
+    <logger name="zio.pravega" level="info" />
     <logger name="docs.scaladsl" level="debug" />
     <logger name="docs.javadsl" level="debug" />
 
