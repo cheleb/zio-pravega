@@ -18,7 +18,8 @@ trait AdminSpec { this: ZIOSpec[_] =>
 
   def adminSuite(
       pravegaScope: String,
-      pravegaStreamName: String
+      pravegaStreamName: String,
+      groupName: String
   ): Spec[PravegaAdminService with Scope, TestFailure[Throwable], TestSuccess] =
     suite("Admin")(
       test("Scope created once")(
@@ -52,6 +53,15 @@ trait AdminSpec { this: ZIOSpec[_] =>
           )
         )
           .map(twice => assert(twice)(isFalse))
+      ),
+      test("Group")(
+        PravegaAdminService(
+          _.readerGroup(
+            pravegaScope,
+            groupName,
+            pravegaStreamName
+          )
+        ).map(once => assert(once)(isTrue))
       )
     ) @@ sequential
 
@@ -66,6 +76,14 @@ trait AdminSpec { this: ZIOSpec[_] =>
           )
         )
           .map(created => assert(created)(isTrue))
+      )
+    )
+
+  def adminCleanSpec =
+    suite("Admin clean")(
+      test("Clean reader")(
+        PravegaAdminService(_.readerOffline("zio-scope", "coco1"))
+          .map(n => assert(n)(equalTo(0)))
       )
     )
 

@@ -26,42 +26,31 @@ trait StreamSpec { this: ZIOSpec[_] =>
     Stream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")
 
   def streamSuite(
-      pravegaScope: String,
       pravegaStreamName: String,
       groupName: String
-  ) = {
-    val writeToAndConsumeStream: ZIO[
-      Scope & PravegaStreamService & PravegaAdminService,
-      Throwable,
-      Int
-    ] =
-      for {
-        sink <- PravegaStream(_.sink(pravegaStreamName, writterSettings))
-        _ <- testStream(0, 10).run(sink)
-        _ <- (ZIO.sleep(2.seconds) *> ZIO.logDebug(
-          "(( Re-start producing ))"
-        ) *> testStream(10, 20).run(sink)).fork
+  ): Spec[PravegaStreamService with Scope, TestFailure[
+    Throwable
+  ], TestSuccess] = {
+    val writeToAndConsumeStream = for {
+      sink <- PravegaStream(_.sink(pravegaStreamName, writterSettings))
+      _ <- testStream(0, 10).run(sink)
+      _ <- (ZIO.sleep(2.seconds) *> ZIO.logDebug(
+        "(( Re-start producing ))"
+      ) *> testStream(10, 20).run(sink)).fork
 
-        _ <- PravegaAdminService(
-          _.readerGroup(
-            pravegaScope,
-            groupName,
-            pravegaStreamName
-          )
+      stream <- PravegaStream(_.stream(groupName, readerSettings))
+      _ <- ZIO.logDebug("Consuming...")
+      count <- stream
+        .take(n.toLong * 2)
+        .tap(e =>
+          adjust(200.millis) *>
+            ZIO.logDebug(s"ZStream of [$e]")
         )
-        stream <- PravegaStream(_.stream(groupName, readerSettings))
-        _ <- ZIO.logDebug("Consuming...")
-        count <- stream
-          .take(n.toLong * 2)
-          .tap(e =>
-            adjust(200.millis) *>
-              ZIO.logDebug(s"ZStream of [$e]")
-          )
-          .runFold(0)((s, _) => s + 1)
+        .runFold(0)((s, _) => s + 1)
 
-        _ <- ZIO.logDebug(s"Consumed $count messages")
+      _ <- ZIO.logDebug(s"Consumed $count messages")
 
-      } yield count
+    } yield count
 
     suite("Stream")(
       test("publish and consume")(

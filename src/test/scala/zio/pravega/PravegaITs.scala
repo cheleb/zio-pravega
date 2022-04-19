@@ -17,10 +17,7 @@ object PravegaITs
     with AdminSpec
     with StreamSpec
     with TableSpecs {
-
   val pravegaScope = "zio-scope"
-  val pravegaStreamName = "zio-stream"
-  val pravegaTableName = "ziotable"
 
   val layer: ZLayer[Scope, TestFailure[
     Nothing
@@ -33,14 +30,19 @@ object PravegaITs
         .fromScope(pravegaScope)
         .mapError(t => TestFailure.die(t)))
 
-  val groupName = "coco1"
+  def spec = {
 
-  def spec =
+    val pravegaStreamName = "zio-stream"
+    val pravegaTableName = "ziotable"
+
+    val groupName = "coco1"
+
     suite("Pravega")(
-      adminSuite(pravegaScope, pravegaStreamName),
-      streamSuite(pravegaScope, pravegaStreamName, groupName),
+      adminSuite(pravegaScope, pravegaStreamName, groupName),
+      streamSuite(pravegaStreamName, groupName),
       adminSuite2(pravegaScope, pravegaTableName),
-      tableSuite(pravegaTableName)
+      tableSuite(pravegaTableName),
+      adminCleanSpec
     ) @@ sequential
-
+  }
 }
