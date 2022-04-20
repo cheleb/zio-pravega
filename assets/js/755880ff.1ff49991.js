@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[56],{9329:function(a){a.exports=JSON.parse('{"allTagsPath":"/zio-pravega/blog/tags","slug":"/zio-pravega/blog/tags/docusaurus","name":"docusaurus","count":4,"permalink":"/zio-pravega/blog/tags/docusaurus"}')}}]);
