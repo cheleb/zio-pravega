@@ -11,7 +11,7 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Stream',
     image: '/img/undraw_docusaurus_mountain.svg',
     description: (
       <>
@@ -21,7 +21,7 @@ const FeatureList: FeatureItem[] = [
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'KVP Table',
     image: '/img/undraw_docusaurus_tree.svg',
     description: (
       <>
@@ -31,7 +31,7 @@ const FeatureList: FeatureItem[] = [
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Distributed state',
     image: '/img/undraw_docusaurus_react.svg',
     description: (
       <>
