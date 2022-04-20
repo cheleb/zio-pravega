@@ -84,7 +84,7 @@ lazy val pravega =
         "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
         "org.scalatest" %% "scalatest" % "3.2.11" % Test,
         "io.pravega" % "pravega-client" % pravegaVersion,
-        "org.testcontainers" % "testcontainers" % "1.16.3" % Test,
+        "org.testcontainers" % "testcontainers" % "1.17.1" % Test,
         "dev.zio" %% "zio-zmx" % "0.0.11" % Test,
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
         "ch.qos.logback" % "logback-classic" % "1.2.11" % Test,
