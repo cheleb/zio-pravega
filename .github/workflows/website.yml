@@ -18,7 +18,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - run: sbt docs/docusaurusCreateSite
+      - run: sbt clean docs/docusaurusCreateSite
       - uses: webfactory/ssh-agent@v0.5.0
         with:
           ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY }}
