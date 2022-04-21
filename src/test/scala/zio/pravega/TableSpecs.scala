@@ -47,10 +47,20 @@ trait TableSpecs { this: ZIOSpec[_] =>
       )
       count <- source
         .take(1000)
-        // .tap(m => ZIO.debug(m))
         .runFold(0)((s, _) => s + 1)
-
     } yield count
+
+    def flowFromTable: ZIO[Scope & PravegaTableService, Throwable, Int] =
+      for {
+        flow <- PravegaTable(
+          _.flow(pravegaTableName, tableReaderSettings, kvtClientConfig)
+        )
+        count <- testStream(0, 1000)
+          .map(str => str.substring(0, 4))
+          .via(flow)
+          .runFold(0)((s, _) => s + 1)
+
+      } yield count
 
     suite("Tables")(
       test(s"Write to table $pravegaTableName")(
@@ -58,6 +68,9 @@ trait TableSpecs { this: ZIOSpec[_] =>
       ),
       test(s"Read from table $pravegaTableName")(
         readFromTable.map(res => assert(res)(equalTo(1000)))
+      ),
+      test("Read through flow")(
+        flowFromTable.map(res => assert(res)(equalTo(1000)))
       )
     ) @@ sequential
   }
