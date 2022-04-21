@@ -18,6 +18,12 @@ trait PravegaTableService {
       kvtClientConfig: KeyValueTableClientConfiguration
   ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]]
 
+  def flow[K, V](
+      tableName: String,
+      settings: TableReaderSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[Scope, ZPipeline[Any, Throwable, K, TableEntry[V]]]
+
   def source[K, V](
       readerGroupName: String,
       settings: TableReaderSettings[K, V],
@@ -43,7 +49,7 @@ final case class PravegaTable(
       )
       .withFinalizerAuto
       .map { table =>
-        ZSink.foreach { pair: (K, V) =>
+        ZSink.foreach { (pair: (K, V)) =>
           val (k, v) = pair
           val put =
             new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
@@ -94,6 +100,31 @@ final case class PravegaTable(
         }
     )
   }
+
+  def flow[K, V](
+      tableName: String,
+      settings: TableReaderSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[Scope, ZPipeline[Any, Throwable, K, TableEntry[V]]] =
+    RIO
+      .attemptBlocking(
+        keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig)
+      )
+      .withFinalizerAuto
+      .map { table =>
+        ZPipeline.mapZIO { in =>
+          ZIO
+            .fromCompletableFuture(table.get(settings.tableKey(in)))
+            .map(tableEntry =>
+              TableEntry(
+                tableEntry.getKey(),
+                tableEntry.getVersion(),
+                settings.valueSerializer
+                  .deserialize(tableEntry.getValue())
+              )
+            )
+        }
+      }
 
 }
 

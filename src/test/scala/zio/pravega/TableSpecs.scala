@@ -8,7 +8,10 @@ import zio.test._
 import io.pravega.client.stream.impl.UTF8StringSerializer
 import io.pravega.client.tables.KeyValueTableClientConfiguration
 
-trait TableSpecs { this: ZIOSpec[_] =>
+trait TableSpecs {
+  this: ZIOSpec[
+    PravegaStreamService & PravegaAdminService & PravegaTableService
+  ] =>
 
   private def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
     Stream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")
@@ -30,8 +33,8 @@ trait TableSpecs { this: ZIOSpec[_] =>
 
   def tableSuite(pravegaTableName: String) = {
 
-    def writeToTable: ZIO[Scope & PravegaTableService, Throwable, Boolean] =
-      for {
+    def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
+      ZIO.scoped(for {
         sink <- PravegaTable(
           _.sink(pravegaTableName, tableSettings, kvtClientConfig)
         )
@@ -39,18 +42,29 @@ trait TableSpecs { this: ZIOSpec[_] =>
           .map(str => (str.substring(0, 4), str))
           .run(sink)
 
-      } yield true
+      } yield true)
 
-    def readFromTable: ZIO[Scope & PravegaTableService, Throwable, Int] = for {
-      source <- PravegaTable(
-        _.source(pravegaTableName, tableReaderSettings, kvtClientConfig)
-      )
-      count <- source
-        .take(1000)
-        // .tap(m => ZIO.debug(m))
-        .runFold(0)((s, _) => s + 1)
+    def readFromTable: ZIO[PravegaTableService, Throwable, Int] =
+      ZIO.scoped(for {
+        source <- PravegaTable(
+          _.source(pravegaTableName, tableReaderSettings, kvtClientConfig)
+        )
+        count <- source
+          .take(1000)
+          .runFold(0)((s, _) => s + 1)
+      } yield count)
 
-    } yield count
+    def flowFromTable: ZIO[PravegaTableService, Throwable, Int] =
+      ZIO.scoped(for {
+        flow <- PravegaTable(
+          _.flow(pravegaTableName, tableReaderSettings, kvtClientConfig)
+        )
+        count <- testStream(0, 1000)
+          .map(str => str.substring(0, 4))
+          .via(flow)
+          .runFold(0)((s, _) => s + 1)
+
+      } yield count)
 
     suite("Tables")(
       test(s"Write to table $pravegaTableName")(
@@ -58,6 +72,9 @@ trait TableSpecs { this: ZIOSpec[_] =>
       ),
       test(s"Read from table $pravegaTableName")(
         readFromTable.map(res => assert(res)(equalTo(1000)))
+      ),
+      test("Read through flow")(
+        flowFromTable.map(res => assert(res)(equalTo(1000)))
       )
     ) @@ sequential
   }
