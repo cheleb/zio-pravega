@@ -12,11 +12,10 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'Stream',
-    image: '/img/undraw_docusaurus_mountain.svg',
+    image: '/img/pravega-stream.png',
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Stream are hightly scalable distributed event store.
       </>
     ),
   },
