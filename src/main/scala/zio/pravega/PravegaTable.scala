@@ -49,7 +49,7 @@ final case class PravegaTable(
       )
       .withFinalizerAuto
       .map { table =>
-        ZSink.foreach { pair: (K, V) =>
+        ZSink.foreach { (pair: (K, V)) =>
           val (k, v) = pair
           val put =
             new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
