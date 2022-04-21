@@ -10,6 +10,7 @@ import zio.Task
 
 import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
+import io.pravega.client.tables.KeyValueTable
 
 trait PravegaTableService {
   def sink[K, V](
@@ -28,7 +29,7 @@ trait PravegaTableService {
       readerGroupName: String,
       settings: TableReaderSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
-  ): Task[ZStream[Any, Throwable, TableEntry[V]]]
+  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]]
 }
 
 object PravegaTable extends Accessible[PravegaTableService]
@@ -37,17 +38,22 @@ final case class PravegaTable(
     keyValueTableFactory: KeyValueTableFactory
 ) extends PravegaTableService {
 
+  private def table(
+      tableName: String,
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): ZIO[Scope,Throwable,KeyValueTable] = ZIO
+    .attemptBlocking(
+      keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig)
+    )
+    .withFinalizerAuto
+
   override def sink[K, V](
       tableName: String,
       settings: TableWriterSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
   ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] = {
 
-    val t = ZIO
-      .attemptBlocking(
-        keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig)
-      )
-      .withFinalizerAuto
+    val t = table(tableName, kvtClientConfig)
       .map { table =>
         ZSink.foreach { (pair: (K, V)) =>
           val (k, v) = pair
@@ -64,53 +70,38 @@ final case class PravegaTable(
       tableName: String,
       settings: TableReaderSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
-  ): Task[ZStream[Any, Throwable, TableEntry[V]]] = {
-    val table = ZIO.attemptBlocking(
-      keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig)
-    )
-
-    Task.attempt(
-      ZStream
-        .acquireReleaseWith(table)(iterator =>
-          ZIO.attemptBlocking(iterator.close()).ignore
-        )
-        .flatMap { table =>
-          val it = table
-            .iterator()
-            .maxIterationSize(settings.maxEntriesAtOnce)
-            .all()
-            .entries()
-          ZStream.repeatZIOChunk {
-            ZIO
-              .fromCompletableFuture(it.getNext())
-              .map {
-                case null => Chunk.empty
-                case el =>
-                  val res = el.getItems().asScala.map { tableEntry =>
-                    TableEntry(
-                      tableEntry.getKey(),
-                      tableEntry.getVersion(),
-                      settings.valueSerializer
-                        .deserialize(tableEntry.getValue())
-                    )
-                  }
-                  Chunk.fromArray(res.toArray)
+  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]] =
+    table(tableName, kvtClientConfig).map { table =>
+      val it = table
+        .iterator()
+        .maxIterationSize(settings.maxEntriesAtOnce)
+        .all()
+        .entries()
+      ZStream.repeatZIOChunk {
+        Task
+          .fromCompletableFuture(it.getNext())
+          .map {
+            case null => Chunk.empty
+            case el =>
+              val res = el.getItems().asScala.map { tableEntry =>
+                TableEntry(
+                  tableEntry.getKey(),
+                  tableEntry.getVersion(),
+                  settings.valueSerializer
+                    .deserialize(tableEntry.getValue())
+                )
               }
+              Chunk.fromArray(res.toArray)
           }
-        }
-    )
-  }
+      }
+    }
 
   def flow[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
   ): RIO[Scope, ZPipeline[Any, Throwable, K, TableEntry[V]]] =
-    RIO
-      .attemptBlocking(
-        keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig)
-      )
-      .withFinalizerAuto
+    table(tableName, kvtClientConfig).withFinalizerAuto
       .map { table =>
         ZPipeline.mapZIO { in =>
           ZIO
