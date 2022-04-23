@@ -21,9 +21,15 @@ trait PravegaTableService {
 
   def flow[K, V](
       tableName: String,
+      settings: TableWriterSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]]
+
+  def flow[K, V](
+      tableName: String,
       settings: TableReaderSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
-  ): RIO[Scope, ZPipeline[Any, Throwable, K, TableEntry[V]]]
+  ): RIO[Scope, ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]]
 
   def source[K, V](
       readerGroupName: String,
@@ -41,7 +47,7 @@ final case class PravegaTable(
   private def table(
       tableName: String,
       kvtClientConfig: KeyValueTableClientConfiguration
-  ): ZIO[Scope,Throwable,KeyValueTable] = ZIO
+  ): ZIO[Scope, Throwable, KeyValueTable] = ZIO
     .attemptBlocking(
       keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig)
     )
@@ -51,9 +57,8 @@ final case class PravegaTable(
       tableName: String,
       settings: TableWriterSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
-  ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] = {
-
-    val t = table(tableName, kvtClientConfig)
+  ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] =
+    table(tableName, kvtClientConfig)
       .map { table =>
         ZSink.foreach { (pair: (K, V)) =>
           val (k, v) = pair
@@ -62,9 +67,6 @@ final case class PravegaTable(
           ZIO.fromCompletableFuture(table.update(put))
         }
       }
-
-    RIO.attempt(ZSink.unwrapScoped(t))
-  }
 
   override def source[K, V](
       tableName: String,
@@ -98,22 +100,48 @@ final case class PravegaTable(
 
   def flow[K, V](
       tableName: String,
+      settings: TableWriterSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]] =
+    table(tableName, kvtClientConfig)
+      .map { table =>
+        ZPipeline.mapZIO { (pair: (K, V)) =>
+          val (k, v) = pair
+          val put =
+            new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
+          ZIO
+            .fromCompletableFuture(table.update(put))
+            .map(version =>
+              TableEntry(
+                settings.tableKey(k),
+                version,
+                v
+              )
+            )
+        }
+      }
+  def flow[K, V](
+      tableName: String,
       settings: TableReaderSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
-  ): RIO[Scope, ZPipeline[Any, Throwable, K, TableEntry[V]]] =
-    table(tableName, kvtClientConfig).withFinalizerAuto
+  ): RIO[Scope, ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]] =
+    table(tableName, kvtClientConfig)
       .map { table =>
         ZPipeline.mapZIO { in =>
           ZIO
             .fromCompletableFuture(table.get(settings.tableKey(in)))
-            .map(tableEntry =>
-              TableEntry(
-                tableEntry.getKey(),
-                tableEntry.getVersion(),
-                settings.valueSerializer
-                  .deserialize(tableEntry.getValue())
-              )
-            )
+            .map {
+              case null => None
+              case tableEntry =>
+                Some(
+                  TableEntry(
+                    tableEntry.getKey(),
+                    tableEntry.getVersion(),
+                    settings.valueSerializer
+                      .deserialize(tableEntry.getValue())
+                  )
+                )
+            }
         }
       }
 
@@ -121,7 +149,7 @@ final case class PravegaTable(
 
 object PravegaTableLayer {
 
-  def service(
+  private def service(
       scope: String
   ): ZIO[ClientConfig & Scope, Throwable, PravegaTableService] = {
 
