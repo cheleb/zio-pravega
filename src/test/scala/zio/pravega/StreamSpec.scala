@@ -4,7 +4,6 @@ import zio._
 import zio.stream._
 import zio.test._
 import zio.test.Assertion._
-import zio.test.TestClock.adjust
 
 import io.pravega.client.stream.impl.UTF8StringSerializer
 
@@ -39,7 +38,7 @@ trait StreamSpec {
       for {
         sink <- PravegaStream(_.sink(pravegaStreamName, writterSettings))
         _ <- testStream(0, 10).run(sink)
-        _ <- (ZIO.sleep(2.seconds) *> ZIO.logDebug(
+        _ <- (ZIO.attemptBlocking(Thread.sleep(2000)) *> ZIO.logDebug(
           "(( Re-start producing ))"
         ) *> testStream(10, 20).run(sink)).fork
 
@@ -47,10 +46,7 @@ trait StreamSpec {
         _ <- ZIO.logDebug("Consuming...")
         count <- stream
           .take(n.toLong * 2)
-          .tap(e =>
-            adjust(200.millis) *>
-              ZIO.logDebug(s"ZStream of [$e]")
-          )
+          .tap(m => ZIO.logDebug(m))
           .runFold(0)((s, _) => s + 1)
 
         _ <- ZIO.logDebug(s"Consumed $count messages")

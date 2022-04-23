@@ -50,7 +50,6 @@ trait TableSpecs {
           _.source(pravegaTableName, tableReaderSettings, kvtClientConfig)
         )
         count <- source
-          .take(1000)
           .runFold(0)((s, _) => s + 1)
       } yield count)
 
@@ -87,7 +86,7 @@ trait TableSpecs {
         writeFlowToTable.map(res => assert(res)(equalTo(1000)))
       ),
       test(s"Read from table $pravegaTableName")(
-        readFromTable.map(res => assert(res)(equalTo(1000)))
+        readFromTable.map(res => assert(res)(equalTo(2000)))
       ),
       test("Read through flow")(
         flowFromTable.map(res => assert(res)(equalTo(1000)))

@@ -6,11 +6,12 @@ import io.pravega.client.KeyValueTableFactory
 import io.pravega.client.tables.KeyValueTableClientConfiguration
 import io.pravega.client.tables.Put
 
-import zio.Task
-
 import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
 import io.pravega.client.tables.KeyValueTable
+import io.pravega.client.tables
+import io.pravega.client.tables.IteratorItem
+import io.pravega.common.util.AsyncIterator
 
 trait PravegaTableService {
   def sink[K, V](
@@ -72,31 +73,44 @@ final case class PravegaTable(
       tableName: String,
       settings: TableReaderSettings[K, V],
       kvtClientConfig: KeyValueTableClientConfiguration
-  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]] =
-    table(tableName, kvtClientConfig).map { table =>
-      val it = table
+  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]] = {
+
+    def consume(it: AsyncIterator[IteratorItem[tables.TableEntry]]) = for {
+      items <- ZIO
+        .fromCompletableFuture(it.getNext())
+    } yield items
+
+    table(tableName, kvtClientConfig).flatMap { table =>
+      val it: AsyncIterator[IteratorItem[tables.TableEntry]] = table
         .iterator()
         .maxIterationSize(settings.maxEntriesAtOnce)
         .all()
         .entries()
-      ZStream.repeatZIOChunk {
-        Task
-          .fromCompletableFuture(it.getNext())
-          .map {
-            case null => Chunk.empty
-            case el =>
-              val res = el.getItems().asScala.map { tableEntry =>
-                TableEntry(
-                  tableEntry.getKey(),
-                  tableEntry.getVersion(),
-                  settings.valueSerializer
-                    .deserialize(tableEntry.getValue())
-                )
+      for {
+        interruptionPromise <- Promise.make[Throwable, Unit]
+        stream = ZStream
+          .repeatZIOChunk {
+            consume(it)
+              .flatMap {
+                case null =>
+                  interruptionPromise.succeed(()) *> ZIO.succeed(Chunk.empty)
+                case el =>
+                  val res = el.getItems().asScala.map { tableEntry =>
+                    TableEntry(
+                      tableEntry.getKey(),
+                      tableEntry.getVersion(),
+                      settings.valueSerializer
+                        .deserialize(tableEntry.getValue())
+                    )
+                  }
+                  ZIO.succeed(Chunk.fromArray(res.toArray))
               }
-              Chunk.fromArray(res.toArray)
+
           }
-      }
+          .interruptWhen(interruptionPromise)
+      } yield stream
     }
+  }
 
   def flow[K, V](
       tableName: String,
