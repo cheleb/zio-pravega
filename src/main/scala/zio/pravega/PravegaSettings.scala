@@ -169,7 +169,6 @@ object ReaderSettingsBuilder {
     val readerBasicSetting = new ReaderBasicSetting()
     extractString("group-name")(readerBasicSetting.withGroupName)
     extractDuration("timeout")(readerBasicSetting.withTimeout)
-    extractString("reader-id")(readerBasicSetting.withReaderId)
 
     val readerConfigBuilder = ConfigHelper.buildReaderConfig(config)
 
@@ -180,7 +179,7 @@ object ReaderSettingsBuilder {
       readerConfigBuilder,
       None,
       readerBasicSetting.timeout,
-      readerBasicSetting.readerId
+      None
     )
 
   }
@@ -379,7 +378,6 @@ class TableReaderSettingsBuilder[K, V](
     new TableReaderSettings[K, V](
       handleClientConfig(),
       clientConfig,
-      keySerializer,
       valueSerializer,
       tableKeyExtractor.getOrElse { k =>
         new TableKey(keySerializer.serialize(k))
@@ -513,7 +511,6 @@ class TableWriterSettingsBuilder[K, V](
     new TableWriterSettings[K, V](
       handleClientConfig(),
       eventWriterConfig,
-      keySerializer,
       valueSerializer,
       tableKeyExtractor.getOrElse(k =>
         new TableKey(keySerializer.serialize(k))
@@ -575,11 +572,9 @@ object TableWriterSettingsBuilder {
 
 private[pravega] class ReaderBasicSetting(
     var groupName: Option[String] = None,
-    var readerId: Option[String] = None,
     var timeout: Duration = Duration.ofSeconds(5)
 ) {
   def withGroupName(name: String) = groupName = Some(name)
-  def withReaderId(name: String) = readerId = Some(name)
   def withTimeout(t: Duration) = timeout = t
 }
 
@@ -608,13 +603,11 @@ class WriterSettings[Message](
 class TableWriterSettings[K, V](
     clientConfig: ClientConfig,
     keyValueTableClientConfiguration: KeyValueTableClientConfiguration,
-    keySerializer: Serializer[K],
     valueSerializer: Serializer[V],
     tableKey: K => TableKey,
     maximumInflightMessages: Int
 ) extends TableSettings(
       clientConfig,
-      keySerializer,
       valueSerializer,
       tableKey,
       keyValueTableClientConfiguration,
@@ -624,14 +617,12 @@ class TableWriterSettings[K, V](
 class TableReaderSettings[K, V](
     clientConfig: ClientConfig,
     keyValueTableClientConfiguration: KeyValueTableClientConfiguration,
-    keySerializer: Serializer[K],
     valueSerializer: Serializer[V],
     tableKey: K => TableKey,
     maximumInflightMessages: Int,
     val maxEntriesAtOnce: Int
 ) extends TableSettings(
       clientConfig,
-      keySerializer,
       valueSerializer,
       tableKey,
       keyValueTableClientConfiguration,
@@ -640,7 +631,6 @@ class TableReaderSettings[K, V](
 
 protected abstract class TableSettings[K, V](
     val clientConfig: ClientConfig,
-    val keySerializer: Serializer[K],
     val valueSerializer: Serializer[V],
     val tableKey: K => TableKey,
     val keyValueTableClientConfiguration: KeyValueTableClientConfiguration,

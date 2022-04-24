@@ -32,6 +32,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
       val readerSettings = ReaderSettingsBuilder()
         .withClientConfig(clientConfig)
         .clientConfigBuilder(_.enableTlsToController(true))
+        .withReaderId("A hard coded reader id")
         .withSerializer(new UTF8StringSerializer)
 
       readerSettings.clientConfig.isEnableTlsToController() mustBe true
