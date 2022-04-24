@@ -9,6 +9,9 @@ import io.pravega.client.tables.Put
 import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
 import io.pravega.client.tables.KeyValueTable
+import io.pravega.client.tables
+import io.pravega.client.tables.IteratorItem
+import io.pravega.common.util.AsyncIterator
 
 trait PravegaTableService {
   def sink[K, V](
@@ -66,7 +69,10 @@ final case class PravegaTable(
         }
       }
 
-  def iterator(table: KeyValueTable, maxEntries: Int) = table
+  private def iterator(
+      table: KeyValueTable,
+      maxEntries: Int
+  ): AsyncIterator[IteratorItem[tables.TableEntry]] = table
     .iterator()
     .maxIterationSize(maxEntries)
     .all()
