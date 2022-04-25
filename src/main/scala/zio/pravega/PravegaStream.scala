@@ -8,13 +8,12 @@ import zio._
 import zio.stream._
 
 import java.util.UUID
-import io.pravega.client.stream.EventStreamWriter
 
 trait PravegaStreamService {
   def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): RIO[Scope, ZSink[Any, Throwable, A, Nothing, Unit]]
+  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]]
   def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
@@ -29,7 +28,7 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
   override def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): RIO[Scope, ZSink[Any, Throwable, A, Nothing, Unit]] = {
+  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]] = {
     val acquireWriter = ZIO
       .attemptBlocking(
         eventStreamClientFactory.createEventWriter(
@@ -38,17 +37,13 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
           settings.eventWriterConfig
         )
       )
-    def release(writer: EventStreamWriter[A]) =
-      ZIO.attemptBlocking(writer.close()).ignore
-
-    val si = ZIO
-      .acquireRelease(acquireWriter)(release)
+      .withFinalizerAuto
       .map(writer =>
         ZSink.foreach((a: A) => ZIO.fromCompletableFuture(writer.writeEvent(a)))
       )
 
     RIO.attempt(
-      ZSink.unwrapScoped(si)
+      ZSink.unwrapScoped(acquireWriter)
     )
 
   }
@@ -56,24 +51,20 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
   override def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): Task[ZStream[Any, Throwable, A]] = {
-
-    val reader = ZIO.attemptBlocking(
-      eventStreamClientFactory
-        .createReader(
-          settings.readerId.getOrElse(UUID.randomUUID().toString),
-          readerGroupName,
-          settings.serializer,
-          settings.readerConfig
+  ): Task[ZStream[Any, Throwable, A]] = Task.attempt(
+    ZStream.unwrapScoped(
+      ZIO
+        .attemptBlocking(
+          eventStreamClientFactory
+            .createReader(
+              settings.readerId.getOrElse(UUID.randomUUID().toString),
+              readerGroupName,
+              settings.serializer,
+              settings.readerConfig
+            )
         )
-    )
-
-    Task.attempt(
-      ZStream
-        .acquireReleaseWith(reader)(reader =>
-          ZIO.attemptBlocking(reader.close()).ignore
-        )
-        .flatMap(reader =>
+        .withFinalizerAuto
+        .map(reader =>
           ZStream.repeatZIOChunk(
             ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
               case eventRead if eventRead.isCheckpoint => Chunk.empty
@@ -85,8 +76,7 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
           )
         )
     )
-
-  }
+  )
 
 }
 
