@@ -61,8 +61,7 @@ final case class PravegaTable(
   ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] =
     table(tableName, kvtClientConfig)
       .map { table =>
-        ZSink.foreach { (pair: (K, V)) =>
-          val (k, v) = pair
+        ZSink.foreach { case (k, v) =>
           val put =
             new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
           ZIO.fromCompletableFuture(table.update(put))
@@ -117,8 +116,7 @@ final case class PravegaTable(
   ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]] =
     table(tableName, kvtClientConfig)
       .map { table =>
-        ZPipeline.mapZIO { (pair: (K, V)) =>
-          val (k, v) = pair
+        ZPipeline.mapZIO { case (k, v) =>
           val put =
             new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
           ZIO
