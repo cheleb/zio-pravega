@@ -19,7 +19,7 @@ trait PravegaAdminService {
       scope: String,
       readerGroupName: String,
       streamNames: String*
-  ): ZIO[Any, Throwable, Boolean]
+  ): ZIO[Scope, Throwable, Boolean]
 
   def createScope(scope: String): RIO[Scope, Boolean]
 
@@ -64,7 +64,7 @@ case class PravegaAdmin(clientConfig: ClientConfig)
       scope: String,
       readerGroupName: String,
       streamNames: String*
-  ): ZIO[Any, Throwable, Boolean] = ZIO.scoped {
+  ): ZIO[Scope, Throwable, Boolean] = {
 
     def config = streamNames
       .foldLeft(ReaderGroupConfig.builder()) { case (builder, streamName) =>

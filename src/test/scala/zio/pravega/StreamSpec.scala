@@ -61,9 +61,6 @@ trait StreamSpec {
         count1 <- count1Fiber.join
         count2 <- count2Fiber.join
 
-        _ <- ZIO.debug(s"Fiber 1 Consumed $count1 messages")
-        _ <- ZIO.debug(s"Fiber 2 Consumed $count2 messages")
-
       } yield count1 + count2
     }
 
