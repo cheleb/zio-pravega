@@ -12,6 +12,7 @@ import io.pravega.client.tables.KeyValueTable
 import io.pravega.client.tables
 import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
+import java.util.concurrent.Executors
 
 trait PravegaTableService {
   def sink[K, V](
@@ -84,30 +85,30 @@ final case class PravegaTable(
     for {
       table <- table(tableName, kvtClientConfig)
       allEntriesRead <- Promise.make[Throwable, Unit]
-      it = iterator(table, settings.maxEntriesAtOnce)
+      it = iterator(table, settings.maxEntriesAtOnce).asSequential(
+        Executors.newSingleThreadExecutor()
+      )
+    } yield ZStream
+      .repeatZIOChunk {
+        ZIO
+          .fromCompletableFuture(it.getNext())
+          .flatMap {
+            case null =>
+              allEntriesRead.succeed(()) *> ZIO.succeed(Chunk.empty)
+            case el =>
+              val res = el.getItems().asScala.map { tableEntry =>
+                TableEntry(
+                  tableEntry.getKey(),
+                  tableEntry.getVersion(),
+                  settings.valueSerializer
+                    .deserialize(tableEntry.getValue())
+                )
+              }
+              ZIO.succeed(Chunk.fromArray(res.toArray))
+          }
 
-      stream = ZStream
-        .repeatZIOChunk {
-          ZIO
-            .fromCompletableFuture(it.getNext())
-            .flatMap {
-              case null =>
-                allEntriesRead.succeed(()) *> ZIO.succeed(Chunk.empty)
-              case el =>
-                val res = el.getItems().asScala.map { tableEntry =>
-                  TableEntry(
-                    tableEntry.getKey(),
-                    tableEntry.getVersion(),
-                    settings.valueSerializer
-                      .deserialize(tableEntry.getValue())
-                  )
-                }
-                ZIO.succeed(Chunk.fromArray(res.toArray))
-            }
-
-        }
-        .interruptWhen(allEntriesRead)
-    } yield stream
+      }
+      .interruptWhen(allEntriesRead)
 
   def flow[K, V](
       tableName: String,
