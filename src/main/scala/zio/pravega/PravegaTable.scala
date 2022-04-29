@@ -12,6 +12,7 @@ import io.pravega.client.tables.KeyValueTable
 import io.pravega.client.tables
 import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
+import java.util.concurrent.Executors
 
 trait PravegaTableService {
   def sink[K, V](
@@ -61,8 +62,7 @@ final case class PravegaTable(
   ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] =
     table(tableName, kvtClientConfig)
       .map { table =>
-        ZSink.foreach { (pair: (K, V)) =>
-          val (k, v) = pair
+        ZSink.foreach { case (k, v) =>
           val put =
             new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
           ZIO.fromCompletableFuture(table.update(put))
@@ -85,30 +85,30 @@ final case class PravegaTable(
     for {
       table <- table(tableName, kvtClientConfig)
       allEntriesRead <- Promise.make[Throwable, Unit]
-      it = iterator(table, settings.maxEntriesAtOnce)
+      it = iterator(table, settings.maxEntriesAtOnce).asSequential(
+        Executors.newSingleThreadExecutor()
+      )
+    } yield ZStream
+      .repeatZIOChunk {
+        ZIO
+          .fromCompletableFuture(it.getNext())
+          .flatMap {
+            case null =>
+              allEntriesRead.succeed(()) *> ZIO.succeed(Chunk.empty)
+            case el =>
+              val res = el.getItems().asScala.map { tableEntry =>
+                TableEntry(
+                  tableEntry.getKey(),
+                  tableEntry.getVersion(),
+                  settings.valueSerializer
+                    .deserialize(tableEntry.getValue())
+                )
+              }
+              ZIO.succeed(Chunk.fromArray(res.toArray))
+          }
 
-      stream = ZStream
-        .repeatZIOChunk {
-          ZIO
-            .fromCompletableFuture(it.getNext())
-            .flatMap {
-              case null =>
-                allEntriesRead.succeed(()) *> ZIO.succeed(Chunk.empty)
-              case el =>
-                val res = el.getItems().asScala.map { tableEntry =>
-                  TableEntry(
-                    tableEntry.getKey(),
-                    tableEntry.getVersion(),
-                    settings.valueSerializer
-                      .deserialize(tableEntry.getValue())
-                  )
-                }
-                ZIO.succeed(Chunk.fromArray(res.toArray))
-            }
-
-        }
-        .interruptWhen(allEntriesRead)
-    } yield stream
+      }
+      .interruptWhen(allEntriesRead)
 
   def flow[K, V](
       tableName: String,
@@ -117,8 +117,7 @@ final case class PravegaTable(
   ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]] =
     table(tableName, kvtClientConfig)
       .map { table =>
-        ZPipeline.mapZIO { (pair: (K, V)) =>
-          val (k, v) = pair
+        ZPipeline.mapZIO { case (k, v) =>
           val put =
             new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
           ZIO

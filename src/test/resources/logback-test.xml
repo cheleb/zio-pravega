@@ -19,6 +19,7 @@
     <logger name="zio.pravega" level="info" />
     <logger name="docs.scaladsl" level="debug" />
     <logger name="docs.javadsl" level="debug" />
+    <logger name="io.pravega.controller.control.impl.ControllerImpl" level="error" />
 
 
     <root level="WARN">

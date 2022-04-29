@@ -42,16 +42,26 @@ trait StreamSpec {
           "(( Re-start producing ))"
         ) *> testStream(10, 20).run(sink)).fork
 
-        stream <- PravegaStream(_.stream(groupName, readerSettings))
+        stream1 <- PravegaStream(_.stream(groupName, readerSettings))
+        stream2 <- PravegaStream(_.stream(groupName, readerSettings))
+
         _ <- ZIO.logDebug("Consuming...")
-        count <- stream
-          .take(n.toLong * 2)
+        count1Fiber <- stream1
+          .take(n.toLong)
           .tap(m => ZIO.logDebug(m))
           .runFold(0)((s, _) => s + 1)
+          .fork
 
-        _ <- ZIO.logDebug(s"Consumed $count messages")
+        count2Fiber <- stream2
+          .take(n.toLong)
+          .tap(m => ZIO.logDebug(m))
+          .runFold(0)((s, _) => s + 1)
+          .fork
 
-      } yield count
+        count1 <- count1Fiber.join
+        count2 <- count2Fiber.join
+
+      } yield count1 + count2
     }
 
     suite("Stream")(

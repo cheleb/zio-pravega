@@ -7,6 +7,11 @@ import zio.test.TestAspect._
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import io.pravega.client.tables.KeyValueTableConfiguration
+import io.pravega.client.EventStreamClientFactory
+import io.pravega.client.ClientConfig
+import java.util.UUID
+import io.pravega.client.stream.impl.UTF8StringSerializer
+import io.pravega.client.stream.ReaderConfig
 
 trait AdminSpec {
   this: ZIOSpec[
@@ -77,6 +82,25 @@ trait AdminSpec {
             )
           )
           .map(once => assert(once)(isTrue))
+      ),
+      test("Create reader buggy")(
+        ZIO
+          .scoped(
+            PravegaAdmin(
+              _.readerGroup(
+                "zio-scope",
+                "coco-buggy",
+                pravegaStreamName
+              )
+            ) *> PravegaAdmin(
+              _.readerGroup(
+                "zio-scope",
+                "coco-buggy2",
+                pravegaStreamName
+              )
+            )
+          )
+          .map(once => assert(once)(isTrue))
       )
     ) @@ sequential
 
@@ -99,11 +123,35 @@ trait AdminSpec {
 
   def adminCleanSpec =
     suite("Admin clean")(
-      test("Clean reader")(
-        ZIO
-          .scoped(PravegaAdmin(_.readerOffline("zio-scope", "coco1")))
-          .map(n => assert(n)(equalTo(0)))
+      test("Set reader offline")(
+        ZIO.debug("""
+        🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        🔥   Pravega container noisy log expected below  🔥
+        🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥""") *>
+          ZIO
+            .scoped(
+              ZIO
+                .attemptBlocking(
+                  EventStreamClientFactory
+                    .withScope(
+                      "zio-scope",
+                      ClientConfig
+                        .builder()
+                        .build()
+                    )
+                )
+                .withFinalizerAuto
+                .map(
+                  _.createReader(
+                    UUID.randomUUID().toString,
+                    "coco-buggy",
+                    new UTF8StringSerializer,
+                    ReaderConfig.builder().build()
+                  )
+                ) *> PravegaAdmin(_.readerOffline("zio-scope", "coco-buggy"))
+            )
+            .map(n => assert(n)(equalTo(1)))
       )
-    )
+    ) @@ sequential
 
 }
