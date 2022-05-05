@@ -16,7 +16,8 @@ object PravegaITs
     ]
     with AdminSpec
     with StreamSpec
-    with TableSpecs {
+    with TableSpecs
+    with StreamAndTableSpec {
   val pravegaScope = "zio-scope"
 
   val layer: ZLayer[Scope, TestFailure[
@@ -42,6 +43,7 @@ object PravegaITs
       streamSuite(pravegaStreamName, groupName),
       adminSuite2(pravegaScope, pravegaTableName),
       tableSuite(pravegaTableName),
+      streamAndTable(pravegaScope, pravegaStreamName),
       adminCleanSpec
     ) @@ sequential
   }

@@ -5,8 +5,6 @@ import zio.stream._
 import zio.test._
 import zio.test.Assertion._
 
-import io.pravega.client.stream.impl.UTF8StringSerializer
-
 trait StreamSpec {
   this: ZIOSpec[
     PravegaStreamService & PravegaAdminService & PravegaTableService
@@ -14,15 +12,7 @@ trait StreamSpec {
 
   val n = 10
 
-  val writterSettings =
-    WriterSettingsBuilder()
-      .withSerializer(new UTF8StringSerializer)
-
-  val readerSettings =
-    ReaderSettingsBuilder()
-      .withSerializer(new UTF8StringSerializer)
-
-  val clientConfig = writterSettings.clientConfig
+  import CommonSettings._
 
   private def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
     Stream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")

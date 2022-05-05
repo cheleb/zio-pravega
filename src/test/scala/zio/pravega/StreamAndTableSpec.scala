@@ -1,0 +1,69 @@
+package zio.pravega
+
+import zio._
+import zio.test._
+import zio.test.Assertion._
+import io.pravega.client.tables.KeyValueTableConfiguration
+
+trait StreamAndTableSpec {
+  this: ZIOSpec[
+    PravegaAdminService & PravegaStreamService & PravegaTableService
+  ] =>
+
+  private val tableConfig = KeyValueTableConfiguration
+    .builder()
+    .partitionCount(2)
+    .primaryKeyLength(4)
+    .build()
+  val groupName = "stream2table"
+  val tableName = "countTable"
+
+  def stream2table(scope: String, streamName: String) = for {
+    _ <- PravegaAdmin(_.createTable(tableName, tableConfig, scope))
+    _ <- PravegaAdmin(_.readerGroup(scope, groupName, streamName))
+    stream <- PravegaStream(_.stream(groupName, CommonSettings.readerSettings))
+    // readFlow <- PravegaTable(
+    //   _.flow(
+    //     tableName,
+    //     CommonSettings.tableReaderSettings,
+    //     CommonSettings.kvtClientConfig
+    //   )
+    // )
+    table <- PravegaTable(
+      _.sink(
+        tableName,
+        CommonSettings.tableWriterSettings,
+        CommonSettings.kvtClientConfig
+      )
+    )
+    count <- stream
+      .take(20)
+      .tap(str => ZIO.debug(str))
+      .map(str => (str.substring(0, 4), str))
+      .broadcast(2, 1)
+      .flatMap(streams =>
+        for {
+          sink0 <-
+            streams(0)
+              .tapSink(table)
+              .runFold(0)((s, _) => s + 1)
+              .fork
+          sink1 <-
+            streams(1)
+              .tapSink(table)
+              .runFold(0)((s, _) => s + 1)
+              .fork
+          x <- sink0.join.zipPar(sink1.join)
+        } yield x._1 + x._2
+      )
+
+  } yield count
+
+  def streamAndTable(scope: String, streamName: String) =
+    suite("Stream and table")(
+      test("Count") {
+        stream2table(scope, streamName).map(count => assert(count)(equalTo(40)))
+      }
+    )
+
+}

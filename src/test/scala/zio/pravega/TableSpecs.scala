@@ -5,31 +5,16 @@ import zio.stream._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
-import io.pravega.client.stream.impl.UTF8StringSerializer
-import io.pravega.client.tables.KeyValueTableClientConfiguration
 
 trait TableSpecs {
   this: ZIOSpec[
     PravegaStreamService & PravegaAdminService & PravegaTableService
   ] =>
 
+  import CommonSettings._
+
   private def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
     Stream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")
-
-  val tableWriterSettings = TableWriterSettingsBuilder(
-    new UTF8StringSerializer,
-    new UTF8StringSerializer
-  )
-    .build()
-
-  val tableReaderSettings = TableReaderSettingsBuilder(
-    new UTF8StringSerializer,
-    new UTF8StringSerializer
-  )
-    .build()
-
-  val kvtClientConfig: KeyValueTableClientConfiguration =
-    KeyValueTableClientConfiguration.builder().build()
 
   def tableSuite(pravegaTableName: String) = {
 

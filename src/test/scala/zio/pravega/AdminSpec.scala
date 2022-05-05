@@ -18,7 +18,7 @@ trait AdminSpec {
     PravegaStreamService & PravegaAdminService & PravegaTableService
   ] =>
 
-  val tableConfig = KeyValueTableConfiguration
+  private val tableConfig = KeyValueTableConfiguration
     .builder()
     .partitionCount(2)
     .primaryKeyLength(4)
