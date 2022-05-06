@@ -40,9 +40,56 @@ trait PravegaTableService {
   ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]]
 }
 
-object PravegaTable extends Accessible[PravegaTableService]
+object PravegaTableService {
+  def sink[K, V](
+      tableName: String,
+      settings: TableWriterSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[PravegaTableService & Scope, ZSink[
+    Any,
+    Throwable,
+    (K, V),
+    Nothing,
+    Unit
+  ]] =
+    ZIO.serviceWithZIO[PravegaTableService](
+      _.sink(tableName, settings, kvtClientConfig)
+    )
 
-final case class PravegaTable(
+  def flow[K, V](
+      tableName: String,
+      settings: TableWriterSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[PravegaTableService & Scope, ZPipeline[
+    Any,
+    Throwable,
+    (K, V),
+    TableEntry[V]
+  ]] = ZIO.serviceWithZIO[PravegaTableService](
+    _.flow(tableName, settings, kvtClientConfig)
+  )
+
+  def flow[K, V](
+      tableName: String,
+      settings: TableReaderSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[PravegaTableService & Scope, ZPipeline[Any, Throwable, K, Option[
+    TableEntry[V]
+  ]]] = ZIO.serviceWithZIO[PravegaTableService](
+    _.flow(tableName, settings, kvtClientConfig)
+  )
+
+  def source[K, V](
+      readerGroupName: String,
+      settings: TableReaderSettings[K, V],
+      kvtClientConfig: KeyValueTableClientConfiguration
+  ): RIO[PravegaTableService & Scope, ZStream[Any, Throwable, TableEntry[V]]] =
+    ZIO.serviceWithZIO[PravegaTableService](
+      _.source(readerGroupName, settings, kvtClientConfig)
+    )
+}
+
+final case class PravegaTableServiceLive(
     keyValueTableFactory: KeyValueTableFactory
 ) extends PravegaTableService {
 
@@ -90,22 +137,30 @@ final case class PravegaTable(
       )
     } yield ZStream
       .repeatZIOChunk {
-        ZIO
-          .fromCompletableFuture(it.getNext())
-          .flatMap {
-            case null =>
-              allEntriesRead.succeed(()) *> ZIO.succeed(Chunk.empty)
-            case el =>
-              val res = el.getItems().asScala.map { tableEntry =>
-                TableEntry(
-                  tableEntry.getKey(),
-                  tableEntry.getVersion(),
-                  settings.valueSerializer
-                    .deserialize(tableEntry.getValue())
-                )
-              }
-              ZIO.succeed(Chunk.fromArray(res.toArray))
+        for {
+          finished <- allEntriesRead.isDone
+          next <- finished match {
+            case true => ZIO.succeed(Chunk.empty)
+            case _ =>
+              ZIO
+                .fromCompletableFuture(it.getNext())
+                .flatMap {
+                  case null =>
+                    allEntriesRead.succeed(()) *> ZIO.succeed(Chunk.empty)
+                  case el =>
+                    val res = el.getItems().asScala.map { tableEntry =>
+                      TableEntry(
+                        tableEntry.getKey(),
+                        tableEntry.getVersion(),
+                        settings.valueSerializer
+                          .deserialize(tableEntry.getValue())
+                      )
+                    }
+                    ZIO.succeed(Chunk.fromArray(res.toArray))
+                }
+
           }
+        } yield next
 
       }
       .interruptWhen(allEntriesRead)
@@ -170,13 +225,13 @@ object PravegaTableLayer {
       )
 
     def release(fac: KeyValueTableFactory) =
-      URIO.attemptBlocking(fac.close()).ignore
+      ZIO.attemptBlocking(fac.close()).ignore
 
     for {
       clientConfig <- ZIO.service[ClientConfig]
       clientFactory <- ZIO
         .acquireRelease(acquire(clientConfig))(release)
-    } yield PravegaTable(clientFactory)
+    } yield PravegaTableServiceLive(clientFactory)
   }
 
   def fromScope(

@@ -19,9 +19,12 @@ trait StreamAndTableSpec {
   val tableName = "countTable"
 
   def stream2table(scope: String, streamName: String) = for {
-    _ <- PravegaAdmin(_.createTable(tableName, tableConfig, scope))
-    _ <- PravegaAdmin(_.readerGroup(scope, groupName, streamName))
-    stream <- PravegaStream(_.stream(groupName, CommonSettings.readerSettings))
+    _ <- PravegaAdminService.createTable(tableName, tableConfig, scope)
+    _ <- PravegaAdminService.readerGroup(scope, groupName, streamName)
+    stream <- PravegaStreamService.stream(
+      groupName,
+      CommonSettings.readerSettings
+    )
     // readFlow <- PravegaTable(
     //   _.flow(
     //     tableName,
@@ -29,16 +32,15 @@ trait StreamAndTableSpec {
     //     CommonSettings.kvtClientConfig
     //   )
     // )
-    table <- PravegaTable(
-      _.sink(
-        tableName,
-        CommonSettings.tableWriterSettings,
-        CommonSettings.kvtClientConfig
-      )
+    table <- PravegaTableService.sink(
+      tableName,
+      CommonSettings.tableWriterSettings,
+      CommonSettings.kvtClientConfig
     )
+
     count <- stream
       .take(20)
-      .tap(str => ZIO.debug(str))
+//      .tap(str => ZIO.debug(str))
       .map(str => (str.substring(0, 4), str))
       .broadcast(2, 1)
       .flatMap(streams =>

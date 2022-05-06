@@ -28,29 +28,27 @@ trait AdminSpec {
       pravegaScope: String,
       pravegaStreamName: String,
       groupName: String
-  ): Spec[PravegaAdminService, TestFailure[Throwable], TestSuccess] =
+  ): Spec[PravegaAdminService, Throwable] =
     suite("Admin")(
       test("Scope created once")(
         ZIO
-          .scoped(PravegaAdmin(_.createScope(pravegaScope)))
+          .scoped(PravegaAdminService.createScope(pravegaScope))
           .map(once => assert(once)(isTrue))
       ),
       test("Scope skip twice")(
         ZIO
-          .scoped(PravegaAdmin(_.createScope(pravegaScope)))
+          .scoped(PravegaAdminService.createScope(pravegaScope))
           .map(twice => assert(twice)(isFalse))
       ),
       test("Stream created once")(
         ZIO
           .scoped(
-            PravegaAdmin(
-              _.createStream(
-                pravegaStreamName,
-                StreamConfiguration.builder
-                  .scalingPolicy(ScalingPolicy.fixed(8))
-                  .build,
-                pravegaScope
-              )
+            PravegaAdminService.createStream(
+              pravegaStreamName,
+              StreamConfiguration.builder
+                .scalingPolicy(ScalingPolicy.fixed(8))
+                .build,
+              pravegaScope
             )
           )
           .map(once => assert(once)(isTrue))
@@ -58,14 +56,12 @@ trait AdminSpec {
       test("Stream creation skiped")(
         ZIO
           .scoped(
-            PravegaAdmin(
-              _.createStream(
-                pravegaStreamName,
-                StreamConfiguration.builder
-                  .scalingPolicy(ScalingPolicy.fixed(8))
-                  .build,
-                pravegaScope
-              )
+            PravegaAdminService.createStream(
+              pravegaStreamName,
+              StreamConfiguration.builder
+                .scalingPolicy(ScalingPolicy.fixed(8))
+                .build,
+              pravegaScope
             )
           )
           .map(twice => assert(twice)(isFalse))
@@ -73,12 +69,10 @@ trait AdminSpec {
       test(s"Create group $groupName")(
         ZIO
           .scoped(
-            PravegaAdmin(
-              _.readerGroup(
-                pravegaScope,
-                groupName,
-                pravegaStreamName
-              )
+            PravegaAdminService.readerGroup(
+              pravegaScope,
+              groupName,
+              pravegaStreamName
             )
           )
           .map(once => assert(once)(isTrue))
@@ -86,18 +80,14 @@ trait AdminSpec {
       test("Create reader buggy")(
         ZIO
           .scoped(
-            PravegaAdmin(
-              _.readerGroup(
-                "zio-scope",
-                "coco-buggy",
-                pravegaStreamName
-              )
-            ) *> PravegaAdmin(
-              _.readerGroup(
-                "zio-scope",
-                "coco-buggy2",
-                pravegaStreamName
-              )
+            PravegaAdminService.readerGroup(
+              "zio-scope",
+              "coco-buggy",
+              pravegaStreamName
+            ) *> PravegaAdminService.readerGroup(
+              "zio-scope",
+              "coco-buggy2",
+              pravegaStreamName
             )
           )
           .map(once => assert(once)(isTrue))
@@ -109,12 +99,10 @@ trait AdminSpec {
       test(s"Create table $pravegaTableName")(
         ZIO
           .scoped(
-            PravegaAdmin(
-              _.createTable(
-                pravegaTableName,
-                tableConfig,
-                pravegaScope
-              )
+            PravegaAdminService.createTable(
+              pravegaTableName,
+              tableConfig,
+              pravegaScope
             )
           )
           .map(created => assert(created)(isTrue))
@@ -148,7 +136,8 @@ trait AdminSpec {
                     new UTF8StringSerializer,
                     ReaderConfig.builder().build()
                   )
-                ) *> PravegaAdmin(_.readerOffline("zio-scope", "coco-buggy"))
+                ) *> PravegaAdminService
+                .readerOffline("zio-scope", "coco-buggy")
             )
             .map(n => assert(n)(equalTo(1)))
       )

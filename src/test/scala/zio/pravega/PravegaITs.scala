@@ -20,16 +20,13 @@ object PravegaITs
     with StreamAndTableSpec {
   val pravegaScope = "zio-scope"
 
-  val layer: ZLayer[Scope, TestFailure[
-    Nothing
-  ], PravegaAdmin & PravegaStreamService & PravegaTableService] =
+  val bootstrap =
     PravegaContainer.pravega >>> PravegaContainer.clientConfig >>> (PravegaAdminLayer.layer ++
       PravegaStreamLayer
         .fromScope(pravegaScope)
-        .mapError(t => TestFailure.die(t)) ++
+      ++
       PravegaTableLayer
-        .fromScope(pravegaScope)
-        .mapError(t => TestFailure.die(t)))
+        .fromScope(pravegaScope))
 
   def spec = {
 
