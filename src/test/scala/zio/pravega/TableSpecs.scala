@@ -35,6 +35,7 @@ trait TableSpecs {
           .source(pravegaTableName, tableReaderSettings, kvtClientConfig)
         count <- source
           .runFold(0)((s, _) => s + 1)
+        _ <- source.runFold(0)((s, _) => s + 1)
       } yield count)
 
     def writeFlowToTable: ZIO[PravegaTableService, Throwable, Int] =
