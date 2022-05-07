@@ -3,6 +3,7 @@ package zio.pravega
 import zio._
 import zio.test._
 import zio.test.Assertion._
+import zio.test.TestAspect._
 import io.pravega.client.tables.KeyValueTableConfiguration
 
 trait StreamAndTableSpec {
@@ -34,14 +35,13 @@ trait StreamAndTableSpec {
     // )
     table <- PravegaTableService.sink(
       tableName,
-      CommonSettings.tableWriterSettings,
-      CommonSettings.kvtClientConfig
+      CommonSettings.tableWriterSettings
     )
 
     count <- stream
       .take(20)
 //      .tap(str => ZIO.debug(str))
-      .map(str => (str.substring(0, 4), str))
+      .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
       .broadcast(2, 1)
       .flatMap(streams =>
         for {
@@ -63,9 +63,18 @@ trait StreamAndTableSpec {
 
   def streamAndTable(scope: String, streamName: String) =
     suite("Stream and table")(
-      test("Count") {
+      test("Write concurently") {
         stream2table(scope, streamName).map(count => assert(count)(equalTo(40)))
+      },
+      test("Sum table") {
+        (for {
+          source <- PravegaTableService.source(
+            tableName,
+            CommonSettings.tableReaderSettings
+          )
+          sum <- source.runFold(0)((s, i) => s + i.value)
+        } yield sum).map(s => assert(s)(equalTo(380)))
       }
-    )
+    ) @@ sequential
 
 }

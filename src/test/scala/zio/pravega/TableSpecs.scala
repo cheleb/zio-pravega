@@ -21,10 +21,10 @@ trait TableSpecs {
     def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
       ZIO.scoped(for {
         sink <- PravegaTableService
-          .sink(pravegaTableName, tableWriterSettings, kvtClientConfig)
+          .sink(pravegaTableName, tableWriterSettings)
 
         _ <- testStream(0, 1000)
-          .map(str => (str.substring(0, 4), str))
+          .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
           .run(sink)
 
       } yield true)
@@ -32,18 +32,18 @@ trait TableSpecs {
     def readFromTable: ZIO[PravegaTableService, Throwable, Int] =
       ZIO.scoped(for {
         source <- PravegaTableService
-          .source(pravegaTableName, tableReaderSettings, kvtClientConfig)
+          .source(pravegaTableName, tableReaderSettings)
         count <- source
           .runFold(0)((s, _) => s + 1)
-        _ <- source.runFold(0)((s, _) => s + 1)
+        // _ <- source.runFold(0)((s, _) => s + 1)
       } yield count)
 
     def writeFlowToTable: ZIO[PravegaTableService, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTableService
-          .flow(pravegaTableName, tableWriterSettings, kvtClientConfig)
+          .flow(pravegaTableName, tableWriterSettings)
         count <- testStream(2000, 3000)
-          .map(str => (str.substring(0, 4), str))
+          .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
           .via(flow)
           .runFold(0)((s, _) => s + 1)
 
@@ -52,7 +52,7 @@ trait TableSpecs {
     def flowFromTable: ZIO[PravegaTableService, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTableService
-          .flow(pravegaTableName, tableReaderSettings, kvtClientConfig)
+          .flow(pravegaTableName, tableReaderSettings)
 
         count <- testStream(0, 1001)
           .map(str => str.substring(0, 4))

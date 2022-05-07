@@ -107,7 +107,8 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
       val tableWritterSettings = TableWriterSettingsBuilder(
         new UTF8StringSerializer,
         new UTF8StringSerializer
-      ).withClientConfig(clientConfig)
+      )((_, a) => a)
+        .withClientConfig(clientConfig)
         .withMaximumInflightMessages(100)
         .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes())))
         .keyValueTableClientConfigurationBuilder(_.retryAttempts(3))
@@ -120,7 +121,8 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
       val tableWritterSettingsDefaultExtractor = TableWriterSettingsBuilder(
         new UTF8StringSerializer,
         new UTF8StringSerializer
-      ).withClientConfig(clientConfig)
+      )((_, a) => a)
+        .withClientConfig(clientConfig)
         .withMaximumInflightMessages(100)
         .keyValueTableClientConfigurationBuilder(_.retryAttempts(3))
         .clientConfigBuilder(_.enableTlsToController(true))
