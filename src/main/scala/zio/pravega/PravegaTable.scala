@@ -140,7 +140,9 @@ final case class PravegaTableServiceLive(
         for {
           finished <- allEntriesRead.isDone
           next <- finished match {
+            // codecov:ignore:start
             case true => ZIO.succeed(Chunk.empty)
+            // codecov:ignore:end
             case _ =>
               ZIO
                 .fromCompletableFuture(it.getNext())
