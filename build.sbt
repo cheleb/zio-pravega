@@ -4,7 +4,7 @@ lazy val mainScala = scala213
 lazy val allScala = Seq(scala31, mainScala)
 
 lazy val zioVersion = "2.0.0-RC6"
-lazy val pravegaVersion = "0.10.2"
+lazy val pravegaVersion = "0.11.0"
 lazy val zioConfigVersion = "2.0.4"
 
 // Allows to silence scalac compilation warnings selectively by code block or file path

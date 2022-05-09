@@ -18,15 +18,14 @@ import io.pravega.client.stream.ScalingPolicy
 def initStream(streamName: String, scope: String)
 : ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
     for {
-      streamCreated <- PravegaAdmin(
-        _.createStream(
+      streamCreated <- PravegaAdminService.createStream(
           streamName,
           StreamConfiguration.builder
             .scalingPolicy(ScalingPolicy.fixed(8))
             .build,
           scope
         )
-      )
+      
       _ <- ZIO.when(streamCreated)(
         printLine(s"Stream $streamName just created")
       )

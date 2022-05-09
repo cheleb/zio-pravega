@@ -4,7 +4,6 @@ import zio._
 import zio.stream._
 import io.pravega.client.KeyValueTableFactory
 import io.pravega.client.tables.KeyValueTableClientConfiguration
-import io.pravega.client.tables.Put
 
 import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
@@ -96,6 +95,40 @@ final case class PravegaTableServiceLive(
     )
     .withFinalizerAuto
 
+  private def upsert[K, V](
+      k: K,
+      v: V,
+      table: KeyValueTable,
+      settings: TableWriterSettings[K, V]
+  ): ZIO[Any, Throwable, tables.Version] =
+    ZIO
+      .fromCompletableFuture(table.get(settings.tableKey(k)))
+      .map {
+        case null =>
+          new tables.Insert(
+            settings.tableKey(k),
+            settings.valueSerializer.serialize(v)
+          )
+        case el =>
+          new tables.Put(
+            settings.tableKey(k),
+            settings.valueSerializer
+              .serialize(
+                settings.combine(
+                  settings.valueSerializer.deserialize(el.getValue),
+                  v
+                )
+              ),
+            el.getVersion
+          )
+      }
+      .flatMap { mod =>
+        ZIO
+          .fromCompletableFuture(table.update(mod))
+          .tapError(o => ZIO.debug(o.toString))
+      }
+      .retry(Schedule.forever)
+
   override def sink[K, V](
       tableName: String,
       settings: TableWriterSettings[K, V]
@@ -103,33 +136,7 @@ final case class PravegaTableServiceLive(
     table(tableName, settings.keyValueTableClientConfiguration)
       .map { table =>
         ZSink.foreach { case (k, v) =>
-          ZIO
-            .fromCompletableFuture(table.get(settings.tableKey(k)))
-            .map {
-              case null =>
-                new tables.Insert(
-                  settings.tableKey(k),
-                  settings.valueSerializer.serialize(v)
-                )
-              case el =>
-                new tables.Put(
-                  settings.tableKey(k),
-                  settings.valueSerializer
-                    .serialize(
-                      settings.combine(
-                        settings.valueSerializer.deserialize(el.getValue),
-                        v
-                      )
-                    ),
-                  el.getVersion
-                )
-            }
-            .flatMap { mod =>
-              ZIO
-                .fromCompletableFuture(table.update(mod))
-                .tapError(o => ZIO.debug(o.toString))
-            }
-            .retry(Schedule.forever)
+          upsert(k, v, table, settings)
         }
       }
 
@@ -179,10 +186,7 @@ final case class PravegaTableServiceLive(
     table(tableName, settings.keyValueTableClientConfiguration)
       .map { table =>
         ZPipeline.mapZIO { case (k, v) =>
-          val put =
-            new Put(settings.tableKey(k), settings.valueSerializer.serialize(v))
-          ZIO
-            .fromCompletableFuture(table.update(put))
+          upsert(k, v, table, settings)
             .map(version =>
               TableEntry(
                 settings.tableKey(k),

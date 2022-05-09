@@ -133,7 +133,7 @@ class ReaderSettingsBuilder(
 }
 
 /** Reader settings that must be provided to @see
-  * [[zio.pravega.PravegaStream#stream]]
+  * [[zio.pravega.PravegaStreamService#stream]]
   *
   * Built with @see [[ReaderSettingsBuilder]]
   *
@@ -583,7 +583,7 @@ private[pravega] class ReaderBasicSetting(
 }
 
 /** Writer settings that must be provided to @see Sink
-  * [[zio.pravega.PravegaStream#sink]]
+  * [[zio.pravega.PravegaStreamService#sink]]
   *
   * Built with @see [[WriterSettingsBuilder]]
   *
@@ -602,7 +602,8 @@ class WriterSettings[Message](
 )
 
 /** Table Writer settings that must be provided to @see Sink
-  * [[zio.pravega.PravegaStream.sink]] Built with @see [[WriterSettingsBuilder]]
+  * [[zio.pravega.PravegaStreamService.sink]] Built with @see
+  * [[WriterSettingsBuilder]]
   */
 class TableWriterSettings[K, V](
     clientConfig: ClientConfig,
