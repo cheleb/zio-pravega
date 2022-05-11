@@ -15,9 +15,11 @@ object TestMe extends ZIOAppDefault {
     ZIO
       .scoped {
         for {
-          _ <- PravegaAdmin(_.createScope("pravegaScope"))
-          _ <- PravegaAdmin(
-            _.createTable("pravegaTableName", tableConfig, "pravegaScope")
+          _ <- PravegaAdminService.createScope("pravegaScope")
+          _ <- PravegaAdminService.createTable(
+            "pravegaTableName",
+            tableConfig,
+            "pravegaScope"
           )
         } yield ()
       }

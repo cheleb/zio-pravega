@@ -133,7 +133,7 @@ class ReaderSettingsBuilder(
 }
 
 /** Reader settings that must be provided to @see
-  * [[zio.pravega.PravegaStream#stream]]
+  * [[zio.pravega.PravegaStreamService#stream]]
   *
   * Built with @see [[ReaderSettingsBuilder]]
   *
@@ -442,6 +442,7 @@ object TableReaderSettingsBuilder {
 class TableWriterSettingsBuilder[K, V](
     config: Config,
     keySerializer: Serializer[K],
+    combine: (V, V) => V,
     valueSerializer: Serializer[V],
     tableKeyExtractor: Option[K => TableKey],
     clientConfig: Option[ClientConfig] = None,
@@ -485,6 +486,7 @@ class TableWriterSettingsBuilder[K, V](
     new TableWriterSettingsBuilder(
       config,
       keySerializer,
+      combine,
       valueSerializer,
       tableKeyExtractor,
       clientConfig,
@@ -511,6 +513,7 @@ class TableWriterSettingsBuilder[K, V](
     new TableWriterSettings[K, V](
       handleClientConfig(),
       eventWriterConfig,
+      combine,
       valueSerializer,
       tableKeyExtractor.getOrElse(k =>
         new TableKey(keySerializer.serialize(k))
@@ -531,21 +534,22 @@ object TableWriterSettingsBuilder {
   def apply[K, V](
       keySerializer: Serializer[K],
       valueSerializer: Serializer[V]
-  ): TableWriterSettingsBuilder[K, V] =
+  )(combine: (V, V) => V): TableWriterSettingsBuilder[K, V] =
     apply(
       ConfigFactory.load().getConfig(configPath),
       keySerializer,
       valueSerializer
-    )
+    )(combine)
 
   def apply[K, V](
       config: Config,
       keySerializer: Serializer[K],
       valueSerializer: Serializer[V]
-  ): TableWriterSettingsBuilder[K, V] =
+  )(combine: (V, V) => V): TableWriterSettingsBuilder[K, V] =
     new TableWriterSettingsBuilder(
       config,
       keySerializer,
+      combine,
       valueSerializer,
       None,
       None,
@@ -579,7 +583,7 @@ private[pravega] class ReaderBasicSetting(
 }
 
 /** Writer settings that must be provided to @see Sink
-  * [[zio.pravega.PravegaStream#sink]]
+  * [[zio.pravega.PravegaStreamService#sink]]
   *
   * Built with @see [[WriterSettingsBuilder]]
   *
@@ -598,11 +602,13 @@ class WriterSettings[Message](
 )
 
 /** Table Writer settings that must be provided to @see Sink
-  * [[zio.pravega.PravegaStream.sink]] Built with @see [[WriterSettingsBuilder]]
+  * [[zio.pravega.PravegaStreamService.sink]] Built with @see
+  * [[WriterSettingsBuilder]]
   */
 class TableWriterSettings[K, V](
     clientConfig: ClientConfig,
     keyValueTableClientConfiguration: KeyValueTableClientConfiguration,
+    val combine: (V, V) => V,
     valueSerializer: Serializer[V],
     tableKey: K => TableKey,
     maximumInflightMessages: Int

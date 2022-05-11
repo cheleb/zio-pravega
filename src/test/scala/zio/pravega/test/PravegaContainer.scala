@@ -28,7 +28,7 @@ class PravegaContainer(
 
 object PravegaContainer {
   def pravega: ZLayer[Scope, Nothing, PravegaContainer] = {
-    val imageName = sys.env.getOrElse("PRAVEGA_IMAGE", "pravega/pravega:0.10.2")
+    val imageName = sys.env.getOrElse("PRAVEGA_IMAGE", "pravega/pravega:0.11.0")
     ZLayer(ZIO.acquireRelease {
       ZIO.attemptBlocking {
         val container = new PravegaContainer(

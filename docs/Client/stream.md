@@ -17,20 +17,19 @@ To write in a stream, simply bread a Sink:
 val writterSettings =
     WriterSettingsBuilder()
       .withSerializer(new UTF8StringSerializer)
-val sink = PravegaStream(_.sink("my-stream", writterSettings))
+val sink = PravegaStreamService.sink("my-stream", writterSettings)
 ```
 ## Consumer
 
 ### Group name
 
 ```scala mdoc
-val group = PravegaAdmin(
-        _.readerGroup(
+val group = PravegaAdminService.readerGroup(
           "my-scope",
           "my-group",
           "my-stream"
         )
-      )
+      
 ```
 
 ### Stream reader
@@ -39,7 +38,7 @@ val group = PravegaAdmin(
 val readerSettings =
     ReaderSettingsBuilder()
       .withSerializer(new UTF8StringSerializer)
-val stream = PravegaStream(_.stream("mygroup", readerSettings))
+val stream = PravegaStreamService.stream("mygroup", readerSettings)
 ```
 
 
@@ -49,15 +48,15 @@ val stream = PravegaStream(_.stream("mygroup", readerSettings))
 ```scala mdoc 
 
 def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
-    Stream.fromIterable(a until b).map(i => s"ZIO Message $i")
+    ZStream.fromIterable(a until b).map(i => s"ZIO Message $i")
 
 val n = 10
 
 for {
-      sink <- PravegaStream(_.sink("my-stream", writterSettings))
+      sink <- PravegaStreamService.sink("my-stream", writterSettings)
       _ <- testStream(0, 10).run(sink)
       _ <- group
-      stream <- PravegaStream(_.stream("my-group", readerSettings))
+      stream <- PravegaStreamService.stream("my-group", readerSettings)
       count <- stream
         .take(n.toLong * 2)
         .tap(e => printLine(s"ZStream of [$e]"))

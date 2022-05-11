@@ -20,10 +20,24 @@ trait PravegaStreamService {
   ): Task[ZStream[Any, Throwable, A]]
 }
 
-object PravegaStream extends Accessible[PravegaStreamService]
+object PravegaStreamService {
+  def sink[A](
+      streamName: String,
+      settings: WriterSettings[A]
+  ): RIO[PravegaStreamService, ZSink[Any, Throwable, A, Nothing, Unit]] =
+    ZIO.serviceWithZIO[PravegaStreamService](_.sink(streamName, settings))
+  def stream[A](
+      readerGroupName: String,
+      settings: ReaderSettings[A]
+  ): RIO[PravegaStreamService, ZStream[Any, Throwable, A]] =
+    ZIO.serviceWithZIO[PravegaStreamService](
+      _.stream(readerGroupName, settings)
+    )
+}
 
-case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
-    extends PravegaStreamService {
+case class PravegaStreamServiceLive(
+    eventStreamClientFactory: EventStreamClientFactory
+) extends PravegaStreamService {
 
   override def sink[A](
       streamName: String,
@@ -42,7 +56,7 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
         ZSink.foreach((a: A) => ZIO.fromCompletableFuture(writer.writeEvent(a)))
       )
 
-    RIO.attempt(
+    ZIO.attempt(
       ZSink.unwrapScoped(acquireWriter)
     )
 
@@ -51,7 +65,7 @@ case class PravegaStream(eventStreamClientFactory: EventStreamClientFactory)
   override def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): Task[ZStream[Any, Throwable, A]] = Task.attempt(
+  ): Task[ZStream[Any, Throwable, A]] = ZIO.attempt(
     ZStream.unwrapScoped(
       ZIO
         .attemptBlocking(
@@ -92,13 +106,13 @@ object PravegaStreamLayer {
       )
 
     def release(fac: EventStreamClientFactory) =
-      URIO.attemptBlocking(fac.close()).ignore
+      ZIO.attemptBlocking(fac.close()).ignore
 
     for {
       clientConfig <- ZIO.service[ClientConfig]
       clientFactory <- ZIO
         .acquireRelease(acquire(clientConfig))(release)
-    } yield PravegaStream(clientFactory)
+    } yield PravegaStreamServiceLive(clientFactory)
   }
 
   def fromScope(

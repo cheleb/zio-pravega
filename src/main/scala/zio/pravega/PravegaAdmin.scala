@@ -29,6 +29,7 @@ trait PravegaAdminService {
       scope: String
   ): RIO[Scope, Boolean]
 
+  /*
   def readerGroupManager(
       scope: String
   ): RIO[Scope, ReaderGroupManager]
@@ -42,6 +43,7 @@ trait PravegaAdminService {
 
   def keyValueTableManager(): RIO[Scope, KeyValueTableManager]
 
+   */
   def createTable(
       tableName: String,
       config: KeyValueTableConfiguration,
@@ -55,9 +57,65 @@ trait PravegaAdminService {
 
 }
 
-object PravegaAdmin extends Accessible[PravegaAdminService]
+object PravegaAdminService {
+  def readerGroup[A](
+      scope: String,
+      readerGroupName: String,
+      streamNames: String*
+  ): ZIO[PravegaAdminService & Scope, Throwable, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdminService](
+      _.readerGroup(scope, readerGroupName, streamNames: _*)
+    )
+  def createScope(scope: String): RIO[PravegaAdminService & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdminService](_.createScope(scope))
 
-case class PravegaAdmin(clientConfig: ClientConfig)
+  def createStream(
+      streamName: String,
+      config: StreamConfiguration,
+      scope: String
+  ): RIO[PravegaAdminService & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdminService](
+      _.createStream(streamName, config, scope)
+    )
+  /*
+  def readerGroupManager(
+      scope: String
+  ): RIO[PravegaAdminService & Scope, ReaderGroupManager] =
+    ZIO.serviceWithZIO[PravegaAdminService](_.readerGroupManager(scope))
+
+  def readerGroupManager(
+      scope: String,
+      clientConfig: ClientConfig
+  ): RIO[PravegaAdminService & Scope, ReaderGroupManager] =
+    ZIO.serviceWithZIO[PravegaAdminService](
+      _.readerGroupManager(scope, clientConfig)
+    )
+
+  def streamManager(): RIO[PravegaAdminService & Scope, StreamManager] =
+    ZIO.serviceWithZIO[PravegaAdminService](_.streamManager())
+
+  def keyValueTableManager()
+      : RIO[PravegaAdminService & Scope, KeyValueTableManager] =
+    ZIO.serviceWithZIO[PravegaAdminService](_.keyValueTableManager())
+   */
+  def createTable(
+      tableName: String,
+      config: KeyValueTableConfiguration,
+      scope: String
+  ): RIO[PravegaAdminService & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdminService](
+      _.createTable(tableName, config, scope)
+    )
+
+  def readerOffline(
+      scope: String,
+      groupName: String
+  ): RIO[PravegaAdminService & Scope, Int] =
+    ZIO.serviceWithZIO[PravegaAdminService](_.readerOffline(scope, groupName))
+
+}
+
+case class PravegaAdminServiceLive(clientConfig: ClientConfig)
     extends PravegaAdminService {
 
   def readerGroup[A](
@@ -131,7 +189,7 @@ case class PravegaAdmin(clientConfig: ClientConfig)
   def streamManager(): RIO[Scope, StreamManager] =
     ZIO.attemptBlocking(StreamManager.create(clientConfig)).withFinalizerAuto
 
-  override def keyValueTableManager(): RIO[Scope, KeyValueTableManager] =
+  def keyValueTableManager(): RIO[Scope, KeyValueTableManager] =
     ZIO
       .attemptBlocking(KeyValueTableManager.create(clientConfig))
       .withFinalizerAuto
@@ -167,10 +225,10 @@ case class PravegaAdmin(clientConfig: ClientConfig)
 }
 
 object PravegaAdminLayer {
-  def layer: ZLayer[ClientConfig, Nothing, PravegaAdmin] =
+  def layer: ZLayer[ClientConfig, Nothing, PravegaAdminService] =
     ZLayer(for {
       clientConfig <- ZIO.service[ClientConfig]
-      l <- ZIO.succeed(new PravegaAdmin(clientConfig))
+      l <- ZIO.succeed(PravegaAdminServiceLive(clientConfig))
 
     } yield l)
 }

@@ -5,61 +5,45 @@ import zio.stream._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
-import io.pravega.client.stream.impl.UTF8StringSerializer
-import io.pravega.client.tables.KeyValueTableClientConfiguration
 
 trait TableSpecs {
   this: ZIOSpec[
     PravegaStreamService & PravegaAdminService & PravegaTableService
   ] =>
 
+  import CommonSettings._
+
   private def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
-    Stream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")
-
-  val tableWriterSettings = TableWriterSettingsBuilder(
-    new UTF8StringSerializer,
-    new UTF8StringSerializer
-  )
-    .build()
-
-  val tableReaderSettings = TableReaderSettingsBuilder(
-    new UTF8StringSerializer,
-    new UTF8StringSerializer
-  )
-    .build()
-
-  val kvtClientConfig: KeyValueTableClientConfiguration =
-    KeyValueTableClientConfiguration.builder().build()
+    ZStream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")
 
   def tableSuite(pravegaTableName: String) = {
 
     def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
       ZIO.scoped(for {
-        sink <- PravegaTable(
-          _.sink(pravegaTableName, tableWriterSettings, kvtClientConfig)
-        )
+        sink <- PravegaTableService
+          .sink(pravegaTableName, tableWriterSettings)
+
         _ <- testStream(0, 1000)
-          .map(str => (str.substring(0, 4), str))
+          .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
           .run(sink)
 
       } yield true)
 
     def readFromTable: ZIO[PravegaTableService, Throwable, Int] =
       ZIO.scoped(for {
-        source <- PravegaTable(
-          _.source(pravegaTableName, tableReaderSettings, kvtClientConfig)
-        )
+        source <- PravegaTableService
+          .source(pravegaTableName, tableReaderSettings)
         count <- source
           .runFold(0)((s, _) => s + 1)
+        // _ <- source.runFold(0)((s, _) => s + 1)
       } yield count)
 
     def writeFlowToTable: ZIO[PravegaTableService, Throwable, Int] =
       ZIO.scoped(for {
-        flow <- PravegaTable(
-          _.flow(pravegaTableName, tableWriterSettings, kvtClientConfig)
-        )
+        flow <- PravegaTableService
+          .flow(pravegaTableName, tableWriterSettings)
         count <- testStream(2000, 3000)
-          .map(str => (str.substring(0, 4), str))
+          .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
           .via(flow)
           .runFold(0)((s, _) => s + 1)
 
@@ -67,9 +51,9 @@ trait TableSpecs {
 
     def flowFromTable: ZIO[PravegaTableService, Throwable, Int] =
       ZIO.scoped(for {
-        flow <- PravegaTable(
-          _.flow(pravegaTableName, tableReaderSettings, kvtClientConfig)
-        )
+        flow <- PravegaTableService
+          .flow(pravegaTableName, tableReaderSettings)
+
         count <- testStream(0, 1001)
           .map(str => str.substring(0, 4))
           .via(flow)
