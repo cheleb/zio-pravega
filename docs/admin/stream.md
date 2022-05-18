@@ -14,7 +14,7 @@ import io.pravega.client.stream.ScalingPolicy
 ```
 
 
-```scala mdoc
+```scala mdoc:silent
 def initStream(streamName: String, scope: String)
 : ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
     for {
@@ -31,5 +31,18 @@ def initStream(streamName: String, scope: String)
       )
     } yield ()
 
-````
+```
 
+# Reader group
+
+A [Reader Group](https://cncf.pravega.io/docs/nightly/pravega-concepts/#writers-readers-reader-groups) is a named collection of Readers, which together perform parallel reads from a given Stream
+
+It must created expliciyly 
+
+```scala mdoc:silent
+  PravegaAdminService.readerGroup(
+              "a-scope",
+              "a-group-name",
+              "stream-a", "stream-b"
+            )
+```

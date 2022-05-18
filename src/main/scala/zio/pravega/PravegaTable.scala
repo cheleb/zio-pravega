@@ -14,14 +14,24 @@ import io.pravega.common.util.AsyncIterator
 import java.util.concurrent.Executors
 
 trait PravegaTableService {
+
+  /** Create a sink
+    *
+    * @param tableName
+    * @param settings
+    * @param combine
+    *   entry if already exists.
+    */
   def sink[K, V](
       tableName: String,
-      settings: TableWriterSettings[K, V]
+      settings: TableWriterSettings[K, V],
+      combine: (V, V) => V
   ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]]
 
   def flow[K, V](
       tableName: String,
-      settings: TableWriterSettings[K, V]
+      settings: TableWriterSettings[K, V],
+      combine: (V, V) => V
   ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]]
 
   def flow[K, V](
@@ -38,7 +48,8 @@ trait PravegaTableService {
 object PravegaTableService {
   def sink[K, V](
       tableName: String,
-      settings: TableWriterSettings[K, V]
+      settings: TableWriterSettings[K, V],
+      combine: (V, V) => V
   ): RIO[PravegaTableService & Scope, ZSink[
     Any,
     Throwable,
@@ -47,19 +58,20 @@ object PravegaTableService {
     Unit
   ]] =
     ZIO.serviceWithZIO[PravegaTableService](
-      _.sink(tableName, settings)
+      _.sink(tableName, settings, combine)
     )
 
   def flow[K, V](
       tableName: String,
-      settings: TableWriterSettings[K, V]
+      settings: TableWriterSettings[K, V],
+      combine: (V, V) => V
   ): RIO[PravegaTableService & Scope, ZPipeline[
     Any,
     Throwable,
     (K, V),
     TableEntry[V]
   ]] = ZIO.serviceWithZIO[PravegaTableService](
-    _.flow(tableName, settings)
+    _.flow(tableName, settings, combine)
   )
 
   def flow[K, V](
@@ -99,7 +111,8 @@ final case class PravegaTableServiceLive(
       k: K,
       v: V,
       table: KeyValueTable,
-      settings: TableWriterSettings[K, V]
+      settings: TableWriterSettings[K, V],
+      combine: (V, V) => V
   ): ZIO[Any, Throwable, tables.Version] =
     ZIO
       .fromCompletableFuture(table.get(settings.tableKey(k)))
@@ -114,7 +127,7 @@ final case class PravegaTableServiceLive(
             settings.tableKey(k),
             settings.valueSerializer
               .serialize(
-                settings.combine(
+                combine(
                   settings.valueSerializer.deserialize(el.getValue),
                   v
                 )
@@ -131,12 +144,13 @@ final case class PravegaTableServiceLive(
 
   override def sink[K, V](
       tableName: String,
-      settings: TableWriterSettings[K, V]
+      settings: TableWriterSettings[K, V],
+      combine: (V, V) => V
   ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] =
     table(tableName, settings.keyValueTableClientConfiguration)
       .map { table =>
         ZSink.foreach { case (k, v) =>
-          upsert(k, v, table, settings)
+          upsert(k, v, table, settings, combine)
         }
       }
 
@@ -181,12 +195,13 @@ final case class PravegaTableServiceLive(
 
   def flow[K, V](
       tableName: String,
-      settings: TableWriterSettings[K, V]
+      settings: TableWriterSettings[K, V],
+      combine: (V, V) => V
   ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]] =
     table(tableName, settings.keyValueTableClientConfiguration)
       .map { table =>
         ZPipeline.mapZIO { case (k, v) =>
-          upsert(k, v, table, settings)
+          upsert(k, v, table, settings, combine)
             .map(version =>
               TableEntry(
                 settings.tableKey(k),

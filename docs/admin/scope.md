@@ -11,7 +11,7 @@ import zio.Console._
 import zio.pravega._
 ```
 
-```scala mdoc
+```scala mdoc:silent
 
 def initScope(scope: String): ZIO[Scope & PravegaAdminService & Console,Throwable,Unit] =
     for {
