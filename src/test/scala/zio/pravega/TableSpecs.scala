@@ -13,18 +13,21 @@ trait TableSpecs {
 
   import CommonSettings._
 
-  private def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
-    ZStream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")
+  private def testStream(a: Int, b: Int): ZStream[Any, Nothing, (String, Int)] =
+    ZStream.fromIterable(a until b).map(i => (f"$i%04d", i))
 
   def tableSuite(pravegaTableName: String) = {
 
     def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
       ZIO.scoped(for {
         sink <- PravegaTableService
-          .sink(pravegaTableName, tableWriterSettings)
+          .sink(
+            pravegaTableName,
+            tableWriterSettings,
+            (a: Int, b: Int) => a + b
+          )
 
         _ <- testStream(0, 1000)
-          .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
           .run(sink)
 
       } yield true)
@@ -41,9 +44,12 @@ trait TableSpecs {
     def writeFlowToTable: ZIO[PravegaTableService, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTableService
-          .flow(pravegaTableName, tableWriterSettings)
+          .flow(
+            pravegaTableName,
+            tableWriterSettings,
+            (a: Int, b: Int) => a + b
+          )
         count <- testStream(2000, 3000)
-          .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
           .via(flow)
           .runFold(0)((s, _) => s + 1)
 
@@ -55,7 +61,7 @@ trait TableSpecs {
           .flow(pravegaTableName, tableReaderSettings)
 
         count <- testStream(0, 1001)
-          .map(str => str.substring(0, 4))
+          .map(_._1)
           .via(flow)
           .collect { case Some(str) => str }
           .runFold(0)((s, _) => s + 1)

@@ -35,7 +35,8 @@ trait StreamAndTableSpec {
     // )
     table <- PravegaTableService.sink(
       tableName,
-      CommonSettings.tableWriterSettings
+      CommonSettings.tableWriterSettings,
+      (a: Int, b: Int) => a + b
     )
 
     count <- stream
