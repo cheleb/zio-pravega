@@ -1,5 +1,5 @@
 lazy val scala213 = "2.13.8"
-lazy val scala31 =  "3.1.2"
+lazy val scala31 = "3.1.2"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala31, mainScala)
 
@@ -63,7 +63,7 @@ lazy val pravega =
     .settings(
       name := "zio-pravega",
       scalafmtOnCompile := true,
-      fork := true,
+      fork := true
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](
@@ -87,13 +87,27 @@ lazy val pravega =
         "org.testcontainers" % "testcontainers" % "1.17.1" % Test,
         "dev.zio" %% "zio-zmx" % "0.0.13" % Test,
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
-        "ch.qos.logback" % "logback-classic" % "1.2.11" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0",
+        "ch.qos.logback" % "logback-classic" % "1.2.11" % Test,
+        "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % Test,
+        "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub" % "0.6.7" % Test,
+        "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
         // compilerPlugin(
         //   "org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full
         // )
       ) ++ zioConfig,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+    )
+    .settings(
+      libraryDependencies ++= Seq(
+        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.5.0-2" % "protobuf",
+        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.5.0-2" % Test,
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.1-0" % "protobuf",
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.1-0" % Test
+      ),
+      Test / PB.targets := Seq(
+        scalapb.gen() -> (Test / sourceManaged).value / "scalapb"
+      )
     )
 
 lazy val docs = project // new documentation project
@@ -103,9 +117,13 @@ lazy val docs = project // new documentation project
     moduleName := "zio-pravega-docs",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(pravega),
     ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
-    cleanFiles += (ScalaUnidoc / unidoc / target ).value,
-    docusaurusCreateSite := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value,
+    cleanFiles += (ScalaUnidoc / unidoc / target).value,
+    docusaurusCreateSite := docusaurusCreateSite
+      .dependsOn(Compile / unidoc)
+      .value,
+    docusaurusPublishGhpages := docusaurusPublishGhpages
+      .dependsOn(Compile / unidoc)
+      .value,
     mdocVariables := Map(
       "VERSION" -> version.value
     )

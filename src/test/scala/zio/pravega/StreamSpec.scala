@@ -4,18 +4,38 @@ import zio._
 import zio.stream._
 import zio.test._
 import zio.test.Assertion._
+import io.pravega.client.stream.Serializer
+import model.Person
+import java.nio.ByteBuffer
 
 trait StreamSpec {
   this: ZIOSpec[
     PravegaStreamService & PravegaAdminService & PravegaTableService
   ] =>
 
+  private val personSerializer = new Serializer[Person] {
+
+    override def serialize(person: Person): ByteBuffer =
+      ByteBuffer.wrap(person.toByteArray)
+
+    override def deserialize(buffer: ByteBuffer): Person =
+      Person.parseFrom(buffer.array())
+
+  }
+
+  val personStremWritterSettings =
+    WriterSettingsBuilder()
+      .eventWriterConfigBuilder(_.enableLargeEvents(true))
+      .withSerializer(personSerializer)
+
   val n = 10
 
   import CommonSettings._
 
-  private def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
-    ZStream.fromIterable(a until b).map(i => f"$i%04d ZIO Message")
+  private def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] =
+    ZStream
+      .fromIterable(a until b)
+      .map(i => Person(key = f"$i%04d", name = s"name $i", age = i % 111))
 
   def streamSuite(
       pravegaStreamName: String,
@@ -24,7 +44,10 @@ trait StreamSpec {
 
     val writeToAndConsumeStream = ZIO.scoped {
       for {
-        sink <- PravegaStreamService.sink(pravegaStreamName, writterSettings)
+        sink <- PravegaStreamService.sink(
+          pravegaStreamName,
+          personStremWritterSettings
+        )
         _ <- testStream(0, 10).run(sink)
         _ <- (ZIO.attemptBlocking(Thread.sleep(2000)) *> ZIO.logDebug(
           "(( Re-start producing ))"

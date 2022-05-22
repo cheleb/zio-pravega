@@ -5,11 +5,27 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import io.pravega.client.tables.KeyValueTableConfiguration
+import io.pravega.client.stream.Serializer
+import model.Person
+import java.nio.ByteBuffer
 
 trait StreamAndTableSpec {
   this: ZIOSpec[
     PravegaAdminService & PravegaStreamService & PravegaTableService
   ] =>
+
+  private val personSerializer = new Serializer[Person] {
+
+    override def serialize(person: Person): ByteBuffer =
+      ByteBuffer.wrap(person.toByteArray)
+
+    override def deserialize(buffer: ByteBuffer): Person =
+      Person.parseFrom(buffer.array())
+
+  }
+  val personReaderSettings =
+    ReaderSettingsBuilder()
+      .withSerializer(personSerializer)
 
   private val tableConfig = KeyValueTableConfiguration
     .builder()
@@ -24,15 +40,8 @@ trait StreamAndTableSpec {
     _ <- PravegaAdminService.readerGroup(scope, groupName, streamName)
     stream <- PravegaStreamService.stream(
       groupName,
-      CommonSettings.readerSettings
+      personReaderSettings
     )
-    // readFlow <- PravegaTable(
-    //   _.flow(
-    //     tableName,
-    //     CommonSettings.tableReaderSettings,
-    //     CommonSettings.kvtClientConfig
-    //   )
-    // )
     table <- PravegaTableService.sink(
       tableName,
       CommonSettings.tableWriterSettings,
@@ -41,8 +50,7 @@ trait StreamAndTableSpec {
 
     count <- stream
       .take(20)
-//      .tap(str => ZIO.debug(str))
-      .map(str => (str.substring(0, 4), str.substring(0, 4).toInt))
+      .map(str => (str.key, str.age))
       .broadcast(2, 1)
       .flatMap(streams =>
         for {

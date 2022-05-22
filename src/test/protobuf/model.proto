@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "validate/validate.proto";
+
+message Person {
+    string key = 1 [(validate.rules).string.len = 4]; 
+    string name = 2;
+    int32 age = 3;
+
+}
