@@ -71,8 +71,8 @@ trait StreamAndTableSpec {
   } yield count
 
   def streamAndTable(scope: String, streamName: String) =
-    suite("Stream and table")(
-      test("Write concurently") {
+    suite("Table concurency writes")(
+      test("Write concurently from stream to table") {
         stream2table(scope, streamName).map(count => assert(count)(equalTo(40)))
       },
       test("Sum table") {
