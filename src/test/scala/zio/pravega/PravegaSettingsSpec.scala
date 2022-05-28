@@ -17,7 +17,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
   private val clientConfig = ClientConfig
     .builder()
-    .controllerURI(new URI("tcp://localhost:9090:"))
+    .controllerURI(new URI("tcp://localhost:9090"))
     .build()
 
   "Pravega stream settings builders" must {
@@ -26,7 +26,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
       val clientConfig = ClientConfig
         .builder()
-        .controllerURI(new URI("tcp://localhost:9090:"))
+        .controllerURI(new URI("tcp://localhost:9090"))
         .build()
 
       val readerSettings = ReaderSettingsBuilder()

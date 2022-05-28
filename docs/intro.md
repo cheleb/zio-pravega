@@ -12,3 +12,4 @@ To install the dependency
 ```scala
 libraryDependencies += "dev.zio" % "zio-pravega" % "@VERSION@"
 ```
+

@@ -2,10 +2,6 @@
 sidebar_position: 1
 ---
 
-# Configuration 
-
-Pravega client configuration has many options.
-
 ```scala mdoc:invisible
 import zio.pravega._
 import io.pravega.client.stream.impl.UTF8StringSerializer
@@ -13,7 +9,7 @@ import io.pravega.client.stream.impl.UTF8StringSerializer
 import scala.language.postfixOps
 import scala.concurrent.duration.DurationInt
 ```
-
+# Settings
 
 ## Writter settings
 

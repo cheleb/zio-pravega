@@ -24,9 +24,9 @@ trait PravegaAdminService {
   def createScope(scope: String): RIO[Scope, Boolean]
 
   def createStream(
+      scope: String,
       streamName: String,
-      config: StreamConfiguration,
-      scope: String
+      config: StreamConfiguration
   ): RIO[Scope, Boolean]
 
   /*
@@ -70,12 +70,12 @@ object PravegaAdminService {
     ZIO.serviceWithZIO[PravegaAdminService](_.createScope(scope))
 
   def createStream(
+      scope: String,
       streamName: String,
-      config: StreamConfiguration,
-      scope: String
+      config: StreamConfiguration
   ): RIO[PravegaAdminService & Scope, Boolean] =
     ZIO.serviceWithZIO[PravegaAdminService](
-      _.createStream(streamName, config, scope)
+      _.createStream(scope, streamName, config)
     )
   /*
   def readerGroupManager(
@@ -152,9 +152,9 @@ case class PravegaAdminServiceLive(clientConfig: ClientConfig)
     } yield created
 
   def createStream(
+      scope: String,
       streamName: String,
-      config: StreamConfiguration,
-      scope: String
+      config: StreamConfiguration
   ): RIO[Scope, Boolean] =
     for {
       streamManager <- streamManager()
