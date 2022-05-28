@@ -19,11 +19,11 @@ def initStream(streamName: String, scope: String)
 : ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
     for {
       streamCreated <- PravegaAdminService.createStream(
+          scope,
           streamName,
           StreamConfiguration.builder
             .scalingPolicy(ScalingPolicy.fixed(8))
-            .build,
-          scope
+            .build
         )
       
       _ <- ZIO.when(streamCreated)(

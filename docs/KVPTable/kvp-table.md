@@ -2,8 +2,6 @@
 sidebar_position: 3
 ---
 
-# KVP table
-
 ```scala mdoc:invisible
 //import zio.Console._
 import zio._

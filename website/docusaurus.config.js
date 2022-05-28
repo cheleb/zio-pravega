@@ -18,6 +18,7 @@ const config = {
   organizationName: 'cheleb', // Usually your GitHub org/user name.
   projectName: 'zio-pravega', // Usually your repo name.
   
+
   
   presets: [
     [
@@ -125,6 +126,7 @@ const config = {
         additionalLanguages: ["java", "scala"]        
       },
     }),
+//    themes: ['@saucelabs/theme-github-codeblock']
 };
 
 module.exports = config;

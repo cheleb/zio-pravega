@@ -44,11 +44,11 @@ trait AdminSpec {
         ZIO
           .scoped(
             PravegaAdminService.createStream(
+              pravegaScope,
               pravegaStreamName,
               StreamConfiguration.builder
                 .scalingPolicy(ScalingPolicy.fixed(8))
-                .build,
-              pravegaScope
+                .build
             )
           )
           .map(once => assert(once)(isTrue))
@@ -57,11 +57,11 @@ trait AdminSpec {
         ZIO
           .scoped(
             PravegaAdminService.createStream(
+              pravegaScope,
               pravegaStreamName,
               StreamConfiguration.builder
                 .scalingPolicy(ScalingPolicy.fixed(8))
-                .build,
-              pravegaScope
+                .build
             )
           )
           .map(twice => assert(twice)(isFalse))
