@@ -45,7 +45,7 @@ trait PravegaTableService {
   ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]]
 }
 
-object PravegaTableService {
+object PravegaTable {
   def sink[K, V](
       tableName: String,
       settings: TableWriterSettings[K, V],
@@ -92,9 +92,31 @@ object PravegaTableService {
         _.source(tableName, settings)
       )
 
+  private def service(
+      scope: String,
+      clientConfig: ClientConfig
+  ): ZIO[Scope, Throwable, PravegaTableService] =
+    for {
+      clientFactory <- ZIO
+        .attemptBlocking(
+          KeyValueTableFactory.withScope(scope, clientConfig)
+        )
+        .withFinalizerAuto
+    } yield new PravegaTableServiceImpl(clientFactory)
+
+  def fromScope(
+      scope: String,
+      clientConfig: ClientConfig
+  ): ZLayer[Scope, Throwable, PravegaTableService] =
+    ZLayer.fromZIO(
+      service(
+        scope,
+        clientConfig
+      )
+    )
 }
 
-final case class PravegaTableServiceLive(
+private final case class PravegaTableServiceImpl(
     keyValueTableFactory: KeyValueTableFactory
 ) extends PravegaTableService {
 
@@ -234,36 +256,5 @@ final case class PravegaTableServiceLive(
             }
         }
       }
-
-}
-
-object PravegaTableLayer {
-
-  private def service(
-      scope: String
-  ): ZIO[ClientConfig & Scope, Throwable, PravegaTableService] = {
-
-    def acquire(clientConfig: ClientConfig) = ZIO
-      .attemptBlocking(
-        KeyValueTableFactory.withScope(scope, clientConfig)
-      )
-
-    def release(fac: KeyValueTableFactory) =
-      ZIO.attemptBlocking(fac.close()).ignore
-
-    for {
-      clientConfig <- ZIO.service[ClientConfig]
-      clientFactory <- ZIO
-        .acquireRelease(acquire(clientConfig))(release)
-    } yield PravegaTableServiceLive(clientFactory)
-  }
-
-  def fromScope(
-      scope: String
-  ): ZLayer[ClientConfig & Scope, Throwable, PravegaTableService] = ZLayer(
-    service(
-      scope
-    )
-  )
 
 }

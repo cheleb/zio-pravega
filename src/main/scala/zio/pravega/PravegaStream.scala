@@ -20,22 +20,7 @@ trait PravegaStreamService {
   ): Task[ZStream[Any, Throwable, A]]
 }
 
-object PravegaStreamService {
-  def sink[A](
-      streamName: String,
-      settings: WriterSettings[A]
-  ): RIO[PravegaStreamService, ZSink[Any, Throwable, A, Nothing, Unit]] =
-    ZIO.serviceWithZIO[PravegaStreamService](_.sink(streamName, settings))
-  def stream[A](
-      readerGroupName: String,
-      settings: ReaderSettings[A]
-  ): RIO[PravegaStreamService, ZStream[Any, Throwable, A]] =
-    ZIO.serviceWithZIO[PravegaStreamService](
-      _.stream(readerGroupName, settings)
-    )
-}
-
-case class PravegaStreamServiceLive(
+private class PravegaStreamServiceImpl(
     eventStreamClientFactory: EventStreamClientFactory
 ) extends PravegaStreamService {
 
@@ -94,33 +79,37 @@ case class PravegaStreamServiceLive(
 
 }
 
-object PravegaStreamLayer {
+object PravegaStream {
 
-  def service(
-      scope: String
-  ): ZIO[ClientConfig & Scope, Throwable, PravegaStreamService] = {
+  def sink[A](
+      streamName: String,
+      settings: WriterSettings[A]
+  ): RIO[PravegaStreamService, ZSink[Any, Throwable, A, Nothing, Unit]] =
+    ZIO.serviceWithZIO[PravegaStreamService](_.sink(streamName, settings))
+  def stream[A](
+      readerGroupName: String,
+      settings: ReaderSettings[A]
+  ): RIO[PravegaStreamService, ZStream[Any, Throwable, A]] =
+    ZIO.serviceWithZIO[PravegaStreamService](
+      _.stream(readerGroupName, settings)
+    )
 
-    def acquire(clientConfig: ClientConfig) = ZIO
+  private def streamService(
+      scope: String,
+      clientConfig: ClientConfig
+  ): ZIO[Scope, Throwable, PravegaStreamService] =
+    ZIO
       .attemptBlocking(
         EventStreamClientFactory.withScope(scope, clientConfig)
       )
-
-    def release(fac: EventStreamClientFactory) =
-      ZIO.attemptBlocking(fac.close()).ignore
-
-    for {
-      clientConfig <- ZIO.service[ClientConfig]
-      clientFactory <- ZIO
-        .acquireRelease(acquire(clientConfig))(release)
-    } yield PravegaStreamServiceLive(clientFactory)
-  }
+      .withFinalizerAuto
+      .map(new PravegaStreamServiceImpl(_))
 
   def fromScope(
-      scope: String
-  ): ZLayer[ClientConfig & Scope, Throwable, PravegaStreamService] = ZLayer(
-    service(
-      scope
-    )
+      scope: String,
+      clientConfig: ClientConfig
+  ): ZLayer[Scope, Throwable, PravegaStreamService] = ZLayer(
+    streamService(scope, clientConfig)
   )
 
 }

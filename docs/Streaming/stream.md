@@ -26,7 +26,7 @@ To write in a stream, simply create a Sink:
 
 ```scala mdoc:silent
 
-val sink = PravegaStreamService.sink("my-stream", writerSettings)
+val sink = PravegaStream.sink("my-stream", writerSettings)
 ```
 
 ## Stream reader
@@ -34,7 +34,7 @@ val sink = PravegaStreamService.sink("my-stream", writerSettings)
 To read from a stream, simply create a stream:
 
 ```scala mdoc:silent
-val stream = PravegaStreamService.stream("mygroup", readerSettings)
+val stream = PravegaStream.stream("mygroup", readerSettings)
 ```
 
 
@@ -49,9 +49,9 @@ def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
 val n = 10
 
 for {
-      sink <- PravegaStreamService.sink("my-stream", writerSettings)
+      sink <- PravegaStream.sink("my-stream", writerSettings)
       _ <- testStream(0, 10).run(sink)
-      stream <- PravegaStreamService.stream("my-group", readerSettings)
+      stream <- PravegaStream.stream("my-group", readerSettings)
       count <- stream
         .take(n.toLong * 2)
         .tap(e => printLine(s"ZStream of [$e]"))

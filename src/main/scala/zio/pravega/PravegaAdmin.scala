@@ -57,7 +57,7 @@ trait PravegaAdminService {
 
 }
 
-object PravegaAdminService {
+object PravegaAdmin {
   def readerGroup[A](
       scope: String,
       readerGroupName: String,
@@ -113,9 +113,14 @@ object PravegaAdminService {
   ): RIO[PravegaAdminService & Scope, Int] =
     ZIO.serviceWithZIO[PravegaAdminService](_.readerOffline(scope, groupName))
 
+  def live(
+      clientConfig: ClientConfig
+  ): ZLayer[Any, Nothing, PravegaAdminService] =
+    ZLayer.succeed(new PravegaAdminServiceImpl(clientConfig))
+
 }
 
-case class PravegaAdminServiceLive(clientConfig: ClientConfig)
+private class PravegaAdminServiceImpl(clientConfig: ClientConfig)
     extends PravegaAdminService {
 
   def readerGroup[A](
@@ -222,13 +227,4 @@ case class PravegaAdminServiceLive(clientConfig: ClientConfig)
 
     } yield freed.size
 
-}
-
-object PravegaAdminLayer {
-  def layer: ZLayer[ClientConfig, Nothing, PravegaAdminService] =
-    ZLayer(for {
-      clientConfig <- ZIO.service[ClientConfig]
-      l <- ZIO.succeed(PravegaAdminServiceLive(clientConfig))
-
-    } yield l)
 }

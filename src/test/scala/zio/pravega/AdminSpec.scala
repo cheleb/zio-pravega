@@ -32,18 +32,18 @@ trait AdminSpec {
     suite("Admin")(
       test("Scope created once")(
         ZIO
-          .scoped(PravegaAdminService.createScope(pravegaScope))
+          .scoped(PravegaAdmin.createScope(pravegaScope))
           .map(once => assert(once)(isTrue))
       ),
       test("Scope skip twice")(
         ZIO
-          .scoped(PravegaAdminService.createScope(pravegaScope))
+          .scoped(PravegaAdmin.createScope(pravegaScope))
           .map(twice => assert(twice)(isFalse))
       ),
       test("Stream created once")(
         ZIO
           .scoped(
-            PravegaAdminService.createStream(
+            PravegaAdmin.createStream(
               pravegaScope,
               pravegaStreamName,
               StreamConfiguration.builder
@@ -56,7 +56,7 @@ trait AdminSpec {
       test("Stream creation skiped")(
         ZIO
           .scoped(
-            PravegaAdminService.createStream(
+            PravegaAdmin.createStream(
               pravegaScope,
               pravegaStreamName,
               StreamConfiguration.builder
@@ -69,7 +69,7 @@ trait AdminSpec {
       test(s"Create group $groupName")(
         ZIO
           .scoped(
-            PravegaAdminService.readerGroup(
+            PravegaAdmin.readerGroup(
               pravegaScope,
               groupName,
               pravegaStreamName
@@ -80,11 +80,11 @@ trait AdminSpec {
       test("Create reader buggy")(
         ZIO
           .scoped(
-            PravegaAdminService.readerGroup(
+            PravegaAdmin.readerGroup(
               "zio-scope",
               "coco-buggy",
               pravegaStreamName
-            ) *> PravegaAdminService.readerGroup(
+            ) *> PravegaAdmin.readerGroup(
               "zio-scope",
               "coco-buggy2",
               pravegaStreamName
@@ -99,7 +99,7 @@ trait AdminSpec {
       test(s"Create table $pravegaTableName")(
         ZIO
           .scoped(
-            PravegaAdminService.createTable(
+            PravegaAdmin.createTable(
               pravegaTableName,
               tableConfig,
               pravegaScope
@@ -136,7 +136,7 @@ trait AdminSpec {
                     new UTF8StringSerializer,
                     ReaderConfig.builder().build()
                   )
-                ) *> PravegaAdminService
+                ) *> PravegaAdmin
                 .readerOffline("zio-scope", "coco-buggy")
             )
             .map(n => assert(n)(equalTo(1)))

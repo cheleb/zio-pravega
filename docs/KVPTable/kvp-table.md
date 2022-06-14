@@ -56,7 +56,7 @@ Just allocate a (K, V) sink ... et voilà.
 ```scala mdoc:silent
 def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
       ZIO.scoped(for {
-        sink <- PravegaTableService
+        sink <- PravegaTable
           .sink("tableName", tableWriterSettings, (a: Int, b: Int) => a + b)
 
         _ <- testStream(0, 1000)

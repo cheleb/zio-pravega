@@ -13,8 +13,8 @@ object CreateResourcesExample extends ZIOAppDefault {
     .build
 
   private val program = for {
-    _ <- PravegaAdminService.createScope("a-scope")
-    _ <- PravegaAdminService.createStream(
+    _ <- PravegaAdmin.createScope("a-scope")
+    _ <- PravegaAdmin.createStream(
       "a-scope",
       "a-stream",
       streamConfiguration
@@ -25,8 +25,7 @@ object CreateResourcesExample extends ZIOAppDefault {
     program
       .provide(
         Scope.default,
-        ZLayer(ZIO.succeed(PravegaClientConfigBuilder().build())),
-        PravegaAdminLayer.layer
+        PravegaAdmin.live(PravegaClientConfigBuilder().build())
       )
 
 }

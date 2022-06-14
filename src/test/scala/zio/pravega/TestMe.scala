@@ -15,8 +15,8 @@ object TestMe extends ZIOAppDefault {
     ZIO
       .scoped {
         for {
-          _ <- PravegaAdminService.createScope("pravegaScope")
-          _ <- PravegaAdminService.createTable(
+          _ <- PravegaAdmin.createScope("pravegaScope")
+          _ <- PravegaAdmin.createTable(
             "pravegaTableName",
             tableConfig,
             "pravegaScope"
@@ -24,8 +24,7 @@ object TestMe extends ZIOAppDefault {
         } yield ()
       }
       .provide(
-        ZLayer(ZIO.succeed(PravegaClientConfigBuilder().build())),
-        PravegaAdminLayer.layer
+        PravegaAdmin.live(PravegaClientConfigBuilder().build())
       )
 
 }
