@@ -12,14 +12,17 @@ import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 
 object CreateResourcesExample extends ZIOAppDefault {
+  
+  val clientConfig = PravegaClientConfigBuilder()
+    .build()
 
   private val streamConfiguration = StreamConfiguration.builder
     .scalingPolicy(ScalingPolicy.fixed(8))
     .build
 
   private val program = for {
-    _ <- PravegaAdminService.createScope("a-scope")
-    _ <- PravegaAdminService.createStream(
+    _ <- PravegaAdmin.createScope("a-scope")
+    _ <- PravegaAdmin.createStream(
       "a-scope",
       "a-stream",
       streamConfiguration
@@ -30,8 +33,7 @@ object CreateResourcesExample extends ZIOAppDefault {
     program
       .provide(
         Scope.default,
-        ZLayer(ZIO.succeed(PravegaClientConfigBuilder().build())),
-        PravegaAdminLayer.layer
+        PravegaAdmin.live(clientConfig)
       )
 
 }

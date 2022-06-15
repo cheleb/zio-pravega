@@ -36,13 +36,13 @@ trait StreamAndTableSpec {
   val tableName = "countTable"
 
   def stream2table(scope: String, streamName: String) = for {
-    _ <- PravegaAdminService.createTable(tableName, tableConfig, scope)
-    _ <- PravegaAdminService.readerGroup(scope, groupName, streamName)
-    stream <- PravegaStreamService.stream(
+    _ <- PravegaAdmin.createTable(tableName, tableConfig, scope)
+    _ <- PravegaAdmin.readerGroup(scope, groupName, streamName)
+    stream <- PravegaStream.stream(
       groupName,
       personReaderSettings
     )
-    table <- PravegaTableService.sink(
+    table <- PravegaTable.sink(
       tableName,
       CommonSettings.tableWriterSettings,
       (a: Int, b: Int) => a + b
@@ -77,7 +77,7 @@ trait StreamAndTableSpec {
       },
       test("Sum table") {
         (for {
-          source <- PravegaTableService.source(
+          source <- PravegaTable.source(
             tableName,
             CommonSettings.tableReaderSettings
           )

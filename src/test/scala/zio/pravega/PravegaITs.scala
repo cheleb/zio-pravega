@@ -18,15 +18,19 @@ object PravegaITs
     with StreamSpec
     with TableSpecs
     with StreamAndTableSpec {
+
+  val clientConfig = PravegaClientConfigBuilder()
+    .build()
+
   val pravegaScope = "zio-scope"
 
   val bootstrap =
-    PravegaContainer.pravega >>> PravegaContainer.clientConfig >>> (PravegaAdminLayer.layer ++
-      PravegaStreamLayer
-        .fromScope(pravegaScope)
+    PravegaContainer.pravega ++ (PravegaAdmin.live(clientConfig) ++
+      PravegaStream
+        .fromScope(pravegaScope, clientConfig)
       ++
-      PravegaTableLayer
-        .fromScope(pravegaScope))
+      PravegaTable
+        .fromScope(pravegaScope, clientConfig))
 
   def spec = {
 

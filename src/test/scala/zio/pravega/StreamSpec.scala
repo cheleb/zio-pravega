@@ -44,7 +44,7 @@ trait StreamSpec {
 
     val writeToAndConsumeStream = ZIO.scoped {
       for {
-        sink <- PravegaStreamService.sink(
+        sink <- PravegaStream.sink(
           pravegaStreamName,
           personStremWritterSettings
         )
@@ -53,8 +53,8 @@ trait StreamSpec {
           "(( Re-start producing ))"
         ) *> testStream(10, 20).run(sink)).fork
 
-        stream1 <- PravegaStreamService.stream(groupName, readerSettings)
-        stream2 <- PravegaStreamService.stream(groupName, readerSettings)
+        stream1 <- PravegaStream.stream(groupName, readerSettings)
+        stream2 <- PravegaStream.stream(groupName, readerSettings)
 
         _ <- ZIO.logDebug("Consuming...")
         count1Fiber <- stream1

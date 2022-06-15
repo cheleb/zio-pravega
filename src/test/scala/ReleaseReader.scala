@@ -3,13 +3,14 @@ import zio.Console._
 
 import io.pravega.client.ClientConfig
 
-import zio.pravega.PravegaAdminLayer
-import zio.pravega.PravegaAdminService
+import zio.pravega.PravegaAdmin
 
 object ReleaseReader extends ZIOAppDefault {
 
+  val clientConfig = ClientConfig.builder().build()
+
   val program = for {
-    n <- PravegaAdminService.readerOffline("zio-scope", "coco1")
+    n <- PravegaAdmin.readerOffline("zio-scope", "coco1")
     _ <- printLine(s"Offined $n reader(s).")
   } yield ()
 
@@ -17,8 +18,7 @@ object ReleaseReader extends ZIOAppDefault {
     program
       .provide(
         Scope.default,
-        ZLayer.succeed(ClientConfig.builder().build()),
-        PravegaAdminLayer.layer
+        PravegaAdmin.live(clientConfig)
       )
       .exitCode
 

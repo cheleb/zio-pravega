@@ -18,7 +18,7 @@ import io.pravega.client.stream.ScalingPolicy
 def initStream(streamName: String, scope: String)
 : ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
     for {
-      streamCreated <- PravegaAdminService.createStream(
+      streamCreated <- PravegaAdmin.createStream(
           scope,
           streamName,
           StreamConfiguration.builder
@@ -40,7 +40,7 @@ A [Reader Group](https://cncf.pravega.io/docs/nightly/pravega-concepts/#writers-
 It must created expliciyly 
 
 ```scala mdoc:silent
-  PravegaAdminService.readerGroup(
+  PravegaAdmin.readerGroup(
               "a-scope",
               "a-group-name",
               "stream-a", "stream-b"

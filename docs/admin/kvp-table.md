@@ -30,7 +30,7 @@ val tableConfig = KeyValueTableConfiguration
 def initTable(tableName: String, pravegaScope: String)
 : ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
     for {
-      tableCreated <- PravegaAdminService.createTable(
+      tableCreated <- PravegaAdmin.createTable(
               tableName,
               tableConfig,
               pravegaScope
