@@ -8,11 +8,11 @@ import io.pravega.client.stream.impl.UTF8StringSerializer
 
 object StreamWriteExample extends ZIOAppDefault {
 
-  val clientConfig = PravegaClientConfigBuilder()
-    .build()
+  val clientConfig = PravegaClientConfig.default
 
   val stringWriterSettings =
     WriterSettingsBuilder()
+      .withClientConfig(clientConfig)
       .eventWriterConfigBuilder(_.enableLargeEvents(true))
       .withSerializer(new UTF8StringSerializer)
 

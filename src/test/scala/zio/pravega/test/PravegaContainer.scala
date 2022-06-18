@@ -7,7 +7,7 @@ import java.time.Duration
 import org.testcontainers.containers.wait.strategy.Wait
 import zio._
 
-import zio.pravega.PravegaClientConfigBuilder
+import zio.pravega.PravegaClientConfig
 import io.pravega.client.ClientConfig
 
 class PravegaContainer(
@@ -40,5 +40,5 @@ object PravegaContainer {
     }(container => ZIO.attemptBlocking(container.stop()).orDie))
   }
   def clientConfig: ZLayer[PravegaContainer, Nothing, ClientConfig] =
-    ZLayer.succeed(PravegaClientConfigBuilder().build())
+    ZLayer.succeed(PravegaClientConfig.default)
 }

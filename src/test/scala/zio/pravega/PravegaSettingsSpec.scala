@@ -4,9 +4,6 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import io.pravega.client.stream.impl.UTF8StringSerializer
 
-import io.pravega.client.ClientConfig
-import java.net.URI
-
 import scala.concurrent.duration.DurationInt
 
 import scala.language.postfixOps
@@ -15,23 +12,16 @@ import java.nio.ByteBuffer
 
 class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
-  private val clientConfig = ClientConfig
-    .builder()
-    .controllerURI(new URI("tcp://localhost:9090"))
+  private val clientConfig = PravegaClientConfig.builder
+    .enableTlsToController(true)
     .build()
 
   "Pravega stream settings builders" must {
 
     "Allows reader to set client config" in {
 
-      val clientConfig = ClientConfig
-        .builder()
-        .controllerURI(new URI("tcp://localhost:9090"))
-        .build()
-
       val readerSettings = ReaderSettingsBuilder()
         .withClientConfig(clientConfig)
-        .clientConfigBuilder(_.enableTlsToController(true))
         .withReaderId("A hard coded reader id")
         .withSerializer(new UTF8StringSerializer)
 
@@ -43,7 +33,6 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
       val writterSettings = WriterSettingsBuilder()
         .withClientConfig(clientConfig)
-        .clientConfigBuilder(_.enableTlsToController(true))
         .eventWriterConfigBuilder(_.enableConnectionPooling(true))
         .withMaximumInflightMessages(100)
         .withKeyExtractor((str: String) => str.substring(0, 2))
@@ -58,7 +47,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
     "Allows client config customisation" in {
 
       val readerSettings = ReaderSettingsBuilder()
-        .clientConfigBuilder(_.enableTlsToController(true))
+        .withClientConfig(clientConfig)
         .readerConfigBuilder(_.bufferSize(1024))
         .withReaderId("dummy")
         .withTimeout(10 seconds)
@@ -78,7 +67,6 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
         new UTF8StringSerializer
       )
         .withClientConfig(clientConfig)
-        .clientConfigBuilder(_.enableTlsToSegmentStore(true))
         .withMaximumInflightMessages(10)
         .keyValueTableClientConfigurationBuilder(_.backoffMultiple(2))
         .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes())))
@@ -93,7 +81,6 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
         new UTF8StringSerializer
       )
         .withClientConfig(clientConfig)
-        .clientConfigBuilder(_.enableTlsToSegmentStore(true))
         .withMaximumInflightMessages(10)
         .keyValueTableClientConfigurationBuilder(_.backoffMultiple(2))
         .withMaxEntriesAtOnce(1000)
@@ -112,7 +99,6 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
         .withMaximumInflightMessages(100)
         .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes())))
         .keyValueTableClientConfigurationBuilder(_.retryAttempts(3))
-        .clientConfigBuilder(_.enableTlsToController(true))
         .build()
 
       tableWritterSettings.clientConfig.isEnableTlsToController mustBe true
@@ -125,7 +111,6 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
         .withClientConfig(clientConfig)
         .withMaximumInflightMessages(100)
         .keyValueTableClientConfigurationBuilder(_.retryAttempts(3))
-        .clientConfigBuilder(_.enableTlsToController(true))
         .build()
 
       tableWritterSettingsDefaultExtractor.clientConfig.isEnableTlsToController mustBe true

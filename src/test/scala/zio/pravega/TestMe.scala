@@ -24,7 +24,7 @@ object TestMe extends ZIOAppDefault {
         } yield ()
       }
       .provide(
-        PravegaAdmin.live(PravegaClientConfigBuilder().build())
+        PravegaAdmin.live(PravegaClientConfig.default)
       )
 
 }
