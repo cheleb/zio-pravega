@@ -11,8 +11,7 @@ import io.pravega.client.stream.impl.UTF8StringSerializer
 
 object StreamReadExample extends ZIOAppDefault {
 
-  val clientConfig = PravegaClientConfigBuilder()
-    .build()
+  val clientConfig = PravegaClientConfig.default
 
   val stringReaderSettings =
     ReaderSettingsBuilder()

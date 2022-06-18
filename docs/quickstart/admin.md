@@ -13,8 +13,7 @@ import io.pravega.client.stream.ScalingPolicy
 
 object CreateResourcesExample extends ZIOAppDefault {
   
-  val clientConfig = PravegaClientConfigBuilder()
-    .build()
+  val clientConfig = PravegaClientConfig.default
 
   private val streamConfiguration = StreamConfiguration.builder
     .scalingPolicy(ScalingPolicy.fixed(8))
