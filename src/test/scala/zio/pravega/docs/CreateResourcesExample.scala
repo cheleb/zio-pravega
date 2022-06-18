@@ -25,7 +25,7 @@ object CreateResourcesExample extends ZIOAppDefault {
     program
       .provide(
         Scope.default,
-        PravegaAdmin.live(PravegaClientConfigBuilder().build())
+        PravegaAdmin.live(PravegaClientConfig.default)
       )
 
 }

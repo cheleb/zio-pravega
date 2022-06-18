@@ -31,10 +31,10 @@ object StreamReadExample extends ZIOAppDefault {
   override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
     program.provide(
       Scope.default,
-      PravegaAdmin.live(PravegaClientConfigBuilder().build()),
+      PravegaAdmin.live(PravegaClientConfig.default),
       PravegaStream.fromScope(
         "a-scope",
-        PravegaClientConfigBuilder().build()
+        PravegaClientConfig.default
       )
     )
 

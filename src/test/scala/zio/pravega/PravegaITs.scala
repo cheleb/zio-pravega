@@ -19,8 +19,7 @@ object PravegaITs
     with TableSpecs
     with StreamAndTableSpec {
 
-  val clientConfig = PravegaClientConfigBuilder()
-    .build()
+  val clientConfig = PravegaClientConfig.default
 
   val pravegaScope = "zio-scope"
 
