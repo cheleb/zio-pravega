@@ -25,7 +25,11 @@ trait StreamSpec {
 
   val personStremWritterSettings =
     WriterSettingsBuilder()
-      .eventWriterConfigBuilder(_.enableLargeEvents(true))
+      .withSerializer(personSerializer)
+
+  val personStremWritterSettingsWithKey =
+    WriterSettingsBuilder[Person]()
+      .withKeyExtractor(_.key)
       .withSerializer(personSerializer)
 
   val n = 10
@@ -48,10 +52,14 @@ trait StreamSpec {
           pravegaStreamName,
           personStremWritterSettings
         )
+        sinkKey <- PravegaStream.sink(
+          pravegaStreamName,
+          personStremWritterSettingsWithKey
+        )
         _ <- testStream(0, 10).run(sink)
         _ <- (ZIO.attemptBlocking(Thread.sleep(2000)) *> ZIO.logDebug(
           "(( Re-start producing ))"
-        ) *> testStream(10, 20).run(sink)).fork
+        ) *> testStream(10, 20).run(sinkKey)).fork
 
         stream1 <- PravegaStream.stream(groupName, readerSettings)
         stream2 <- PravegaStream.stream(groupName, readerSettings)
