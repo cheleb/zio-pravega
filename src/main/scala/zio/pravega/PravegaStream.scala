@@ -37,9 +37,14 @@ private class PravegaStreamServiceImpl(
         )
       )
       .withFinalizerAuto
-      .map(writer =>
-        ZSink.foreach((a: A) => ZIO.fromCompletableFuture(writer.writeEvent(a)))
-      )
+      .map { writer =>
+        def writeEvent(a: A) = settings.keyExtractor match {
+          case None => ZIO.fromCompletableFuture(writer.writeEvent(a))
+          case Some(extractor) =>
+            ZIO.fromCompletableFuture(writer.writeEvent(extractor(a), a))
+        }
+        ZSink.foreach((a: A) => writeEvent(a))
+      }
 
     ZIO.attempt(
       ZSink.unwrapScoped(acquireWriter)
