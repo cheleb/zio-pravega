@@ -24,9 +24,12 @@ inThisBuild(
     Test / parallelExecution := false,
     Test / fork := true,
     run / fork := true,
-    pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc"),
-    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    githubOwner := "cheleb",
+    githubRepository := "zio-pravega",
+    githubTokenSource := TokenSource.Environment("GH_TOKEN"),
+//    pgpPublicRing := file("/tmp/public.asc"),
+//    pgpSecretRing := file("/tmp/secret.asc"),
+//    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/cheleb/zio-pravega/"),
