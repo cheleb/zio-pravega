@@ -49,7 +49,7 @@ trait StreamAndTableSpec {
     )
 
     count <- stream
-      .take(20)
+      .take(40)
       .map(str => (str.key, str.age))
       .broadcast(2, 1)
       .flatMap(streams =>
@@ -73,7 +73,7 @@ trait StreamAndTableSpec {
   def streamAndTable(scope: String, streamName: String) =
     suite("Table concurency writes")(
       test("Write concurently from stream to table") {
-        stream2table(scope, streamName).map(count => assert(count)(equalTo(40)))
+        stream2table(scope, streamName).map(count => assert(count)(equalTo(80)))
       },
       test("Sum table") {
         (for {
@@ -82,7 +82,7 @@ trait StreamAndTableSpec {
             CommonSettings.tableReaderSettings
           )
           sum <- source.runFold(0)((s, i) => s + i.value)
-        } yield sum).map(s => assert(s)(equalTo(380)))
+        } yield sum).map(s => assert(s)(equalTo(1560)))
       }
     ) @@ sequential
 

@@ -130,7 +130,7 @@ trait AdminSpec {
                 )
                 .withFinalizerAuto
                 .map(
-                  _.createReader(
+                  _.createReader( // This reader is intentionaly not close to leak
                     UUID.randomUUID().toString,
                     "coco-buggy",
                     new UTF8StringSerializer,
