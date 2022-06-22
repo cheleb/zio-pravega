@@ -22,11 +22,15 @@ val readerSettings =
 
 ## Stream writer
 
-To write in a stream, simply create a Sink:
+* Without transaction in a stream, simply create a Sink:
 
 ```scala mdoc:silent
-
 val sink = PravegaStream.sink("my-stream", writerSettings)
+```
+* With transaction, the transaction will commit at the end of the Stream.
+
+```scala mdoc:silent
+val sinkTx = PravegaStream.sinkTx("my-stream", writerSettings)
 ```
 
 ## Stream reader
