@@ -26,7 +26,7 @@ inThisBuild(
     run / fork := true,
     githubOwner := "cheleb",
     githubRepository := "zio-pravega",
-    githubTokenSource := TokenSource.Environment("GITHUB_TOKEN"),
+    githubTokenSource := TokenSource.Environment("GH_TOKEN"),
 //    pgpPublicRing := file("/tmp/public.asc"),
 //    pgpSecretRing := file("/tmp/secret.asc"),
 //    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
