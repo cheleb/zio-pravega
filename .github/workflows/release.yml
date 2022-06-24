@@ -1,6 +1,8 @@
 name: Release
 on:
   push:
+    branches:
+      - master
     tags:
      - v*
 
@@ -15,20 +17,16 @@ jobs:
 #          cache: yarn
       - name: Set up JDK 17
         uses: actions/setup-java@v2
-        env:
-         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           java-version: '17'
           distribution: 'temurin'
       - run: sbt clean docs/docusaurusCreateSite
-      - name: Release GitHub package
-        uses: actions/setup-java@v2
-        env:
-         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-      - run: sbt publish
+#     - name: Release GitHub package
+#       uses: actions/setup-java@v2
+#        with:
+#          java-version: '17'
+#          distribution: 'temurin'
+#      - run: sbt publish
       - uses: webfactory/ssh-agent@v0.5.0
         with:
           ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY }}
