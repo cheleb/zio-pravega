@@ -3,7 +3,7 @@ lazy val scala31 = "3.1.2"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala31, mainScala)
 
-lazy val zioVersion = "2.0.0-RC6"
+lazy val zioVersion = "2.0.0"
 lazy val pravegaVersion = "0.11.0"
 lazy val zioConfigVersion = "2.0.4"
 
@@ -24,12 +24,9 @@ inThisBuild(
     Test / parallelExecution := false,
     Test / fork := true,
     run / fork := true,
-    githubOwner := "cheleb",
-    githubRepository := "zio-pravega",
-    githubTokenSource := TokenSource.Environment("GITHUB_TOKEN"),
-//    pgpPublicRing := file("/tmp/public.asc"),
-//    pgpSecretRing := file("/tmp/secret.asc"),
-//    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing := file("/tmp/public.asc"),
+    pgpSecretRing := file("/tmp/secret.asc"),
+    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     scmInfo := Some(
       ScmInfo(
         url("https://github.com/cheleb/zio-pravega/"),
@@ -53,6 +50,8 @@ inThisBuild(
     )
   )
 )
+
+ThisBuild / publishTo := sonatypePublishToBundle.value
 
 val zioConfig =
   Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
@@ -117,6 +116,7 @@ lazy val docs = project // new documentation project
   .in(file("zio-pravega-docs")) // important: it must not be docs/
   .dependsOn(pravega)
   .settings(
+    publish / skip := true,
     moduleName := "zio-pravega-docs",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(pravega),
     ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",

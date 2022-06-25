@@ -1,13 +1,11 @@
-name: Release
+name: Website
 on:
   push:
-    branches:
-      - master
-    tags:
-     - v*
-
+    branches: [master]
+    tags: ["*"]
 jobs:
   deploy:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -21,12 +19,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       - run: sbt clean docs/docusaurusCreateSite
-#     - name: Release GitHub package
-#       uses: actions/setup-java@v2
-#        with:
-#          java-version: '17'
-#          distribution: 'temurin'
-#      - run: sbt publish
       - uses: webfactory/ssh-agent@v0.5.0
         with:
           ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY }}
