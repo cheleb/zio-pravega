@@ -13,7 +13,7 @@ lazy val zioConfigVersion = "2.0.4"
 
 inThisBuild(
   List(
-    organization := "dev.zio",
+    organization := "dev.cheleb",
     homepage := Some(url("https://github.com/cheleb/zio-pravega")),
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
@@ -24,6 +24,8 @@ inThisBuild(
     Test / parallelExecution := false,
     Test / fork := true,
     run / fork := true,
+    sonatypeCredentialHost := "s01.oss.sonatype.org",
+    sonatypeRepository := "https://s01.oss.sonatype.org/service/local",
     pgpPublicRing := file("/tmp/public.asc"),
     pgpSecretRing := file("/tmp/secret.asc"),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
@@ -50,8 +52,6 @@ inThisBuild(
     )
   )
 )
-
-ThisBuild / publishTo := sonatypePublishToBundle.value
 
 val zioConfig =
   Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
