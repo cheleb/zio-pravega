@@ -27,7 +27,7 @@ val readerSettings =
 ```scala mdoc:silent
 val sink = PravegaStream.sink("my-stream", writerSettings)
 ```
-* With transaction, the transaction will commit at the end of the Stream.
+* With transaction, the transaction will commit at the end of the Stream, or rollback if an error is raised.
 
 ```scala mdoc:silent
 val sinkTx = PravegaStream.sinkTx("my-stream", writerSettings)
