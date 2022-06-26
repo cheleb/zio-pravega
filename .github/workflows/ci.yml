@@ -2,10 +2,12 @@ name: Scala CI
 
 on:
   push:
+    paths-ignore:
+      - 'docs/**'
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
+    
 jobs:
   build:
     runs-on: ubuntu-latest
