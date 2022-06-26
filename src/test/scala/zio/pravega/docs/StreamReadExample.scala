@@ -23,7 +23,7 @@ object StreamReadExample extends ZIOAppDefault {
     )
     _ <- stream
       .tap(m => ZIO.debug(m.toString()))
-      .take(10)
+      .take(20)
       .runFold(0)((s, _) => s + 1)
 
   } yield ()
