@@ -128,7 +128,8 @@ lazy val docs = project // new documentation project
       .dependsOn(Compile / unidoc)
       .value,
     mdocVariables := Map(
-      "VERSION" -> version.value
+      "VERSION" -> version.value,
+      "ORG" -> organization.value
     )
   )
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

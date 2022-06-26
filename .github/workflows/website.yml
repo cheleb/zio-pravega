@@ -1,7 +1,8 @@
 name: Website
 on:
   push:
-    tags: ["*"]
+    branches:
+      - "master"
 jobs:
   deploy:
     if: github.event.base_ref=='refs/heads/master' && github.event_name != 'pull_request'  # check the branch, if it's not master, skip the job.

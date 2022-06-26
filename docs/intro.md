@@ -10,6 +10,6 @@ This project is a [ZIO](https://zio.dev) 2.x connector to [Pravega](https://prav
 To install the dependency
 
 ```scala
-libraryDependencies += "dev.zio" % "zio-pravega" % "@VERSION@"
+libraryDependencies += "@ORG@" % "zio-pravega" % "@VERSION@"
 ```
 
