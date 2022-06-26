@@ -3,18 +3,15 @@ sidebar_position: 1
 ---
 # Stream
 
-Central Pravega abstraction, must be explictly created, in a [Scope](scope.md).
+Central Pravega abstraction, [Stream](https://cncf.pravega.io/docs/nightly/pravega-concepts/#streams) must be explictly created, in a [Scope](scope.md).
 
-```scala mdoc:invisible
+```scala mdoc:silent
 import zio._
 import zio.Console._
 import zio.pravega._
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
-```
 
-
-```scala mdoc:silent
 def initStream(streamName: String, scope: String)
 : ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
     for {
@@ -24,8 +21,7 @@ def initStream(streamName: String, scope: String)
           StreamConfiguration.builder
             .scalingPolicy(ScalingPolicy.fixed(8))
             .build
-        )
-      
+        )      
       _ <- ZIO.when(streamCreated)(
         printLine(s"Stream $streamName just created")
       )

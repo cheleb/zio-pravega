@@ -6,12 +6,8 @@ sidebar_position: 4
 
 Pravega [serializer](https://cncf.pravega.io/docs/latest/javadoc/clients/io/pravega/client/stream/Serializer.html) convert events to bytebuffer and vice versa.
 
-
-
 ## Protobuf 
 
-```scala mdoc:invisible
-```
 Easy to implement with protobuf.
 
 ```scala

@@ -7,6 +7,7 @@ This project is a [ZIO](https://zio.dev) 2.x connector to [Pravega](https://prav
 
 # Quickstart 
 
+Assumming [Pravega](https://pravega.io) is running on tcp://localhost:9090 see https://github.com/pravega/pravega/releases
 ## Init project
 ```bash
 sbt new cheleb/zio-pravega-starter.g8
