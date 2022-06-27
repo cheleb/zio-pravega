@@ -24,10 +24,10 @@ val intSerializer = new Serializer[Int] {
 ```
 # Settings
 
+Table setting 
 ## Table Writter settings
 
 ```scala mdoc:silent
-
 val tableWriterSettings = TableWriterSettingsBuilder(
     new UTF8StringSerializer,
     intSerializer

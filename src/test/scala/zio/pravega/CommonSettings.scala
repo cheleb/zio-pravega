@@ -42,6 +42,4 @@ object CommonSettings {
   )
     .build()
 
-  val clientConfig = writterSettings.clientConfig
-
 }
