@@ -12,7 +12,6 @@ object StreamWriteExample extends ZIOAppDefault {
 
   val stringWriterSettings =
     WriterSettingsBuilder()
-      .withClientConfig(clientConfig)
       .eventWriterConfigBuilder(_.enableLargeEvents(true))
       .withSerializer(new UTF8StringSerializer)
 
