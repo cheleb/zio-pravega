@@ -23,14 +23,13 @@ object StreamReadExample extends ZIOAppDefault {
     )
     _ <- stream
       .tap(m => ZIO.debug(m.toString()))
-      .take(20)
+      .take(10)
       .runFold(0)((s, _) => s + 1)
 
   } yield ()
 
-  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
-    program.provide(
-      Scope.default,
+  override def run: ZIO[Scope, Throwable, Unit] =
+    program.provideSome(
       PravegaAdmin.live(PravegaClientConfig.default),
       PravegaStream.fromScope(
         "a-scope",
