@@ -4,6 +4,8 @@ sidebar_position: 1
 
 # Create scope and stream
 
+First of all we need to create a scope (aka namespace) and a [stream].
+
 ```scala mdoc
 import zio._
 import zio.pravega._
@@ -28,10 +30,9 @@ object CreateResourcesExample extends ZIOAppDefault {
     )
   } yield ()
 
-  override def run: ZIO[Any, Throwable, Unit] =
+  override def run: ZIO[Scope, Throwable, Unit] =
     program
-      .provide(
-        Scope.default,
+      .provideSome(
         PravegaAdmin.live(clientConfig)
       )
 
