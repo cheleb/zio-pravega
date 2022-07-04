@@ -1,5 +1,5 @@
 lazy val scala213 = "2.13.8"
-lazy val scala31 = "3.1.2"
+lazy val scala31 = "3.1.3"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala31, mainScala)
 

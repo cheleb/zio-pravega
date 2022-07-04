@@ -3,7 +3,9 @@ sidebar_position: 1
 ---
 # ZIO Pravega
 
-This project is a [ZIO](https://zio.dev) 2.x connector to [Pravega](https://pravega.io).
+This project is a [ZIO](https://zio.dev) 2.x connector to [Pravega](https://pravega.io). 
+
+Pravega is a distributed, scalable, and fault-tolerant storage system for streaming data.
 
 # Quickstart 
 
