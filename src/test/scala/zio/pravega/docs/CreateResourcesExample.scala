@@ -1,6 +1,7 @@
 package zio.pravega.docs
 
 import zio._
+import zio.Console._
 import zio.pravega._
 
 import io.pravega.client.stream.StreamConfiguration
@@ -13,17 +14,20 @@ object CreateResourcesExample extends ZIOAppDefault {
     .build
 
   private val program = for {
-    _ <- PravegaAdmin.createScope("a-scope")
-    _ <- PravegaAdmin.createStream(
+    scopeCreated <- PravegaAdmin.createScope("a-scope")
+    _ <- printLine(s"Scope created: $scopeCreated")
+    streamCreated <- PravegaAdmin.createStream(
       "a-scope",
       "a-stream",
       streamConfiguration
     )
+    _ <- printLine(s"Stream created: $streamCreated")
   } yield ()
 
-  override def run: ZIO[Scope, Throwable, Unit] =
+  override def run: ZIO[Any, Throwable, Unit] =
     program
-      .provideSome(
+      .provide(
+        Scope.default,
         PravegaAdmin.live(PravegaClientConfig.default)
       )
 
