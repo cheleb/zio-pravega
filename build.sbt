@@ -89,7 +89,7 @@ lazy val pravega =
         "org.testcontainers" % "testcontainers" % "1.17.2" % Test,
         "dev.zio" %% "zio-zmx" % "2.0.0-RC4" % Test,
 //        "com.fasterxml.jackson.core" % "jackson-databind"         % "2.12.4",
-        "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0",
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.0",
         "ch.qos.logback" % "logback-classic" % "1.2.11" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub" % "0.6.7" % Test,
