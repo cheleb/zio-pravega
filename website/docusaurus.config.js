@@ -12,7 +12,7 @@ const config = {
   tagline: 'Pravega and ZIO together',
   url: 'https://cheleb.github.io',
   baseUrl: baseUrl,
-  onBrokenLinks: 'error',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   favicon: 'img/favicon.ico',
   organizationName: 'cheleb', // Usually your GitHub org/user name.
