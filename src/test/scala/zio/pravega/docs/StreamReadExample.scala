@@ -12,7 +12,7 @@ object StreamReadExample extends ZIOAppDefault {
       .withSerializer(new UTF8StringSerializer)
 
   private val program = for {
-    _ <- PravegaAdmin.readerGroup(
+    _ <- PravegaAdmin.createReaderGroup(
       "a-scope",
       "a-reader-group",
       "a-stream"

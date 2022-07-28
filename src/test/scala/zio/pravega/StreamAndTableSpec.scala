@@ -37,7 +37,7 @@ trait StreamAndTableSpec {
 
   def stream2table(scope: String, streamName: String) = for {
     _ <- PravegaAdmin.createTable(tableName, tableConfig, scope)
-    _ <- PravegaAdmin.readerGroup(scope, groupName, streamName)
+    _ <- PravegaAdmin.createReaderGroup(scope, groupName, streamName)
     stream <- PravegaStream.stream(
       groupName,
       personReaderSettings

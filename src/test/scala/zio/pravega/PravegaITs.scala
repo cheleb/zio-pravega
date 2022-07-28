@@ -32,17 +32,26 @@ object PravegaITs
 
   def spec = {
 
-    val pravegaStreamName = "zio-stream"
+    val pravegaStreamName1 = "zio-stream"
+    val pravegaStreamName2 = "zio-event-stream"
     val pravegaTableName = "ziotable"
 
-    val groupName = "coco1"
+    val groupName1 = "coco1"
+    val groupName2 = "coco2"
 
     suite("Pravega")(
-      adminSuite(pravegaScope, pravegaStreamName, groupName),
-      streamSuite(pravegaStreamName, groupName),
+      adminSuite(
+        pravegaScope,
+        pravegaStreamName1,
+        pravegaStreamName2,
+        groupName1,
+        groupName2
+      ),
+      streamSuite(pravegaStreamName1, groupName1),
+      eventStreamSuite(pravegaStreamName2, groupName2),
       adminSuite2(pravegaScope, pravegaTableName),
       tableSuite(pravegaTableName),
-      streamAndTable(pravegaScope, pravegaStreamName),
+      streamAndTable(pravegaScope, pravegaStreamName1),
       adminCleanSpec
     ) @@ sequential
   }

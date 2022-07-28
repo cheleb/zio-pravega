@@ -36,7 +36,7 @@ A [Reader Group](https://cncf.pravega.io/docs/nightly/pravega-concepts/#writers-
 It must created expliciyly 
 
 ```scala mdoc:silent
-  PravegaAdmin.readerGroup(
+  PravegaAdmin.createReaderGroup(
               "a-scope",
               "a-group-name",
               "stream-a", "stream-b"

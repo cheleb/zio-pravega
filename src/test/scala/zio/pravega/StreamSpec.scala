@@ -115,4 +115,67 @@ trait StreamSpec {
       )
     )
   }
+
+  def eventStreamSuite(
+      pravegaStreamName: String,
+      groupName: String
+  ) = {
+
+    val n = 1000
+
+    val writeToAndConsumeStream = ZIO.scoped {
+      for {
+
+        _ <- PravegaAdmin.openReaderGroup("zio-scope", groupName)
+
+        sink1 <- PravegaStream.sink(
+          pravegaStreamName,
+          personStremWritterSettings
+        )
+
+        sink2 <- PravegaStream.sink(
+          pravegaStreamName,
+          personStremWritterSettings
+        )
+
+        _ <- testStream(0, 10).run(sink1)
+
+        _ <- (ZIO.attemptBlocking(Thread.sleep(3000)) *> ZIO.logDebug(
+          "(( Re-start producing ))"
+        ) *> testStream(10, n * 2)
+          .run(sink2)).fork
+
+        stream1 <- PravegaStream.eventStream(groupName, readerSettings2)
+        stream2 <- PravegaStream.eventStream(groupName, readerSettings2)
+
+        fiber1 <- stream1
+          .take(n.toLong)
+          .tap(m =>
+            ZIO
+              .when(m.isCheckpoint())(ZIO.debug(s"🏁 ${m.getCheckpointName()}"))
+          )
+          .runFold(0)((s, _) => s + 1)
+          .fork
+        fiber2 <- stream2
+          .take(n.toLong)
+          .tap(m =>
+            ZIO
+              .when(m.isCheckpoint())(ZIO.debug(s"🏁 ${m.getCheckpointName()}"))
+          )
+          .runFold(0)((s, _) => s + 1)
+          .fork
+
+        count1 <- fiber1.join
+        count2 <- fiber2.join
+
+      } yield count1 + count2
+    }
+
+    suite("Event Stream")(
+      test("publish and consume")(
+        writeToAndConsumeStream
+          .map(count => assert(count)(equalTo(2 * n)))
+      )
+    )
+  }
 }

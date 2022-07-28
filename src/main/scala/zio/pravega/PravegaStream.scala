@@ -10,6 +10,7 @@ import zio.stream._
 import java.util.UUID
 import zio.Exit.Failure
 import zio.Exit.Success
+import io.pravega.client.stream.EventRead
 
 trait PravegaStreamService {
   def sink[A](
@@ -26,6 +27,11 @@ trait PravegaStreamService {
       readerGroupName: String,
       settings: ReaderSettings[A]
   ): Task[ZStream[Any, Throwable, A]]
+
+  def eventStream[A](
+      readerGroupName: String,
+      settings: ReaderSettings[A]
+  ): Task[ZStream[Any, Throwable, EventRead[A]]]
 }
 
 private class PravegaStreamServiceImpl(
@@ -132,6 +138,35 @@ private class PravegaStreamServiceImpl(
     )
   )
 
+  override def eventStream[A](
+      readerGroupName: String,
+      settings: ReaderSettings[A]
+  ): Task[ZStream[Any, Throwable, EventRead[A]]] = ZIO.attempt(
+    ZStream.unwrapScoped(
+      ZIO
+        .attemptBlocking(
+          eventStreamClientFactory
+            .createReader(
+              settings.readerId.getOrElse(UUID.randomUUID().toString),
+              readerGroupName,
+              settings.serializer,
+              settings.readerConfig
+            )
+        )
+        .withFinalizerAuto
+        .map(reader =>
+          ZStream.repeatZIOChunk(
+            ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
+              case eventRead if eventRead.isCheckpoint =>
+                Chunk.single(eventRead)
+              case eventRead if eventRead.getEvent() == null => Chunk.empty
+              case eventRead => Chunk.single(eventRead)
+            })
+          )
+        )
+    )
+  )
+
 }
 
 object PravegaStream {
@@ -154,6 +189,13 @@ object PravegaStream {
   ): RIO[PravegaStreamService, ZStream[Any, Throwable, A]] =
     ZIO.serviceWithZIO[PravegaStreamService](
       _.stream(readerGroupName, settings)
+    )
+  def eventStream[A](
+      readerGroupName: String,
+      settings: ReaderSettings[A]
+  ): RIO[PravegaStreamService, ZStream[Any, Throwable, EventRead[A]]] =
+    ZIO.serviceWithZIO[PravegaStreamService](
+      _.eventStream(readerGroupName, settings)
     )
 
   private def streamService(
