@@ -13,13 +13,20 @@ import io.pravega.client.stream.ReaderGroupConfig
 import io.pravega.client.stream.Stream
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.admin.KeyValueTableManager
+import io.pravega.client.stream.ReaderGroup
 
 trait PravegaAdminService {
-  def readerGroup[A](
+  def createReaderGroup[A](
       scope: String,
       readerGroupName: String,
+      builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
       streamNames: String*
   ): ZIO[Scope, Throwable, Boolean]
+
+  def openReaderGroup[A](
+      scope: String,
+      readerGroupName: String
+  ): ZIO[Scope, Throwable, ReaderGroup]
 
   def createScope(scope: String): RIO[Scope, Boolean]
 
@@ -58,14 +65,37 @@ trait PravegaAdminService {
 }
 
 object PravegaAdmin {
-  def readerGroup[A](
+  def createReaderGroup[A](
       scope: String,
       readerGroupName: String,
       streamNames: String*
   ): ZIO[PravegaAdminService & Scope, Throwable, Boolean] =
     ZIO.serviceWithZIO[PravegaAdminService](
-      _.readerGroup(scope, readerGroupName, streamNames: _*)
+      _.createReaderGroup(
+        scope,
+        readerGroupName,
+        ReaderGroupConfig.builder(),
+        streamNames: _*
+      )
     )
+  def createReaderGroup[A](
+      scope: String,
+      readerGroupName: String,
+      builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
+      streamNames: String*
+  ): ZIO[PravegaAdminService & Scope, Throwable, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdminService](
+      _.createReaderGroup(scope, readerGroupName, builder, streamNames: _*)
+    )
+
+  def openReaderGroup[A](
+      scope: String,
+      readerGroupName: String
+  ): ZIO[PravegaAdminService & Scope, Throwable, ReaderGroup] =
+    ZIO.serviceWithZIO[PravegaAdminService](
+      _.openReaderGroup(scope, readerGroupName)
+    )
+
   def createScope(scope: String): RIO[PravegaAdminService & Scope, Boolean] =
     ZIO.serviceWithZIO[PravegaAdminService](_.createScope(scope))
 
@@ -123,14 +153,15 @@ object PravegaAdmin {
 private class PravegaAdminServiceImpl(clientConfig: ClientConfig)
     extends PravegaAdminService {
 
-  def readerGroup[A](
+  def createReaderGroup[A](
       scope: String,
       readerGroupName: String,
+      builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
       streamNames: String*
   ): ZIO[Scope, Throwable, Boolean] = {
 
-    def config = streamNames
-      .foldLeft(ReaderGroupConfig.builder()) { case (builder, streamName) =>
+    val config = streamNames
+      .foldLeft(builder) { case (builder, streamName) =>
         builder.stream(Stream.of(scope, streamName))
       }
 
@@ -145,6 +176,16 @@ private class PravegaAdminServiceImpl(clientConfig: ClientConfig)
     } yield created
 
   }
+
+  override def openReaderGroup[A](
+      scope: String,
+      readerGroupName: String
+  ): ZIO[Scope, Throwable, ReaderGroup] = for {
+    manager <- readerGroupManager(scope)
+    readerGroup <- ZIO
+      .attemptBlocking(manager.getReaderGroup(readerGroupName))
+      .withFinalizerAuto
+  } yield readerGroup
 
   def createScope(scope: String): RIO[Scope, Boolean] =
     for {

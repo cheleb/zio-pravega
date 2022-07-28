@@ -12,6 +12,7 @@ import io.pravega.client.ClientConfig
 import java.util.UUID
 import io.pravega.client.stream.impl.UTF8StringSerializer
 import io.pravega.client.stream.ReaderConfig
+import io.pravega.client.stream.ReaderGroupConfig
 
 trait AdminSpec {
   this: ZIOSpec[
@@ -26,8 +27,10 @@ trait AdminSpec {
 
   def adminSuite(
       pravegaScope: String,
-      pravegaStreamName: String,
-      groupName: String
+      pravegaStreamName1: String,
+      pravegaStreamName2: String,
+      groupName1: String,
+      groupName2: String
   ): Spec[PravegaAdminService, Throwable] =
     suite("Admin")(
       test("Scope created once")(
@@ -43,13 +46,23 @@ trait AdminSpec {
       test("Stream created once")(
         ZIO
           .scoped(
-            PravegaAdmin.createStream(
-              pravegaScope,
-              pravegaStreamName,
-              StreamConfiguration.builder
-                .scalingPolicy(ScalingPolicy.fixed(8))
-                .build
-            )
+            PravegaAdmin
+              .createStream(
+                pravegaScope,
+                pravegaStreamName1,
+                StreamConfiguration.builder
+                  .scalingPolicy(ScalingPolicy.fixed(8))
+                  .build
+              )
+              .zipWith(
+                PravegaAdmin.createStream(
+                  pravegaScope,
+                  pravegaStreamName2,
+                  StreamConfiguration.builder
+                    .scalingPolicy(ScalingPolicy.fixed(8))
+                    .build
+                )
+              )(_ && _)
           )
           .map(once => assert(once)(isTrue))
       ),
@@ -58,7 +71,7 @@ trait AdminSpec {
           .scoped(
             PravegaAdmin.createStream(
               pravegaScope,
-              pravegaStreamName,
+              pravegaStreamName1,
               StreamConfiguration.builder
                 .scalingPolicy(ScalingPolicy.fixed(8))
                 .build
@@ -66,28 +79,38 @@ trait AdminSpec {
           )
           .map(twice => assert(twice)(isFalse))
       ),
-      test(s"Create group $groupName")(
+      test(s"Create group $groupName1 && $groupName2")(
         ZIO
           .scoped(
-            PravegaAdmin.readerGroup(
-              pravegaScope,
-              groupName,
-              pravegaStreamName
-            )
+            PravegaAdmin
+              .createReaderGroup(
+                pravegaScope,
+                groupName1,
+                pravegaStreamName1
+              )
+              .zipWith(
+                PravegaAdmin.createReaderGroup(
+                  pravegaScope,
+                  groupName2,
+                  ReaderGroupConfig.builder
+                    .automaticCheckpointIntervalMillis(1000),
+                  pravegaStreamName2
+                )
+              )(_ && _)
           )
           .map(once => assert(once)(isTrue))
       ),
       test("Create reader buggy")(
         ZIO
           .scoped(
-            PravegaAdmin.readerGroup(
+            PravegaAdmin.createReaderGroup(
               "zio-scope",
               "coco-buggy",
-              pravegaStreamName
-            ) *> PravegaAdmin.readerGroup(
+              pravegaStreamName1
+            ) *> PravegaAdmin.createReaderGroup(
               "zio-scope",
               "coco-buggy2",
-              pravegaStreamName
+              pravegaStreamName1
             )
           )
           .map(once => assert(once)(isTrue))
