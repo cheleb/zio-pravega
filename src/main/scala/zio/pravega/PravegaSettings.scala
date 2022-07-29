@@ -540,9 +540,6 @@ private[pravega] object ConfigHelper {
     builder
   }
 
-  def buildClientConfigFromTypeSafeConfig(config: Config): ClientConfig =
-    builder(config).build()
-
   def extractString(
       path: String
   )(f: String => Any)(implicit config: Config): Unit =

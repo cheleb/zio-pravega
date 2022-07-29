@@ -74,7 +74,7 @@ trait StreamSpec {
         )
 
         _ <- testStream(0, 10).run(sink)
-        _ <- (ZIO.attemptBlocking(Thread.sleep(2000)) *> ZIO.logDebug(
+        _ <- (ZIO.attemptBlocking(Thread.sleep(6000)) *> ZIO.logDebug(
           "(( Re-start producing ))"
         ) *> testStream(10, 20).run(sinkKey)).fork *> testStream(20, 30).run(
           sinkTx
@@ -140,7 +140,7 @@ trait StreamSpec {
 
         _ <- testStream(0, 10).run(sink1)
 
-        _ <- (ZIO.attemptBlocking(Thread.sleep(3000)) *> ZIO.logDebug(
+        _ <- (ZIO.attemptBlocking(Thread.sleep(6000)) *> ZIO.logDebug(
           "(( Re-start producing ))"
         ) *> testStream(10, n * 2)
           .run(sink2)).fork

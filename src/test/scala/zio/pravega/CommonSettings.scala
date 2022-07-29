@@ -27,12 +27,12 @@ object CommonSettings {
 
   val readerSettings =
     ReaderSettingsBuilder()
-      .withTimeout(10 seconds)
+      .withTimeout(2 seconds)
       .withSerializer(new UTF8StringSerializer)
 
   val readerSettings2 =
     ReaderSettingsBuilder()
-      .withTimeout(10 seconds)
+      .withTimeout(2 seconds)
       .withSerializer(new UTF8StringSerializer)
 
   val tableWriterSettings = TableWriterSettingsBuilder(
