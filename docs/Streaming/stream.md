@@ -3,10 +3,14 @@ sidebar_position: 2
 ---
 # Stream
 
-```scala mdoc:invisible
+For the sake of simplicity, we will use simple String to write to and read from a Pravega stream.
+
+
+```scala mdoc:silent
 import zio.Console._
 import zio.stream._
 import zio.pravega._
+
 import io.pravega.client.stream.impl.UTF8StringSerializer
 
 val writerSettings =
@@ -35,12 +39,30 @@ val sinkTx = PravegaStream.sinkTx("my-stream", writerSettings)
 
 ## Stream reader
 
-To read from a stream, simply create a stream:
+To read from a stream, simply create a stream of String: 
+```scala 
+ ZStream[Any,Throwable,String]
+```
 
 ```scala mdoc:silent
 val stream = PravegaStream.stream("mygroup", readerSettings)
 ```
 
+To gain more control over the stream, you can use the `PravegaStream.eventStream("mygroup", readerSettings)` method and create a stream of `EventRead`: 
+
+```scala 
+ ZStream[Any,Throwable,EventRead[String]]
+```
+ that exposes the event metadata.
+
+* offset: the offset of the event in the stream.
+* checkpoint: the checkpoint emitted by the stream.
+
+```scala mdoc:silent
+val eventStream = PravegaStream.eventStream("mygroup", readerSettings)
+```
+
+This stream will output a Stream of EventRead[String], with the EventRead containing the offset of the event, and the element.
 
 # All together 
 
