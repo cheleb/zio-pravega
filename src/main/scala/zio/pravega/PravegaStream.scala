@@ -52,12 +52,13 @@ private class PravegaStreamServiceImpl(
       )
       .withFinalizerAuto
       .map { writer =>
-        def writeEvent(a: A) = settings.keyExtractor match {
-          case None => ZIO.fromCompletableFuture(writer.writeEvent(a))
+        val writeEvent: A => Task[Void] = settings.keyExtractor match {
+          case None =>
+            a => ZIO.fromCompletableFuture(writer.writeEvent(a))
           case Some(extractor) =>
-            ZIO.fromCompletableFuture(writer.writeEvent(extractor(a), a))
+            a => ZIO.fromCompletableFuture(writer.writeEvent(extractor(a), a))
         }
-        ZSink.foreach((a: A) => writeEvent(a))
+        ZSink.foreach(writeEvent)
       }
 
     ZIO.attempt(
@@ -94,12 +95,13 @@ private class PravegaStreamServiceImpl(
         }
       )
       .map { writer =>
-        def writeEvent(a: A) = settings.keyExtractor match {
-          case None => ZIO.attemptBlocking(writer.writeEvent(a))
+        val writeEvent: A => Task[Unit] = settings.keyExtractor match {
+          case None =>
+            a => ZIO.attemptBlocking(writer.writeEvent(a))
           case Some(extractor) =>
-            ZIO.attemptBlocking(writer.writeEvent(extractor(a), a))
+            a => ZIO.attemptBlocking(writer.writeEvent(extractor(a), a))
         }
-        ZSink.foreach((a: A) => writeEvent(a))
+        ZSink.foreach(writeEvent)
       }
 
     ZIO.attempt(
