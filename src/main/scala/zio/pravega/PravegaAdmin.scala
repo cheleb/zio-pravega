@@ -36,21 +36,6 @@ trait PravegaAdminService {
       config: StreamConfiguration
   ): RIO[Scope, Boolean]
 
-  /*
-  def readerGroupManager(
-      scope: String
-  ): RIO[Scope, ReaderGroupManager]
-
-  def readerGroupManager(
-      scope: String,
-      clientConfig: ClientConfig
-  ): RIO[Scope, ReaderGroupManager]
-
-  def streamManager(): RIO[Scope, StreamManager]
-
-  def keyValueTableManager(): RIO[Scope, KeyValueTableManager]
-
-   */
   def createTable(
       tableName: String,
       config: KeyValueTableConfiguration,
@@ -107,27 +92,7 @@ object PravegaAdmin {
     ZIO.serviceWithZIO[PravegaAdminService](
       _.createStream(scope, streamName, config)
     )
-  /*
-  def readerGroupManager(
-      scope: String
-  ): RIO[PravegaAdminService & Scope, ReaderGroupManager] =
-    ZIO.serviceWithZIO[PravegaAdminService](_.readerGroupManager(scope))
 
-  def readerGroupManager(
-      scope: String,
-      clientConfig: ClientConfig
-  ): RIO[PravegaAdminService & Scope, ReaderGroupManager] =
-    ZIO.serviceWithZIO[PravegaAdminService](
-      _.readerGroupManager(scope, clientConfig)
-    )
-
-  def streamManager(): RIO[PravegaAdminService & Scope, StreamManager] =
-    ZIO.serviceWithZIO[PravegaAdminService](_.streamManager())
-
-  def keyValueTableManager()
-      : RIO[PravegaAdminService & Scope, KeyValueTableManager] =
-    ZIO.serviceWithZIO[PravegaAdminService](_.keyValueTableManager())
-   */
   def createTable(
       tableName: String,
       config: KeyValueTableConfiguration,

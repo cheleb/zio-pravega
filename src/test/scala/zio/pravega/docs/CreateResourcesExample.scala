@@ -24,10 +24,9 @@ object CreateResourcesExample extends ZIOAppDefault {
     _ <- printLine(s"Stream created: $streamCreated")
   } yield ()
 
-  override def run: ZIO[Any, Throwable, Unit] =
+  override def run: ZIO[Scope, Throwable, Unit] =
     program
-      .provide(
-        Scope.default,
+      .provideSome(
         PravegaAdmin.live(PravegaClientConfig.default)
       )
 
