@@ -3,7 +3,7 @@ lazy val scala31 = "3.1.3"
 lazy val mainScala = scala213
 lazy val allScala = Seq(scala31, mainScala)
 
-lazy val zioVersion = "2.0.0"
+lazy val zioVersion = "2.0.1"
 lazy val pravegaVersion = "0.11.0"
 lazy val zioConfigVersion = "2.0.4"
 
