@@ -41,11 +41,6 @@ inThisBuild(
     ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
-    scalacOptions ++= Seq(
-//      "-Wunused:imports",
-//      "-Wunused",
-//      "-Wconf:cat=unused:info"
-    )
   )
 )
 
@@ -126,8 +121,8 @@ lazy val docs = project // new documentation project
   )
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
 
-addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
+addCommandAlias("fmt", "all scalafmtSbt scalafmt test / scalafmt")
 addCommandAlias(
   "check",
-  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
+  "all scalafmtSbtCheck scalafmtCheck test / scalafmtCheck"
 )

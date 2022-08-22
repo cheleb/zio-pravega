@@ -21,11 +21,11 @@ object StreamReadExample extends ZIOAppDefault {
       "a-reader-group",
       stringReaderSettings
     )
-    _ <- stream
+    count <- stream
       .tap(m => ZIO.debug(m.toString()))
       .take(10)
-      .runFold(0)((s, _) => s + 1)
-
+      .runCount
+    _ <- Console.printLine(s"Read $count elements.")
   } yield ()
 
   override def run: ZIO[Any, Throwable, Unit] =
