@@ -50,6 +50,6 @@ runMain dev.sample.myziopravegaproject.StreamReadExample
 To install the dependency
 
 ```scala
-libraryDependencies += "@ORG@" %% "zio-pravega" % "0.0.1"
+libraryDependencies += "@ORG@" %% "zio-pravega" % "@VERSION@"
 ```
 
