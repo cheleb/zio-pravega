@@ -160,7 +160,7 @@ private final case class PravegaTableServiceImpl(
       .flatMap { mod =>
         ZIO
           .fromCompletableFuture(table.update(mod))
-          .tapError(o => ZIO.debug(o.toString))
+          .tapError(o => ZIO.logDebug(o.toString))
       }
       .retry(Schedule.forever)
 
