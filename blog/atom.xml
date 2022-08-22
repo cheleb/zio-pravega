@@ -2,11 +2,39 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://cheleb.github.io/zio-pravega/blog</id>
     <title>ZIO Pravega Blog</title>
-    <updated>2022-06-26T00:00:00.000Z</updated>
+    <updated>2022-08-23T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://cheleb.github.io/zio-pravega/blog"/>
     <subtitle>ZIO Pravega Blog</subtitle>
     <icon>https://cheleb.github.io/zio-pravega/img/favicon.ico</icon>
+    <entry>
+        <title type="html"><![CDATA[Release 0.1.1]]></title>
+        <id>Release 0.1.1</id>
+        <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.1.1"/>
+        <updated>2022-08-23T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[ZIO Pravega 0.1.0 - fix log level]]></summary>
+        <content type="html"><![CDATA[<p>ZIO Pravega 0.1.0 - fix log level</p>]]></content>
+        <author>
+            <name>Olivier NOUGUIER</name>
+            <uri>https://github.com/cheleb</uri>
+        </author>
+        <category label="pravega" term="pravega"/>
+        <category label="zio" term="zio"/>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Release 0.1.1]]></title>
+        <id>Release 0.1.1</id>
+        <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.1.1"/>
+        <updated>2022-08-22T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[ZIO Pravega 0.1.0.]]></summary>
+        <content type="html"><![CDATA[<p>ZIO Pravega 0.1.0 - fix log level</p>]]></content>
+        <author>
+            <name>Olivier NOUGUIER</name>
+            <uri>https://github.com/cheleb</uri>
+        </author>
+        <category label="pravega" term="pravega"/>
+        <category label="zio" term="zio"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Release 0.0.1]]></title>
         <id>Release 0.0.1</id>

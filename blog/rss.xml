@@ -4,10 +4,30 @@
         <title>ZIO Pravega Blog</title>
         <link>https://cheleb.github.io/zio-pravega/blog</link>
         <description>ZIO Pravega Blog</description>
-        <lastBuildDate>Sun, 26 Jun 2022 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 23 Aug 2022 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[Release 0.1.1]]></title>
+            <link>https://cheleb.github.io/zio-pravega/blog/Release 0.1.1</link>
+            <guid>Release 0.1.1</guid>
+            <pubDate>Tue, 23 Aug 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[ZIO Pravega 0.1.0 - fix log level]]></description>
+            <content:encoded><![CDATA[<p>ZIO Pravega 0.1.0 - fix log level</p>]]></content:encoded>
+            <category>pravega</category>
+            <category>zio</category>
+        </item>
+        <item>
+            <title><![CDATA[Release 0.1.1]]></title>
+            <link>https://cheleb.github.io/zio-pravega/blog/Release 0.1.1</link>
+            <guid>Release 0.1.1</guid>
+            <pubDate>Mon, 22 Aug 2022 00:00:00 GMT</pubDate>
+            <description><![CDATA[ZIO Pravega 0.1.0.]]></description>
+            <content:encoded><![CDATA[<p>ZIO Pravega 0.1.0 - fix log level</p>]]></content:encoded>
+            <category>pravega</category>
+            <category>zio</category>
+        </item>
         <item>
             <title><![CDATA[Release 0.0.1]]></title>
             <link>https://cheleb.github.io/zio-pravega/blog/Release 0.0.1</link>
