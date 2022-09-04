@@ -26,7 +26,7 @@ object CreateResourcesExample extends ZIOAppDefault {
 
   override def run: ZIO[Scope, Throwable, Unit] =
     program
-      .provideSome(
+      .provideSome[Scope](
         PravegaAdmin.live(PravegaClientConfig.default)
       )
 
