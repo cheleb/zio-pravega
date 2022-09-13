@@ -15,9 +15,10 @@ import com.typesafe.config.ConfigFactory
 object PravegaClientConfig {
   val configPath = "zio.pravega"
 
-  def default = builder.build()
+  def default: ClientConfig = builder.build()
 
-  def builder = ConfigHelper.builder(ConfigFactory.load().getConfig(configPath))
+  def builder: ClientConfigBuilder =
+    ConfigHelper.builder(ConfigFactory.load().getConfig(configPath))
 
 }
 
@@ -451,8 +452,8 @@ private[pravega] class ReaderBasicSetting(
     var groupName: Option[String] = None,
     var timeout: Duration = Duration.ofSeconds(5)
 ) {
-  def withGroupName(name: String) = groupName = Some(name)
-  def withTimeout(t: Duration) = timeout = t
+  def withGroupName(name: String): Unit = groupName = Some(name)
+  def withTimeout(t: Duration): Unit = timeout = t
 }
 
 /** Writer settings that must be provided to @see Sink

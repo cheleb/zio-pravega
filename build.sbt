@@ -41,6 +41,7 @@ inThisBuild(
     ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
+    scalafixScalaBinaryVersion := "2.13"
   )
 )
 
