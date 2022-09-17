@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([[535],{5641:e=>{e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Release 0.1.1","permalink":"/zio-pravega/blog/Release 0.1.1"},{"title":"Release 0.1.1","permalink":"/zio-pravega/blog/Release 0.1.1"},{"title":"Release 0.0.1","permalink":"/zio-pravega/blog/Release 0.0.1"}]}')}}]);

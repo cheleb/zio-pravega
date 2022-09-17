@@ -22,12 +22,12 @@
         <category label="zio" term="zio"/>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Release 0.1.1]]></title>
-        <id>Release 0.1.1</id>
-        <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.1.1"/>
+        <title type="html"><![CDATA[Release 0.1.0]]></title>
+        <id>Release 0.1.0</id>
+        <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.1.0"/>
         <updated>2022-08-22T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[ZIO Pravega 0.1.0.]]></summary>
-        <content type="html"><![CDATA[<p>ZIO Pravega 0.1.0 - fix log level</p>]]></content>
+        <content type="html"><![CDATA[<p>ZIO Pravega 0.1.0. </p><p>Exposes an event read (event metadata) stream.</p>]]></content>
         <author>
             <name>Olivier NOUGUIER</name>
             <uri>https://github.com/cheleb</uri>

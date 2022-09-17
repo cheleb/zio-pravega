@@ -19,12 +19,12 @@
             <category>zio</category>
         </item>
         <item>
-            <title><![CDATA[Release 0.1.1]]></title>
-            <link>https://cheleb.github.io/zio-pravega/blog/Release 0.1.1</link>
-            <guid>Release 0.1.1</guid>
+            <title><![CDATA[Release 0.1.0]]></title>
+            <link>https://cheleb.github.io/zio-pravega/blog/Release 0.1.0</link>
+            <guid>Release 0.1.0</guid>
             <pubDate>Mon, 22 Aug 2022 00:00:00 GMT</pubDate>
             <description><![CDATA[ZIO Pravega 0.1.0.]]></description>
-            <content:encoded><![CDATA[<p>ZIO Pravega 0.1.0 - fix log level</p>]]></content:encoded>
+            <content:encoded><![CDATA[<p>ZIO Pravega 0.1.0. </p><p>Exposes an event read (event metadata) stream.</p>]]></content:encoded>
             <category>pravega</category>
             <category>zio</category>
         </item>
