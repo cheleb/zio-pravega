@@ -16,7 +16,7 @@ import io.pravega.client.stream.ReaderGroupConfig
 
 trait AdminSpec {
   this: ZIOSpec[
-    PravegaStreamService & PravegaAdminService & PravegaTableService
+    PravegaStreamService & PravegaAdmin & PravegaTableService
   ] =>
 
   private val tableConfig = KeyValueTableConfiguration
@@ -31,7 +31,7 @@ trait AdminSpec {
       pravegaStreamName2: String,
       groupName1: String,
       groupName2: String
-  ): Spec[PravegaAdminService, Throwable] =
+  ): Spec[PravegaAdmin, Throwable] =
     suite("Admin")(
       test("Scope created once")(
         ZIO

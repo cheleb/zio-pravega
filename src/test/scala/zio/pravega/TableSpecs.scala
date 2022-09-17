@@ -8,7 +8,7 @@ import zio.test._
 
 trait TableSpecs {
   this: ZIOSpec[
-    PravegaStreamService & PravegaAdminService & PravegaTableService
+    PravegaStreamService & PravegaAdmin & PravegaTableService
   ] =>
 
   import CommonSettings._
