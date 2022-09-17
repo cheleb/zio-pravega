@@ -13,7 +13,7 @@ import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 
 def initStream(streamName: String, scope: String)
-: ZIO[Scope & Console & PravegaAdminService,Throwable,Unit] =
+: ZIO[Scope & Console & PravegaAdmin,Throwable,Unit] =
     for {
       streamCreated <- PravegaAdmin.createStream(
           scope,

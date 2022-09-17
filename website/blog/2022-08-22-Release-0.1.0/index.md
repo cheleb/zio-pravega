@@ -1,6 +1,6 @@
 ---
-slug: Release 0.1.1
-title: Release 0.1.1
+slug: Release 0.1.0
+title: Release 0.1.0
 authors: [cheleb]
 tags: [pravega, zio]
 ---
