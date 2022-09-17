@@ -12,7 +12,7 @@ import zio.pravega.test.PravegaContainer
 
 object PravegaITs
     extends ZIOSpec[
-      PravegaStreamService & PravegaAdminService & PravegaTableService
+      PravegaStreamService & PravegaAdmin & PravegaTableService
     ]
     with AdminSpec
     with StreamSpec

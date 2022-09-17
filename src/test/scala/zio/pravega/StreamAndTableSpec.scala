@@ -11,7 +11,7 @@ import java.nio.ByteBuffer
 
 trait StreamAndTableSpec {
   this: ZIOSpec[
-    PravegaAdminService & PravegaStreamService & PravegaTableService
+    PravegaAdmin & PravegaStreamService & PravegaTableService
   ] =>
 
   private val personSerializer = new Serializer[Person] {
