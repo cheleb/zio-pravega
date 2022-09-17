@@ -10,7 +10,7 @@ import zio._
 import zio.Console._
 import zio.pravega._
 
-def initScope(scope: String): ZIO[Scope & PravegaAdminService & Console,Throwable,Unit] =
+def initScope(scope: String): ZIO[Scope & PravegaAdmin & Console,Throwable,Unit] =
     for {
       scopeCreated <- PravegaAdmin.createScope(scope)
       _ <- ZIO.when(scopeCreated)(printLine(s"Scope $scope just created"))
