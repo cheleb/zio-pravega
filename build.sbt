@@ -116,7 +116,7 @@ lazy val docs = project // new documentation project
       .dependsOn(Compile / unidoc)
       .value,
     mdocVariables := Map(
-      "VERSION" -> "0.2.0",
+      "VERSION" -> version.value,
       "ORG" -> organization.value
     )
   )
