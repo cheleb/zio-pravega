@@ -6,14 +6,26 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
 
-trait TableSpecs {
-  this: ZIOSpec[
-    PravegaStreamService & PravegaAdmin & PravegaTableService
-  ] =>
+object TableSpecs extends SharedPravegaContainerSpec("table") {
+
+  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+    scopedSuite(
+      suite("Tables")(
+        test("Create table") {
+          ZIO
+            .scoped(table("ages"))
+            .map(_ => assertCompletes)
+        },
+        tableSuite("ages")
+      )
+    )
 
   import CommonSettings._
 
-  private def testStream(a: Int, b: Int): ZStream[Any, Nothing, (String, Int)] =
+  private def stringTestStream(
+      a: Int,
+      b: Int
+  ): ZStream[Any, Nothing, (String, Int)] =
     ZStream.fromIterable(a until b).map(i => (f"$i%04d", i))
 
   def tableSuite(pravegaTableName: String) = {
@@ -27,7 +39,7 @@ trait TableSpecs {
             (a: Int, b: Int) => a + b
           )
 
-        _ <- testStream(0, 1000)
+        _ <- stringTestStream(0, 1000)
           .run(sink)
 
       } yield true)
@@ -49,7 +61,7 @@ trait TableSpecs {
             tableWriterSettings,
             (a: Int, b: Int) => a + b
           )
-        count <- testStream(2000, 3000)
+        count <- stringTestStream(2000, 3000)
           .via(flow)
           .runFold(0)((s, _) => s + 1)
 
@@ -60,7 +72,7 @@ trait TableSpecs {
         flow <- PravegaTable
           .flow(pravegaTableName, tableReaderSettings)
 
-        count <- testStream(0, 1001)
+        count <- stringTestStream(0, 1001)
           .map(_._1)
           .via(flow)
           .collect { case Some(str) => str }

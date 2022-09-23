@@ -40,7 +40,7 @@ class ReaderSettingsBuilder(
     copy(readerId = Some(id))
 
   def withTimeout(
-      timeout: scala.concurrent.duration.Duration
+      timeout: Duration
   ): ReaderSettingsBuilder =
     copy(timeout = Duration.ofMillis(timeout.toMillis))
 

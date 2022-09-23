@@ -1,11 +1,11 @@
 package zio.pravega
 
+import zio._
 import io.pravega.client.stream.impl.UTF8StringSerializer
 import io.pravega.client.stream.Serializer
 import java.nio.ByteBuffer
 
 import scala.language.postfixOps
-import scala.concurrent.duration.DurationInt
 
 object CommonSettings {
 

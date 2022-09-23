@@ -94,9 +94,9 @@ object PravegaAdmin {
     )
 
   def createTable(
+      scope: String,
       tableName: String,
-      config: KeyValueTableConfiguration,
-      scope: String
+      config: KeyValueTableConfiguration
   ): RIO[PravegaAdmin & Scope, Boolean] =
     ZIO.serviceWithZIO[PravegaAdmin](
       _.createTable(tableName, config, scope)

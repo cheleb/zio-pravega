@@ -4,81 +4,110 @@ import zio._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
-import io.pravega.client.stream.StreamConfiguration
-import io.pravega.client.stream.ScalingPolicy
+
 import io.pravega.client.tables.KeyValueTableConfiguration
-import io.pravega.client.EventStreamClientFactory
-import io.pravega.client.ClientConfig
-import java.util.UUID
-import io.pravega.client.stream.impl.UTF8StringSerializer
-import io.pravega.client.stream.ReaderConfig
 import io.pravega.client.stream.ReaderGroupConfig
 
-trait AdminSpec {
-  this: ZIOSpec[
-    PravegaStreamService & PravegaAdmin & PravegaTableService
-  ] =>
+object AdminSpec extends SharedPravegaContainerSpec("admin") {
 
-  private val tableConfig = KeyValueTableConfiguration
-    .builder()
-    .partitionCount(2)
-    .primaryKeyLength(4)
-    .build()
-
-  def adminSuite(
-      pravegaScope: String,
-      pravegaStreamName1: String,
-      pravegaStreamName2: String,
-      groupName1: String,
-      groupName2: String
-  ): Spec[PravegaAdmin, Throwable] =
+  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     suite("Admin")(
-      test("Scope created once")(
-        ZIO
-          .scoped(PravegaAdmin.createScope(pravegaScope))
-          .map(once => assert(once)(isTrue))
-      ),
-      test("Scope skip twice")(
-        ZIO
-          .scoped(PravegaAdmin.createScope(pravegaScope))
-          .map(twice => assert(twice)(isFalse))
-      ),
+      namespaceSuite,
+      streamSuite,
+      groupsSuite,
+      tableSuite
+    ).provide(Scope.default, PravegaAdmin.live(clientConfig)) @@ sequential
+
+  def namespaceSuite = suite("Scopes")(
+    test("Scope created once")(
+      PravegaAdmin
+        .createScope(aScope)
+        .map(once => assert(once)(isTrue))
+    ),
+    test("Scope skip twice")(
+      PravegaAdmin
+        .createScope(aScope)
+        .map(twice => assert(twice)(isFalse))
+    )
+  ) @@ sequential
+
+  def streamSuite =
+    suite("Streams")(
       test("Stream created once")(
-        ZIO
-          .scoped(
-            PravegaAdmin
-              .createStream(
-                pravegaScope,
-                pravegaStreamName1,
-                StreamConfiguration.builder
-                  .scalingPolicy(ScalingPolicy.fixed(8))
-                  .build
-              )
-              .zipWith(
-                PravegaAdmin.createStream(
-                  pravegaScope,
-                  pravegaStreamName2,
-                  StreamConfiguration.builder
-                    .scalingPolicy(ScalingPolicy.fixed(8))
-                    .build
-                )
-              )(_ && _)
+        PravegaAdmin
+          .createStream(
+            aScope,
+            "stream",
+            streamConfig(2)
           )
           .map(once => assert(once)(isTrue))
       ),
-      test("Stream creation skiped")(
-        ZIO
-          .scoped(
-            PravegaAdmin.createStream(
-              pravegaScope,
-              pravegaStreamName1,
-              StreamConfiguration.builder
-                .scalingPolicy(ScalingPolicy.fixed(8))
-                .build
-            )
+      test("Stream skip twice")(
+        PravegaAdmin
+          .createStream(
+            aScope,
+            "stream",
+            streamConfig(2)
           )
           .map(twice => assert(twice)(isFalse))
+      )
+    ) @@ sequential
+
+  def groupsSuite = suite("Groups")(
+    test("Group created")(
+      PravegaAdmin
+        .createReaderGroup(
+          aScope,
+          "group",
+          "stream"
+        )
+        .map(once => assert(once)(isTrue))
+    ),
+    test("Group created")(
+      PravegaAdmin
+        .createReaderGroup(
+          aScope,
+          "group2",
+          ReaderGroupConfig.builder
+            .automaticCheckpointIntervalMillis(1000),
+          "stream"
+        )
+        .map(once => assert(once)(isTrue))
+    )
+  )
+
+  def tableSuite = {
+    val tableConfig = KeyValueTableConfiguration
+      .builder()
+      .partitionCount(2)
+      .primaryKeyLength(4)
+      .build()
+    suite("Tables")(
+      test("Table created once")(
+        PravegaAdmin
+          .createTable(
+            aScope,
+            "table",
+            tableConfig
+          )
+          .map(once => assert(once)(isTrue))
       ),
+      test("Table skip twice")(
+        PravegaAdmin
+          .createTable(
+            aScope,
+            "table",
+            tableConfig
+          )
+          .map(twice => assert(twice)(isFalse))
+      )
+    ) @@ sequential
+  }
+
+}
+/*
+
+
       test(s"Create group $groupName1 && $groupName2")(
         ZIO
           .scoped(
@@ -167,3 +196,4 @@ trait AdminSpec {
     ) @@ sequential
 
 }
+ */

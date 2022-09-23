@@ -4,49 +4,47 @@ import zio._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
-import io.pravega.client.tables.KeyValueTableConfiguration
-import io.pravega.client.stream.Serializer
-import model.Person
-import java.nio.ByteBuffer
 
-trait StreamAndTableSpec {
-  this: ZIOSpec[
-    PravegaAdmin & PravegaStreamService & PravegaTableService
-  ] =>
+object StreamAndTableSpec
+    extends SharedPravegaContainerSpec("stream-and-table") {
 
-  private val personSerializer = new Serializer[Person] {
+  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+    scopedSuite(
+      suite("Table concurency writes")(
+        test("Write concurently from stream to table") {
+          stream2table.map(count => assert(count)(equalTo(80)))
+        },
+        test("Sum table") {
+          for {
+            source <- PravegaTable.source(
+              "ages",
+              CommonSettings.tableReaderSettings
+            )
+            sum <- source.runFold(0)((s, i) => s + i.value)
+          } yield assert(sum)(equalTo(1560))
+        }
+      ) @@ sequential
+    )
 
-    override def serialize(person: Person): ByteBuffer =
-      ByteBuffer.wrap(person.toByteArray)
+  def stream2table = for {
+    _ <- table("ages")
+    _ <- stream("persons")
+    _ <- group("g1", "persons")
 
-    override def deserialize(buffer: ByteBuffer): Person =
-      Person.parseFrom(buffer.array())
+    sink <- sink("persons")
 
-  }
-  val personReaderSettings =
-    ReaderSettingsBuilder()
-      .withSerializer(personSerializer)
-
-  private val tableConfig = KeyValueTableConfiguration
-    .builder()
-    .partitionCount(2)
-    .primaryKeyLength(4)
-    .build()
-  val groupName = "stream2table"
-  val tableName = "countTable"
-
-  def stream2table(scope: String, streamName: String) = for {
-    _ <- PravegaAdmin.createTable(tableName, tableConfig, scope)
-    _ <- PravegaAdmin.createReaderGroup(scope, groupName, streamName)
     stream <- PravegaStream.stream(
-      groupName,
+      "g1",
       personReaderSettings
     )
-    table <- PravegaTable.sink(
-      tableName,
+
+    tableSink <- PravegaTable.sink(
+      "ages",
       CommonSettings.tableWriterSettings,
       (a: Int, b: Int) => a + b
     )
+
+    _ <- testStream(0, 40).run(sink).fork
 
     count <- stream
       .take(40)
@@ -56,12 +54,12 @@ trait StreamAndTableSpec {
         for {
           sink0 <-
             streams(0)
-              .tapSink(table)
+              .tapSink(tableSink)
               .runFold(0)((s, _) => s + 1)
               .fork
           sink1 <-
             streams(1)
-              .tapSink(table)
+              .tapSink(tableSink)
               .runFold(0)((s, _) => s + 1)
               .fork
           x <- sink0.join.zipPar(sink1.join)
@@ -69,21 +67,5 @@ trait StreamAndTableSpec {
       )
 
   } yield count
-
-  def streamAndTable(scope: String, streamName: String) =
-    suite("Table concurency writes")(
-      test("Write concurently from stream to table") {
-        stream2table(scope, streamName).map(count => assert(count)(equalTo(80)))
-      },
-      test("Sum table") {
-        (for {
-          source <- PravegaTable.source(
-            tableName,
-            CommonSettings.tableReaderSettings
-          )
-          sum <- source.runFold(0)((s, i) => s + i.value)
-        } yield sum).map(s => assert(s)(equalTo(1560)))
-      }
-    ) @@ sequential
 
 }

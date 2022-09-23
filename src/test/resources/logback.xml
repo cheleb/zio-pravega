@@ -16,7 +16,7 @@
 
 
 
-    <logger name="zio.pravega" level="info" />
+    <logger name="zio.pravega" level="DEBUG" />
     <logger name="docs.scaladsl" level="debug" />
     <logger name="docs.javadsl" level="debug" />
     <logger name="io.pravega.controller.control.impl.ControllerImpl" level="error" />
@@ -24,6 +24,6 @@
 
     <root level="WARN">
         <appender-ref ref="FILE" />
-        <appender-ref ref="STDOUT"/>
+        <!-- <appender-ref ref="STDOUT"/> -->
     </root>
 </configuration>
