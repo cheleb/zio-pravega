@@ -4,9 +4,10 @@ import zio._
 
 import zio.test._
 import zio.test.Assertion._
-//import zio.test.TestAspect._
 
 object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
+
+  import CommonTestSettings._
 
   override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     scopedSuite(

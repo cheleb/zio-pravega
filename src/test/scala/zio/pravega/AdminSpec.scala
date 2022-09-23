@@ -73,6 +73,14 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
           "stream"
         )
         .map(once => assert(once)(isTrue))
+    ),
+    test("Open")(
+      PravegaAdmin
+        .openReaderGroup(
+          aScope,
+          "group"
+        )
+        .map(_ => assertCompletes)
     )
   )
 

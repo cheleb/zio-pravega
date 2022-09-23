@@ -1,6 +1,5 @@
 package zio.pravega
 
-import zio._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
@@ -12,16 +11,17 @@ import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import zio.test.Spec
 import zio.logging.backend.SLF4J
-import io.pravega.client.stream.Serializer
+
 import model.Person
-import java.nio.ByteBuffer
+
 import zio.stream.ZStream
 
-import scala.language.postfixOps
 import io.pravega.client.tables.KeyValueTableConfiguration
 
 abstract class SharedPravegaContainerSpec(val aScope: String)
     extends ZIOSpec[PravegaContainer] {
+
+  import CommonTestSettings._
 
   val logger = zio.Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
@@ -89,30 +89,6 @@ abstract class SharedPravegaContainerSpec(val aScope: String)
       if (routingKey) personStremWritterSettings
       else personStremWritterSettingsWithKey
     )
-
-  protected val personSerializer = new Serializer[Person] {
-
-    override def serialize(person: Person): ByteBuffer =
-      ByteBuffer.wrap(person.toByteArray)
-
-    override def deserialize(buffer: ByteBuffer): Person =
-      Person.parseFrom(buffer.array())
-
-  }
-
-  val personReaderSettings =
-    ReaderSettingsBuilder()
-      .withTimeout(2 seconds)
-      .withSerializer(personSerializer)
-
-  protected val personStremWritterSettings =
-    WriterSettingsBuilder()
-      .withSerializer(personSerializer)
-
-  protected val personStremWritterSettingsWithKey =
-    WriterSettingsBuilder[Person]()
-      .withKeyExtractor(_.key)
-      .withSerializer(personSerializer)
 
   protected def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] =
     ZStream

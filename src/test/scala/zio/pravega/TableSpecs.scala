@@ -20,7 +20,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
       )
     )
 
-  import CommonSettings._
+  import CommonTestSettings._
 
   private def stringTestStream(
       a: Int,

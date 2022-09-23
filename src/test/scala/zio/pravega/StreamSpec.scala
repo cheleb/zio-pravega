@@ -7,6 +7,8 @@ import zio.test.Assertion._
 
 object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
 
+  import CommonTestSettings._
+
   override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     scopedSuite(test("Stream support timeouts") {
       for {

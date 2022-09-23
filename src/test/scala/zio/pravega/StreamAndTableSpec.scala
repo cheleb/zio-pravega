@@ -8,6 +8,8 @@ import zio.test.TestAspect._
 object StreamAndTableSpec
     extends SharedPravegaContainerSpec("stream-and-table") {
 
+  import CommonTestSettings._
+
   override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     scopedSuite(
       suite("Table concurency writes")(
@@ -18,7 +20,7 @@ object StreamAndTableSpec
           for {
             source <- PravegaTable.source(
               "ages",
-              CommonSettings.tableReaderSettings
+              tableReaderSettings
             )
             sum <- source.runFold(0)((s, i) => s + i.value)
           } yield assert(sum)(equalTo(1560))
@@ -40,7 +42,7 @@ object StreamAndTableSpec
 
     tableSink <- PravegaTable.sink(
       "ages",
-      CommonSettings.tableWriterSettings,
+      tableWriterSettings,
       (a: Int, b: Int) => a + b
     )
 
