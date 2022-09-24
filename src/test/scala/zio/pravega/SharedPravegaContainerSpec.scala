@@ -41,7 +41,7 @@ abstract class SharedPravegaContainerSpec(val aScope: String)
     */
   def scopedSuite(
       aSuite: Spec[
-        PravegaAdmin with PravegaStreamService with PravegaTableService with Scope,
+        PravegaAdmin with PravegaStream with PravegaTable with Scope,
         Throwable
       ]
   ): Spec[Any, Throwable] =

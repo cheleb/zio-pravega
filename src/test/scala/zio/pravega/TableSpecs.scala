@@ -30,7 +30,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
 
   def tableSuite(pravegaTableName: String) = {
 
-    def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
+    def writeToTable: ZIO[PravegaTable, Throwable, Boolean] =
       ZIO.scoped(for {
         sink <- PravegaTable
           .sink(
@@ -44,7 +44,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
 
       } yield true)
 
-    def readFromTable: ZIO[PravegaTableService, Throwable, Int] =
+    def readFromTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         source <- PravegaTable
           .source(pravegaTableName, tableReaderSettings)
@@ -53,7 +53,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
         // _ <- source.runFold(0)((s, _) => s + 1)
       } yield count)
 
-    def writeFlowToTable: ZIO[PravegaTableService, Throwable, Int] =
+    def writeFlowToTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTable
           .flow(
@@ -67,7 +67,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
 
       } yield count)
 
-    def flowFromTable: ZIO[PravegaTableService, Throwable, Int] =
+    def flowFromTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTable
           .flow(pravegaTableName, tableReaderSettings)

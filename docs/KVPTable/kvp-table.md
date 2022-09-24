@@ -54,7 +54,7 @@ private def testStream(a: Int, b: Int): ZStream[Any, Nothing, (String, Int)] =
 Just allocate a (K, V) sink ... et voilà.
 
 ```scala mdoc:silent
-def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
+def writeToTable: ZIO[PravegaTable, Throwable, Boolean] =
       ZIO.scoped(for {
         sink <- PravegaTable
           .sink("tableName", tableWriterSettings, (a: Int, b: Int) => a + b)

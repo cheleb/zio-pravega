@@ -12,7 +12,7 @@ import zio.Exit.Failure
 import zio.Exit.Success
 import io.pravega.client.stream.EventRead
 
-trait PravegaStreamService {
+trait PravegaStream {
   def sink[A](
       streamName: String,
       settings: WriterSettings[A]
@@ -36,7 +36,7 @@ trait PravegaStreamService {
 
 private class PravegaStreamServiceImpl(
     eventStreamClientFactory: EventStreamClientFactory
-) extends PravegaStreamService {
+) extends PravegaStream {
 
   override def sink[A](
       streamName: String,
@@ -176,34 +176,34 @@ object PravegaStream {
   def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): RIO[PravegaStreamService, ZSink[Any, Throwable, A, Nothing, Unit]] =
-    ZIO.serviceWithZIO[PravegaStreamService](_.sink(streamName, settings))
+  ): RIO[PravegaStream, ZSink[Any, Throwable, A, Nothing, Unit]] =
+    ZIO.serviceWithZIO[PravegaStream](_.sink(streamName, settings))
 
   def sinkTx[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): RIO[PravegaStreamService, ZSink[Any, Throwable, A, Nothing, Unit]] =
-    ZIO.serviceWithZIO[PravegaStreamService](_.sinkTx(streamName, settings))
+  ): RIO[PravegaStream, ZSink[Any, Throwable, A, Nothing, Unit]] =
+    ZIO.serviceWithZIO[PravegaStream](_.sinkTx(streamName, settings))
 
   def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): RIO[PravegaStreamService, ZStream[Any, Throwable, A]] =
-    ZIO.serviceWithZIO[PravegaStreamService](
+  ): RIO[PravegaStream, ZStream[Any, Throwable, A]] =
+    ZIO.serviceWithZIO[PravegaStream](
       _.stream(readerGroupName, settings)
     )
   def eventStream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): RIO[PravegaStreamService, ZStream[Any, Throwable, EventRead[A]]] =
-    ZIO.serviceWithZIO[PravegaStreamService](
+  ): RIO[PravegaStream, ZStream[Any, Throwable, EventRead[A]]] =
+    ZIO.serviceWithZIO[PravegaStream](
       _.eventStream(readerGroupName, settings)
     )
 
   private def streamService(
       scope: String,
       clientConfig: ClientConfig
-  ): ZIO[Scope, Throwable, PravegaStreamService] =
+  ): ZIO[Scope, Throwable, PravegaStream] =
     ZIO
       .attemptBlocking(
         EventStreamClientFactory.withScope(scope, clientConfig)
@@ -214,7 +214,7 @@ object PravegaStream {
   def fromScope(
       scope: String,
       clientConfig: ClientConfig
-  ): ZLayer[Scope, Throwable, PravegaStreamService] = ZLayer(
+  ): ZLayer[Scope, Throwable, PravegaStream] = ZLayer(
     streamService(scope, clientConfig)
   )
 

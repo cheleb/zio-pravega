@@ -13,7 +13,7 @@ import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
 import java.util.concurrent.Executors
 
-trait PravegaTableService {
+trait PravegaTable {
 
   /** Create a sink
     *
@@ -50,14 +50,14 @@ object PravegaTable {
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): RIO[PravegaTableService & Scope, ZSink[
+  ): RIO[PravegaTable & Scope, ZSink[
     Any,
     Throwable,
     (K, V),
     Nothing,
     Unit
   ]] =
-    ZIO.serviceWithZIO[PravegaTableService](
+    ZIO.serviceWithZIO[PravegaTable](
       _.sink(tableName, settings, combine)
     )
 
@@ -65,37 +65,37 @@ object PravegaTable {
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): RIO[PravegaTableService & Scope, ZPipeline[
+  ): RIO[PravegaTable & Scope, ZPipeline[
     Any,
     Throwable,
     (K, V),
     TableEntry[V]
-  ]] = ZIO.serviceWithZIO[PravegaTableService](
+  ]] = ZIO.serviceWithZIO[PravegaTable](
     _.flow(tableName, settings, combine)
   )
 
   def flow[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
-  ): RIO[PravegaTableService & Scope, ZPipeline[Any, Throwable, K, Option[
+  ): RIO[PravegaTable & Scope, ZPipeline[Any, Throwable, K, Option[
     TableEntry[V]
-  ]]] = ZIO.serviceWithZIO[PravegaTableService](
+  ]]] = ZIO.serviceWithZIO[PravegaTable](
     _.flow(tableName, settings)
   )
 
   def source[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
-  ): RIO[PravegaTableService & Scope, ZStream[Any, Throwable, TableEntry[V]]] =
+  ): RIO[PravegaTable & Scope, ZStream[Any, Throwable, TableEntry[V]]] =
     ZIO
-      .serviceWithZIO[PravegaTableService](
+      .serviceWithZIO[PravegaTable](
         _.source(tableName, settings)
       )
 
   private def service(
       scope: String,
       clientConfig: ClientConfig
-  ): ZIO[Scope, Throwable, PravegaTableService] =
+  ): ZIO[Scope, Throwable, PravegaTable] =
     for {
       clientFactory <- ZIO
         .attemptBlocking(
@@ -107,7 +107,7 @@ object PravegaTable {
   def fromScope(
       scope: String,
       clientConfig: ClientConfig
-  ): ZLayer[Scope, Throwable, PravegaTableService] =
+  ): ZLayer[Scope, Throwable, PravegaTable] =
     ZLayer.fromZIO(
       service(
         scope,
@@ -118,7 +118,7 @@ object PravegaTable {
 
 private final case class PravegaTableServiceImpl(
     keyValueTableFactory: KeyValueTableFactory
-) extends PravegaTableService {
+) extends PravegaTable {
 
   private def table(
       tableName: String,
