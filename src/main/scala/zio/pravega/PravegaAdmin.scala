@@ -23,6 +23,11 @@ trait PravegaAdmin {
       streamNames: String*
   ): ZIO[Scope, Throwable, Boolean]
 
+  def dropReaderGroup(
+      scope: String,
+      readerGroupName: String
+  ): RIO[Scope, Boolean]
+
   def openReaderGroup[A](
       scope: String,
       readerGroupName: String
@@ -30,17 +35,25 @@ trait PravegaAdmin {
 
   def createScope(scope: String): RIO[Scope, Boolean]
 
+  def dropScope(scope: String): RIO[Scope, Boolean]
+
   def createStream(
       scope: String,
       streamName: String,
       config: StreamConfiguration
   ): RIO[Scope, Boolean]
 
+  def sealStream(scope: String, streamName: String): RIO[Scope, Boolean]
+
+  def dropStream(scope: String, streamName: String): RIO[Scope, Boolean]
+
   def createTable(
+      scope: String,
       tableName: String,
-      config: KeyValueTableConfiguration,
-      scope: String
+      config: KeyValueTableConfiguration
   ): RIO[Scope, Boolean]
+
+  def dropTable(scope: String, tableName: String): RIO[Scope, Boolean]
 
   def readerOffline(
       scope: String,
@@ -81,8 +94,19 @@ object PravegaAdmin {
       _.openReaderGroup(scope, readerGroupName)
     )
 
+  def dropReaderGroup(
+      scope: String,
+      readerGroupName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](
+      _.dropReaderGroup(scope, readerGroupName)
+    )
+
   def createScope(scope: String): RIO[PravegaAdmin & Scope, Boolean] =
     ZIO.serviceWithZIO[PravegaAdmin](_.createScope(scope))
+
+  def dropScope(scope: String): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.dropScope(scope))
 
   def createStream(
       scope: String,
@@ -93,14 +117,32 @@ object PravegaAdmin {
       _.createStream(scope, streamName, config)
     )
 
+  def sealStream(
+      scope: String,
+      streamName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.sealStream(scope, streamName))
+
+  def dropStream(
+      scope: String,
+      streamName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.dropStream(scope, streamName))
+
   def createTable(
       scope: String,
       tableName: String,
       config: KeyValueTableConfiguration
   ): RIO[PravegaAdmin & Scope, Boolean] =
     ZIO.serviceWithZIO[PravegaAdmin](
-      _.createTable(tableName, config, scope)
+      _.createTable(scope, tableName, config)
     )
+
+  def dropTable(
+      scope: String,
+      tableName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.dropTable(scope, tableName))
 
   def readerOffline(
       scope: String,
@@ -117,6 +159,14 @@ object PravegaAdmin {
 
 private class PravegaAdminImpl(clientConfig: ClientConfig)
     extends PravegaAdmin {
+
+  override def sealStream(
+      scope: String,
+      streamName: String
+  ): RIO[Scope, Boolean] = for {
+    streamManager <- streamManager()
+    _ <- ZIO.attemptBlocking(streamManager.sealStream(scope, streamName))
+  } yield true
 
   def createReaderGroup[A](
       scope: String,
@@ -142,6 +192,14 @@ private class PravegaAdminImpl(clientConfig: ClientConfig)
 
   }
 
+  def dropReaderGroup(
+      scope: String,
+      readerGroupName: String
+  ): RIO[Scope, Boolean] = for {
+    manager <- readerGroupManager(scope)
+    _ <- ZIO.attemptBlocking(manager.deleteReaderGroup(readerGroupName))
+  } yield true
+
   override def openReaderGroup[A](
       scope: String,
       readerGroupName: String
@@ -162,6 +220,11 @@ private class PravegaAdminImpl(clientConfig: ClientConfig)
       }
     } yield created
 
+  def dropScope(scope: String): RIO[Scope, Boolean] = for {
+    streamManager <- streamManager()
+    dropped <- ZIO.attemptBlocking(streamManager.deleteScope(scope))
+  } yield dropped
+
   def createStream(
       scope: String,
       streamName: String,
@@ -181,6 +244,16 @@ private class PravegaAdminImpl(clientConfig: ClientConfig)
           )
       }
     } yield created
+
+  override def dropStream(
+      scope: String,
+      streamName: String
+  ): RIO[Scope, Boolean] = for {
+    streamManager <- streamManager()
+    dropped <- ZIO.attemptBlocking(
+      streamManager.deleteStream(scope, streamName)
+    )
+  } yield dropped
 
   def readerGroupManager(
       scope: String
@@ -206,9 +279,9 @@ private class PravegaAdminImpl(clientConfig: ClientConfig)
       .withFinalizerAuto
 
   override def createTable(
+      scope: String,
       tableName: String,
-      config: KeyValueTableConfiguration,
-      scope: String
+      config: KeyValueTableConfiguration
   ): RIO[Scope, Boolean] =
     for {
       keyValueTableManager <- keyValueTableManager()
@@ -216,6 +289,16 @@ private class PravegaAdminImpl(clientConfig: ClientConfig)
         keyValueTableManager.createKeyValueTable(scope, tableName, config)
       )
     } yield created
+
+  override def dropTable(
+      scope: String,
+      tableName: String
+  ): RIO[Scope, Boolean] = for {
+    keyValueTableManager <- keyValueTableManager()
+    deleted <- ZIO.attemptBlocking(
+      keyValueTableManager.deleteKeyValueTable(scope, tableName)
+    )
+  } yield deleted
 
   def readerOffline(
       scope: String,
