@@ -30,8 +30,8 @@ object StreamAndTableSpec
 
   def stream2table = for {
     _ <- table("ages")
-    _ <- stream("persons")
-    _ <- group("g1", "persons")
+    _ <- createStream("persons")
+    _ <- createGroup("g1", "persons")
 
     sink <- sink("persons")
 

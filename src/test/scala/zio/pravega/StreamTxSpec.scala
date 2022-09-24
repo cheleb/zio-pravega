@@ -16,7 +16,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           for {
             _ <- PravegaAdmin.createStream(aScope, "s1", streamConfig(2))
 
-            _ <- group("g1", "s1")
+            _ <- createGroup("g1", "s1")
 
             sink1 <- sink("s1", true)
             sink2 <- sinkTx("s1", true)
@@ -50,7 +50,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
             sink <- sink("s2")
             sinkAborted <- sinkTx("s2")
 
-            _ <- group("g2", "s2")
+            _ <- createGroup("g2", "s2")
             _ <- testStream(1, 100)
               .tap(p => ZIO.when(p.age % 50 == 0)(ZIO.fail("Boom")))
               .run(sinkAborted)

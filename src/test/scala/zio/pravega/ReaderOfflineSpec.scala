@@ -14,8 +14,8 @@ object ReaderOfflineSpec extends SharedPravegaContainerSpec("reader-offline") {
   override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     scopedSuite(
       test("Set reader offline")(for {
-        _ <- stream("stream", 2)
-        _ <- group("unclosed", "stream")
+        _ <- createStream("stream", 2)
+        _ <- createGroup("unclosed", "stream")
         _ <- ZIO.debug("""
         🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
         🔥   Pravega container noisy log expected below  🔥

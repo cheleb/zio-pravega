@@ -63,12 +63,12 @@ abstract class SharedPravegaContainerSpec(val aScope: String)
   override def bootstrap: ZLayer[Scope, Any, PravegaContainer] =
     PravegaContainer.pravega
 
-    def stream(name: String, partition: Int = 2) =
-      PravegaAdmin.createStream(aScope, name, streamConfig(partition))
-    def table(name: String) =
-      PravegaAdmin.createTable(aScope, name, tableConfig)
+  def createStream(name: String, partition: Int = 2) =
+    PravegaAdmin.createStream(aScope, name, streamConfig(partition))
+  def table(name: String) =
+    PravegaAdmin.createTable(aScope, name, tableConfig)
 
-  def group(name: String, stream: String) =
+  def createGroup(name: String, stream: String) =
     PravegaAdmin
       .createReaderGroup(
         aScope,
