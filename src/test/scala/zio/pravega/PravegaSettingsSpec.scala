@@ -1,10 +1,9 @@
 package zio.pravega
 
+import zio._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import io.pravega.client.stream.impl.UTF8StringSerializer
-
-import scala.concurrent.duration.DurationInt
 
 import scala.language.postfixOps
 import io.pravega.client.tables.TableKey

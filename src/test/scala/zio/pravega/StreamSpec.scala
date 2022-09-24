@@ -1,181 +1,50 @@
 package zio.pravega
 
 import zio._
-import zio.stream._
+
 import zio.test._
 import zio.test.Assertion._
-import io.pravega.client.stream.Serializer
-import model.Person
-import java.nio.ByteBuffer
 
-trait StreamSpec {
-  this: ZIOSpec[
-    PravegaStreamService & PravegaAdmin & PravegaTableService
-  ] =>
+object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
 
-  private val personSerializer = new Serializer[Person] {
+  import CommonTestSettings._
 
-    override def serialize(person: Person): ByteBuffer =
-      ByteBuffer.wrap(person.toByteArray)
-
-    override def deserialize(buffer: ByteBuffer): Person =
-      Person.parseFrom(buffer.array())
-
-  }
-
-  val personStremWritterSettings =
-    WriterSettingsBuilder()
-      .withSerializer(personSerializer)
-
-  val personStremWritterSettingsWithKey =
-    WriterSettingsBuilder[Person]()
-      .withKeyExtractor(_.key)
-      .withSerializer(personSerializer)
-
-  val n = 10
-
-  import CommonSettings._
-
-  private def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] =
-    ZStream
-      .fromIterable(a until b)
-      .map(i => Person(key = f"$i%04d", name = s"name $i", age = i % 111))
-
-  def streamSuite(
-      pravegaStreamName: String,
-      groupName: String
-  ) = {
-
-    val writeToAndConsumeStream = ZIO.scoped {
+  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+    scopedSuite(test("Stream support timeouts") {
       for {
-        sink <- PravegaStream.sink(
-          pravegaStreamName,
-          personStremWritterSettings
-        )
+        _ <- PravegaAdmin.createStream(aScope, "s1", streamConfig(2))
 
-        sinkTx <- PravegaStream.sinkTx(
-          pravegaStreamName,
-          personStremWritterSettings
-        )
+        _ <- PravegaAdmin
+          .createReaderGroup(
+            aScope,
+            "g1",
+            "s1"
+          )
 
-        sinkKey <- PravegaStream.sink(
-          pravegaStreamName,
-          personStremWritterSettingsWithKey
-        )
-
-        sinkAborted <- PravegaStream.sinkTx(
-          pravegaStreamName,
-          personStremWritterSettingsWithKey
-        )
-
-        sinkKeyTx <- PravegaStream.sinkTx(
-          pravegaStreamName,
-          personStremWritterSettingsWithKey
-        )
-
-        _ <- testStream(0, 10).run(sink)
-        _ <- (ZIO.attemptBlocking(Thread.sleep(6000)) *> ZIO.logDebug(
-          "(( Re-start producing ))"
-        ) *> testStream(10, 20).run(sinkKey)).fork *> testStream(20, 30).run(
-          sinkTx
-        ) *> testStream(30, 40).run(
-          sinkKeyTx
-        ) *> testStream(1, 101)
-          .tap(p => ZIO.when(p.age % 100 == 0)(ZIO.fail("Boom")))
-          .run(sinkAborted)
-          .sandbox
-          .ignore
-
-        stream1 <- PravegaStream.stream(groupName, readerSettings)
-        stream2 <- PravegaStream.stream(groupName, readerSettings)
-
-        _ <- ZIO.logDebug("Consuming...")
-        count1Fiber <- stream1
-          .take(n.toLong * 2)
-          .tap(m => ZIO.logDebug(m))
-          .runFold(0)((s, _) => s + 1)
+        sink1 <- sink("s1")
+        sink2 <- sinkTx("s1")
+        _ <- testStream(0, 50).run(sink1).fork
+        stream1 <- PravegaStream
+          .stream("g1", personReaderSettings)
+        fib1 <- stream1
+          .take(50)
+          .runCount
           .fork
-
-        count2Fiber <- stream2
-          .take(n.toLong * 2)
-          .tap(m => ZIO.logDebug(m))
-          .runFold(0)((s, _) => s + 1)
+        stream2 <- PravegaStream
+          .stream("g1", personReaderSettings)
+        fib2 <- stream2
+          .take(50)
+          .runCount
           .fork
-
-        count1 <- count1Fiber.join
-        count2 <- count2Fiber.join
-
-      } yield count1 + count2
-    }
-
-    suite("Stream")(
-      test("publish and consume")(
-        writeToAndConsumeStream
-          .map(count => assert(count)(equalTo(40)))
-      )
-    )
-  }
-
-  def eventStreamSuite(
-      pravegaStreamName: String,
-      groupName: String
-  ) = {
-
-    val n = 1000
-
-    val writeToAndConsumeStream = ZIO.scoped {
-      for {
-
-        _ <- PravegaAdmin.openReaderGroup("zio-scope", groupName)
-
-        sink1 <- PravegaStream.sink(
-          pravegaStreamName,
-          personStremWritterSettings
-        )
-
-        sink2 <- PravegaStream.sink(
-          pravegaStreamName,
-          personStremWritterSettings
-        )
-
-        _ <- testStream(0, 10).run(sink1)
-
-        _ <- (ZIO.attemptBlocking(Thread.sleep(6000)) *> ZIO.logDebug(
+        _ <- (ZIO.attemptBlocking(Thread.sleep(2000)) *> ZIO.logDebug(
           "(( Re-start producing ))"
-        ) *> testStream(10, n * 2)
+        ) *> testStream(50, 100)
           .run(sink2)).fork
+        count1 <- fib1.join
+        count2 <- fib2.join
+        count = count1 + count2
+        _ <- ZIO.logDebug(s"count $count1 + $count2 = $count")
+      } yield assert(count)(equalTo(100L))
+    })
 
-        stream1 <- PravegaStream.eventStream(groupName, readerSettings2)
-        stream2 <- PravegaStream.eventStream(groupName, readerSettings2)
-
-        fiber1 <- stream1
-          .take(n.toLong)
-          .tap(m =>
-            ZIO
-              .when(m.isCheckpoint())(ZIO.debug(s"🏁 ${m.getCheckpointName()}"))
-          )
-          .runFold(0)((s, _) => s + 1)
-          .fork
-        fiber2 <- stream2
-          .take(n.toLong)
-          .tap(m =>
-            ZIO
-              .when(m.isCheckpoint())(ZIO.debug(s"🏁 ${m.getCheckpointName()}"))
-          )
-          .runFold(0)((s, _) => s + 1)
-          .fork
-
-        count1 <- fiber1.join
-        count2 <- fiber2.join
-
-      } yield count1 + count2
-    }
-
-    suite("Event Stream")(
-      test("publish and consume")(
-        writeToAndConsumeStream
-          .map(count => assert(count)(equalTo(2 * n)))
-      )
-    )
-  }
 }

@@ -27,9 +27,9 @@ class PravegaContainer(
 }
 
 object PravegaContainer {
-  def pravega: ZLayer[Scope, Nothing, PravegaContainer] = {
+  val pravega: ZLayer[Any, Nothing, PravegaContainer] = {
     val imageName = sys.env.getOrElse("PRAVEGA_IMAGE", "pravega/pravega:0.12.0")
-    ZLayer(ZIO.acquireRelease {
+    ZLayer.scoped(ZIO.acquireRelease {
       ZIO.attemptBlocking {
         val container = new PravegaContainer(
           dockerImageName = DockerImageName.parse(imageName)
@@ -42,3 +42,20 @@ object PravegaContainer {
   def clientConfig: ZLayer[PravegaContainer, Nothing, ClientConfig] =
     ZLayer.succeed(PravegaClientConfig.default)
 }
+// object PravegaContainer {
+//   val pravega: ZLayer[Any, Nothing, PravegaContainer] = {
+//     val imageName = sys.env.getOrElse("PRAVEGA_IMAGE", "pravega/pravega:0.12.0")
+
+//     ZLayer.scoped(ZIO.acquireRelease {
+//       Ref.make(0).map { _ =>
+//         val container = new PravegaContainer(
+//           dockerImageName = DockerImageName.parse(imageName)
+//         )
+//         container.start()
+//         container
+//       }
+//     }(ref => ZIO.attemptBlocking(ref.stop()).orDie))
+//   }
+//   def clientConfig: ZLayer[PravegaContainer, Nothing, ClientConfig] =
+//     ZLayer.succeed(PravegaClientConfig.default)
+// }

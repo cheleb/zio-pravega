@@ -26,10 +26,10 @@ def initTable(tableName: String, pravegaScope: String)
 : ZIO[Scope & Console & PravegaAdmin,Throwable,Unit] =
     for {
       tableCreated <- PravegaAdmin.createTable(
-              tableName,
-              tableConfig,
-              pravegaScope
-            )
+            pravegaScope,
+            tableName,
+            tableConfig
+          )
       
       _ <- ZIO.when(tableCreated)(
         printLine(s"Table $tableName just created")

@@ -6,19 +6,31 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
 
-trait TableSpecs {
-  this: ZIOSpec[
-    PravegaStreamService & PravegaAdmin & PravegaTableService
-  ] =>
+object TableSpecs extends SharedPravegaContainerSpec("table") {
 
-  import CommonSettings._
+  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+    scopedSuite(
+      suite("Tables")(
+        test("Create table") {
+          ZIO
+            .scoped(table("ages"))
+            .map(_ => assertCompletes)
+        },
+        tableSuite("ages")
+      )
+    )
 
-  private def testStream(a: Int, b: Int): ZStream[Any, Nothing, (String, Int)] =
+  import CommonTestSettings._
+
+  private def stringTestStream(
+      a: Int,
+      b: Int
+  ): ZStream[Any, Nothing, (String, Int)] =
     ZStream.fromIterable(a until b).map(i => (f"$i%04d", i))
 
   def tableSuite(pravegaTableName: String) = {
 
-    def writeToTable: ZIO[PravegaTableService, Throwable, Boolean] =
+    def writeToTable: ZIO[PravegaTable, Throwable, Boolean] =
       ZIO.scoped(for {
         sink <- PravegaTable
           .sink(
@@ -27,12 +39,12 @@ trait TableSpecs {
             (a: Int, b: Int) => a + b
           )
 
-        _ <- testStream(0, 1000)
+        _ <- stringTestStream(0, 1000)
           .run(sink)
 
       } yield true)
 
-    def readFromTable: ZIO[PravegaTableService, Throwable, Int] =
+    def readFromTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         source <- PravegaTable
           .source(pravegaTableName, tableReaderSettings)
@@ -41,7 +53,7 @@ trait TableSpecs {
         // _ <- source.runFold(0)((s, _) => s + 1)
       } yield count)
 
-    def writeFlowToTable: ZIO[PravegaTableService, Throwable, Int] =
+    def writeFlowToTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTable
           .flow(
@@ -49,18 +61,18 @@ trait TableSpecs {
             tableWriterSettings,
             (a: Int, b: Int) => a + b
           )
-        count <- testStream(2000, 3000)
+        count <- stringTestStream(2000, 3000)
           .via(flow)
           .runFold(0)((s, _) => s + 1)
 
       } yield count)
 
-    def flowFromTable: ZIO[PravegaTableService, Throwable, Int] =
+    def flowFromTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTable
           .flow(pravegaTableName, tableReaderSettings)
 
-        count <- testStream(0, 1001)
+        count <- stringTestStream(0, 1001)
           .map(_._1)
           .via(flow)
           .collect { case Some(str) => str }

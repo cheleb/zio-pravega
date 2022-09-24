@@ -3,11 +3,12 @@ sidebar_position: 1
 ---
 
 ```scala mdoc:invisible
+import zio._
 import zio.pravega._
 import io.pravega.client.stream.impl.UTF8StringSerializer
 
 import scala.language.postfixOps
-import scala.concurrent.duration.DurationInt
+
 ```
 # Settings
 

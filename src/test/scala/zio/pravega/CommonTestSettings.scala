@@ -1,13 +1,14 @@
 package zio.pravega
 
+import zio._
 import io.pravega.client.stream.impl.UTF8StringSerializer
 import io.pravega.client.stream.Serializer
 import java.nio.ByteBuffer
 
 import scala.language.postfixOps
-import scala.concurrent.duration.DurationInt
+import model.Person
 
-object CommonSettings {
+object CommonTestSettings {
 
   val intSerializer = new Serializer[Int] {
     override def serialize(value: Int): ByteBuffer = {
@@ -47,4 +48,27 @@ object CommonSettings {
   )
     .build()
 
+  val personSerializer = new Serializer[Person] {
+
+    override def serialize(person: Person): ByteBuffer =
+      ByteBuffer.wrap(person.toByteArray)
+
+    override def deserialize(buffer: ByteBuffer): Person =
+      Person.parseFrom(buffer.array())
+
+  }
+
+  val personReaderSettings =
+    ReaderSettingsBuilder()
+      .withTimeout(2 seconds)
+      .withSerializer(personSerializer)
+
+  val personStremWritterSettings =
+    WriterSettingsBuilder()
+      .withSerializer(personSerializer)
+
+  val personStremWritterSettingsWithKey =
+    WriterSettingsBuilder[Person]()
+      .withKeyExtractor(_.key)
+      .withSerializer(personSerializer)
 }

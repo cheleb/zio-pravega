@@ -1,4 +1,4 @@
-val scala213 = "2.13.8"
+val scala213 = "2.13.9"
 val scala32 = "3.2.0"
 val mainScala = scala213
 val allScala = Seq(scala32, mainScala)
@@ -76,6 +76,7 @@ lazy val pravega =
         "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-test" % zioVersion % Test,
         "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
+        "dev.zio" %% "zio-logging-slf4j" % "2.1.1" % Test,
         "org.scalatest" %% "scalatest" % "3.2.13" % Test,
         "io.pravega" % "pravega-client" % pravegaVersion,
         "org.testcontainers" % "testcontainers" % "1.17.2" % Test,
