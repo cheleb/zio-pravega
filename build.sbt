@@ -1,4 +1,4 @@
-val scala213 = "2.13.8"
+val scala213 = "2.13.9"
 val scala32 = "3.2.0"
 val mainScala = scala213
 val allScala = Seq(scala32, mainScala)
