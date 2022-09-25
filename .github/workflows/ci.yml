@@ -2,6 +2,10 @@ name: Scala CI
 
 on:
   push:
+    tags-ignore:
+      - 'v*'
+    branches:
+      - "*"
     paths-ignore:
       - 'docs/**'    
       - 'website/**'    

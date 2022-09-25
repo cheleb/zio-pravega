@@ -13,6 +13,8 @@ import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
 import java.util.concurrent.Executors
 
+/** Pravega Table API.
+  */
 trait PravegaTable {
 
   /** Create a sink
@@ -20,7 +22,7 @@ trait PravegaTable {
     * @param tableName
     * @param settings
     * @param combine
-    *   entry if already exists.
+    *   old and new entries.
     */
   def sink[K, V](
       tableName: String,

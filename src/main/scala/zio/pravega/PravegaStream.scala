@@ -12,6 +12,8 @@ import zio.Exit.Failure
 import zio.Exit.Success
 import io.pravega.client.stream.EventRead
 
+/** Pravega Stream API.
+  */
 trait PravegaStream {
   def sink[A](
       streamName: String,
