@@ -15,6 +15,8 @@ import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.admin.KeyValueTableManager
 import io.pravega.client.stream.ReaderGroup
 
+/** Pravega Admin API.
+  */
 trait PravegaAdmin {
   def createReaderGroup[A](
       scope: String,
