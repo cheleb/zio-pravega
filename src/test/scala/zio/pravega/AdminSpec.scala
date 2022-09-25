@@ -154,14 +154,6 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
             tableConfig
           )
           .map(twice => assert(twice)(isFalse))
-      ),
-      test("Drop table")(
-        PravegaAdmin
-          .dropTable(
-            aScope,
-            "table"
-          )
-          .map(dropped => assert(dropped)(isTrue))
       )
     ) @@ sequential
   }
@@ -172,7 +164,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
           aScope,
           "table"
         )
-        .map(dropped => assert(dropped)(isFalse))
+        .map(dropped => assert(dropped)(isTrue))
     )
   def dropScope =
     test("Drop namespace")(
