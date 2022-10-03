@@ -9,6 +9,11 @@ on:
     paths-ignore:
       - 'docs/**'    
       - 'website/**'    
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - 'docs/**'    
+      - 'website/**'    
 jobs:
   build:
     runs-on: ubuntu-latest
