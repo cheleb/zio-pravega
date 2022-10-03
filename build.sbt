@@ -79,7 +79,7 @@ lazy val pravega =
         "dev.zio" %% "zio-logging-slf4j" % "2.1.1" % Test,
         "org.scalatest" %% "scalatest" % "3.2.13" % Test,
         "io.pravega" % "pravega-client" % pravegaVersion,
-        "org.testcontainers" % "testcontainers" % "1.17.2" % Test,
+        "org.testcontainers" % "testcontainers" % "1.17.4" % Test,
         "dev.zio" %% "zio-zmx" % "2.0.0-RC4" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.1",
         "ch.qos.logback" % "logback-classic" % "1.2.11" % Test,
