@@ -84,7 +84,7 @@ lazy val pravega =
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.1",
         "ch.qos.logback" % "logback-classic" % "1.2.11" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % Test,
-        "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub" % "0.6.7" % Test,
+        "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub" % "0.6.13" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
       ) ++ zioConfig,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
