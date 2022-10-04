@@ -7,7 +7,7 @@ addSbtPlugin("com.github.sbt"            % "sbt-ci-release" % "1.5.10")
 addSbtPlugin("com.thesamet"              % "sbt-protoc"     % "1.0.6")
 addSbtPlugin("org.scoverage"             % "sbt-scoverage"  % "2.0.4")
 addSbtPlugin("com.github.sbt"            % "sbt-unidoc"     % "0.5.0")
-addSbtPlugin("org.scalameta"             % "sbt-mdoc"       % "2.3.5")
+addSbtPlugin("org.scalameta"             % "sbt-mdoc"       % "2.3.6")
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"   % "0.4.1")
 
 libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.11"
