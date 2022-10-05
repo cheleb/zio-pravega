@@ -31,7 +31,7 @@ trait PravegaTable {
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): Task[ZSink[Any, Throwable, (K, V), Nothing, Unit]]
+  ): ZSink[Any, Throwable, (K, V), Nothing, Unit]
 
   /** Create a writer flow
     *
@@ -64,7 +64,7 @@ trait PravegaTable {
   def source[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
-  ): Task[ZStream[Any, Throwable, TableEntry[V]]]
+  ): ZStream[Any, Throwable, TableEntry[V]]
 }
 
 /** Pravega Table API.
@@ -74,14 +74,14 @@ object PravegaTable {
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): RIO[PravegaTable, ZSink[
-    Any,
+  ): ZSink[
+    PravegaTable,
     Throwable,
     (K, V),
     Nothing,
     Unit
-  ]] =
-    ZIO.serviceWithZIO[PravegaTable](
+  ] =
+    ZSink.serviceWithSink[PravegaTable](
       _.sink(tableName, settings, combine)
     )
 
@@ -110,9 +110,9 @@ object PravegaTable {
   def source[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
-  ): RIO[PravegaTable & Scope, ZStream[Any, Throwable, TableEntry[V]]] =
-    ZIO
-      .serviceWithZIO[PravegaTable](
+  ): ZStream[PravegaTable, Throwable, TableEntry[V]] =
+    ZStream
+      .serviceWithStream[PravegaTable](
         _.source(tableName, settings)
       )
 
@@ -184,7 +184,7 @@ private final case class PravegaTableImpl(
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): Task[ZSink[Any, Throwable, (K, V), Nothing, Unit]] = ZIO.attemptBlocking(
+  ): ZSink[Any, Throwable, (K, V), Nothing, Unit] =
     ZSink.unwrapScoped(
       table(tableName, settings.keyValueTableClientConfiguration)
         .map { table =>
@@ -194,7 +194,6 @@ private final case class PravegaTableImpl(
           }
         }
     )
-  )
 
   private def iterator(
       table: KeyValueTable,
@@ -207,7 +206,7 @@ private final case class PravegaTableImpl(
   override def source[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
-  ): Task[ZStream[Any, Throwable, TableEntry[V]]] = ZIO.attemptBlocking(
+  ): ZStream[Any, Throwable, TableEntry[V]] =
     ZStream.unwrapScoped(
       for {
         table <- table(tableName, settings.keyValueTableClientConfiguration)
@@ -236,7 +235,6 @@ private final case class PravegaTableImpl(
             }
         }
     )
-  )
 
   def writerFlow[K, V](
       tableName: String,

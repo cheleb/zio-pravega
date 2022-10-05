@@ -18,16 +18,16 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
             _ <- createGroup("g1", "s1")
 
-            sink1 <- sink("s1", true)
-            sink2 <- sinkTx("s1", true)
+            sink1 = sink("s1", true)
+            sink2 = sinkTx("s1", true)
             _ <- testStream(0, 50).run(sink1).fork
-            stream1 <- PravegaStream
+            stream1 = PravegaStream
               .stream("g1", personReaderSettings)
             fib1 <- stream1
               .take(50)
               .runCount
               .fork
-            stream2 <- PravegaStream
+            stream2 = PravegaStream
               .stream("g1", personReaderSettings)
             fib2 <- stream2
               .take(50)
@@ -47,8 +47,8 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           for {
             _ <- PravegaAdmin.createStream(aScope, "s2", streamConfig(1))
 
-            sink <- sink("s2")
-            sinkAborted <- sinkTx("s2")
+            sink0 = sink("s2")
+            sinkAborted = sinkTx("s2")
 
             _ <- createGroup("g2", "s2")
             _ <- testStream(1, 100)
@@ -56,9 +56,9 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
               .run(sinkAborted)
               .sandbox
               .ignore
-            _ <- testStream(50, 100).run(sink)
+            _ <- testStream(50, 100).run(sink0)
 
-            stream <- PravegaStream.stream("g2", personReaderSettings)
+            stream = PravegaStream.stream("g2", personReaderSettings)
             count <- stream
               .take(50)
               .filter(_.age < 50)

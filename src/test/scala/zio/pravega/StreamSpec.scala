@@ -21,16 +21,16 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
             "s1"
           )
 
-        sink1 <- sink("s1")
-        sink2 <- sinkTx("s1")
+        sink1 = sink("s1")
+        sink2 = sinkTx("s1")
         _ <- testStream(0, 50).run(sink1).fork
-        stream1 <- PravegaStream
+        stream1 = PravegaStream
           .stream("g1", personReaderSettings)
         fib1 <- stream1
           .take(50)
           .runCount
           .fork
-        stream2 <- PravegaStream
+        stream2 = PravegaStream
           .stream("g1", personReaderSettings)
         fib2 <- stream2
           .take(50)

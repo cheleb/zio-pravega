@@ -31,25 +31,26 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
 
     def writeToTable: ZIO[PravegaTable, Throwable, Boolean] =
       for {
-        sink <- PravegaTable
-          .sink(
-            pravegaTableName,
-            tableWriterSettings,
-            (a: Int, b: Int) => a + b
-          )
 
         _ <- stringTestStream(0, 1000)
-          .run(sink)
+          .run(
+            PravegaTable
+              .sink(
+                pravegaTableName,
+                tableWriterSettings,
+                (a: Int, b: Int) => a + b
+              )
+          )
 
       } yield true
 
     def readFromTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
-        source <- PravegaTable
+        _ <- ZIO.logInfo("Read from table")
+        source = PravegaTable
           .source(pravegaTableName, tableReaderSettings)
         count <- source
           .runFold(0)((s, _) => s + 1)
-        // _ <- source.runFold(0)((s, _) => s + 1)
       } yield count)
 
     def writeFlowToTable: ZIO[PravegaTable, Throwable, Int] =

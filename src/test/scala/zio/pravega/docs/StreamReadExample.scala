@@ -17,7 +17,7 @@ object StreamReadExample extends ZIOAppDefault {
       "a-reader-group",
       "a-stream"
     )
-    stream <- PravegaStream.stream(
+    stream = PravegaStream.stream(
       "a-reader-group",
       stringReaderSettings
     )

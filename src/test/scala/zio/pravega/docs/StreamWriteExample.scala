@@ -21,13 +21,15 @@ object StreamWriteExample extends ZIOAppDefault {
       .map(i => f"$i%04d_name $i")
 
   val program = for {
-    sink <- PravegaStream.sink(
-      "a-stream",
-      stringWriterSettings
-    )
+
     _ <- testStream(1, 10)
       .tap(p => ZIO.debug(p.toString()))
-      .run(sink)
+      .run(
+        PravegaStream.sink(
+          "a-stream",
+          stringWriterSettings
+        )
+      )
     _ <- ZIO.log("Coucou")
 
   } yield ()

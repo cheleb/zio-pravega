@@ -18,22 +18,22 @@ trait PravegaStream {
   def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]]
+  ): ZSink[Any, Throwable, A, Nothing, Unit]
 
   def sinkTx[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]]
+  ): ZSink[Any, Throwable, A, Nothing, Unit]
 
   def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): Task[ZStream[Any, Throwable, A]]
+  ): ZStream[Any, Throwable, A]
 
   def eventStream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): Task[ZStream[Any, Throwable, EventRead[A]]]
+  ): ZStream[Any, Throwable, EventRead[A]]
 }
 
 private class PravegaStreamImpl(
@@ -43,7 +43,7 @@ private class PravegaStreamImpl(
   override def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]] = {
+  ): ZSink[Any, Throwable, A, Nothing, Unit] = {
     val acquireWriter = ZIO
       .attemptBlocking(
         eventStreamClientFactory.createEventWriter(
@@ -63,16 +63,14 @@ private class PravegaStreamImpl(
         ZSink.foreach(writeEvent)
       }
 
-    ZIO.attempt(
-      ZSink.unwrapScoped(acquireWriter)
-    )
+    ZSink.unwrapScoped(acquireWriter)
 
   }
 
   def sinkTx[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): Task[ZSink[Any, Throwable, A, Nothing, Unit]] = {
+  ): ZSink[Any, Throwable, A, Nothing, Unit] = {
     val acquireWriter = ZIO
       .attemptBlocking(
         eventStreamClientFactory.createTransactionalEventWriter(
@@ -106,16 +104,14 @@ private class PravegaStreamImpl(
         ZSink.foreach(writeEvent)
       }
 
-    ZIO.attempt(
-      ZSink.unwrapScoped(acquireWriter)
-    )
+    ZSink.unwrapScoped(acquireWriter)
 
   }
 
   override def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): Task[ZStream[Any, Throwable, A]] = ZIO.attemptBlocking(
+  ): ZStream[Any, Throwable, A] =
     ZStream.unwrapScoped(
       ZIO
         .attemptBlocking(
@@ -140,12 +136,11 @@ private class PravegaStreamImpl(
           )
         )
     )
-  )
 
   override def eventStream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): Task[ZStream[Any, Throwable, EventRead[A]]] = ZIO.attempt(
+  ): ZStream[Any, Throwable, EventRead[A]] =
     ZStream.unwrapScoped(
       ZIO
         .attemptBlocking(
@@ -169,7 +164,6 @@ private class PravegaStreamImpl(
           )
         )
     )
-  )
 
 }
 
@@ -178,27 +172,27 @@ object PravegaStream {
   def sink[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): RIO[PravegaStream, ZSink[Any, Throwable, A, Nothing, Unit]] =
-    ZIO.serviceWithZIO[PravegaStream](_.sink(streamName, settings))
+  ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
+    ZSink.serviceWithSink[PravegaStream](_.sink(streamName, settings))
 
   def sinkTx[A](
       streamName: String,
       settings: WriterSettings[A]
-  ): RIO[PravegaStream, ZSink[Any, Throwable, A, Nothing, Unit]] =
-    ZIO.serviceWithZIO[PravegaStream](_.sinkTx(streamName, settings))
+  ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
+    ZSink.serviceWithSink[PravegaStream](_.sinkTx(streamName, settings))
 
   def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): RIO[PravegaStream, ZStream[Any, Throwable, A]] =
-    ZIO.serviceWithZIO[PravegaStream](
+  ): ZStream[PravegaStream, Throwable, A] =
+    ZStream.serviceWithStream[PravegaStream](
       _.stream(readerGroupName, settings)
     )
   def eventStream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): RIO[PravegaStream, ZStream[Any, Throwable, EventRead[A]]] =
-    ZIO.serviceWithZIO[PravegaStream](
+  ): ZStream[PravegaStream, Throwable, EventRead[A]] =
+    ZStream.serviceWithStream[PravegaStream](
       _.eventStream(readerGroupName, settings)
     )
 

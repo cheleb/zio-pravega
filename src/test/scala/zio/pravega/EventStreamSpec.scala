@@ -4,7 +4,6 @@ import zio._
 
 import zio.test._
 import zio.test.Assertion._
-//import zio.test.TestAspect._
 
 object EventStreamSpec extends SharedPravegaContainerSpec("event-streaming") {
 
@@ -25,8 +24,8 @@ object EventStreamSpec extends SharedPravegaContainerSpec("event-streaming") {
               "s1"
             )
 
-          sink1 <- sink("s1")
-          sink2 <- sinkTx("s1")
+          sink1 = sink("s1")
+          sink2 = sinkTx("s1")
 
           _ <- testStream(0, 10).run(sink1)
 
@@ -35,8 +34,8 @@ object EventStreamSpec extends SharedPravegaContainerSpec("event-streaming") {
           ) *> testStream(10, 20)
             .run(sink2)).fork
 
-          stream1 <- PravegaStream.eventStream("g1", personReaderSettings)
-          stream2 <- PravegaStream.eventStream("g1", personReaderSettings)
+          stream1 = PravegaStream.eventStream("g1", personReaderSettings)
+          stream2 = PravegaStream.eventStream("g1", personReaderSettings)
 
           fiber1 <- stream1
             .take(10)
