@@ -45,13 +45,13 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
       } yield true
 
     def readFromTable: ZIO[PravegaTable, Throwable, Int] =
-      ZIO.scoped(for {
+      for {
         _ <- ZIO.logInfo("Read from table")
         source = PravegaTable
           .source(pravegaTableName, tableReaderSettings)
         count <- source
           .runFold(0)((s, _) => s + 1)
-      } yield count)
+      } yield count
 
     def writeFlowToTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
