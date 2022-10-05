@@ -11,7 +11,7 @@ import io.pravega.client.stream.ReaderConfig
 
 object ReaderOfflineSpec extends SharedPravegaContainerSpec("reader-offline") {
 
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+  override def spec: Spec[Environment with TestEnvironment, Any] =
     scopedSuite(
       test("Set reader offline")(for {
         _ <- createStream("stream", 2)

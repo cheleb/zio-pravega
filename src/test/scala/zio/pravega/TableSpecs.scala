@@ -8,12 +8,11 @@ import zio.test._
 
 object TableSpecs extends SharedPravegaContainerSpec("table") {
 
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+  override def spec: Spec[Environment with TestEnvironment, Any] =
     scopedSuite(
       suite("Tables")(
         test("Create table") {
-          ZIO
-            .scoped(table("ages"))
+          table("ages")
             .map(_ => assertCompletes)
         },
         tableSuite("ages")
@@ -31,7 +30,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
   def tableSuite(pravegaTableName: String) = {
 
     def writeToTable: ZIO[PravegaTable, Throwable, Boolean] =
-      ZIO.scoped(for {
+      for {
         sink <- PravegaTable
           .sink(
             pravegaTableName,
@@ -42,7 +41,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
         _ <- stringTestStream(0, 1000)
           .run(sink)
 
-      } yield true)
+      } yield true
 
     def readFromTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {

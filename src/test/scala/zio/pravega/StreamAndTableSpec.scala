@@ -1,6 +1,5 @@
 package zio.pravega
 
-import zio._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
@@ -10,7 +9,7 @@ object StreamAndTableSpec
 
   import CommonTestSettings._
 
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+  override def spec: Spec[Environment with TestEnvironment, Any] =
     scopedSuite(
       suite("Table concurency writes")(
         test("Write concurently from stream to table") {

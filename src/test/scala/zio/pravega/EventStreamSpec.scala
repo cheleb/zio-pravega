@@ -9,7 +9,7 @@ import zio.test.Assertion._
 object EventStreamSpec extends SharedPravegaContainerSpec("event-streaming") {
 
   import CommonTestSettings._
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+  override def spec: Spec[Environment with TestEnvironment, Any] =
     scopedSuite(
       test("EventStream support timeouts")(
         for {

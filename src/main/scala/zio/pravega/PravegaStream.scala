@@ -115,7 +115,7 @@ private class PravegaStreamImpl(
   override def stream[A](
       readerGroupName: String,
       settings: ReaderSettings[A]
-  ): Task[ZStream[Any, Throwable, A]] = ZIO.attempt(
+  ): Task[ZStream[Any, Throwable, A]] = ZIO.attemptBlocking(
     ZStream.unwrapScoped(
       ZIO
         .attemptBlocking(

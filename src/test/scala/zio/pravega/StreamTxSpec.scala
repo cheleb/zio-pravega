@@ -9,7 +9,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
   import CommonTestSettings._
 
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+  override def spec: Spec[Environment with TestEnvironment, Any] =
     scopedSuite(
       suite("Tx Stream support")(
         test("Stream support timeouts") {

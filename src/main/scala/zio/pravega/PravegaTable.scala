@@ -9,12 +9,12 @@ import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
 import io.pravega.client.tables.KeyValueTable
 import io.pravega.client.tables.Version
-import io.pravega.client.tables.Insert
-import io.pravega.client.tables.Put
 import io.pravega.client.tables.{TableEntry => JTableEntry}
 import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
 import java.util.concurrent.Executors
+
+import zio.pravega.table.KVPWriter
 
 /** Pravega Table API.
   */
@@ -31,7 +31,7 @@ trait PravegaTable {
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]]
+  ): Task[ZSink[Any, Throwable, (K, V), Nothing, Unit]]
 
   /** Create a writer flow
     *
@@ -64,7 +64,7 @@ trait PravegaTable {
   def source[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
-  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]]
+  ): Task[ZStream[Any, Throwable, TableEntry[V]]]
 }
 
 /** Pravega Table API.
@@ -74,7 +74,7 @@ object PravegaTable {
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): RIO[PravegaTable & Scope, ZSink[
+  ): RIO[PravegaTable, ZSink[
     Any,
     Throwable,
     (K, V),
@@ -162,29 +162,16 @@ private final case class PravegaTableImpl(
       k: K,
       v: V,
       table: KeyValueTable,
-      settings: TableWriterSettings[K, V],
+      kvpWriter: KVPWriter[K, V],
       combine: (V, V) => V
   ): ZIO[Any, Throwable, Version] =
     ZIO
-      .fromCompletableFuture(table.get(settings.tableKey(k)))
+      .fromCompletableFuture(table.get(kvpWriter.tableKey(k)))
       .map {
         case null =>
-          new Insert(
-            settings.tableKey(k),
-            settings.valueSerializer.serialize(v)
-          )
+          kvpWriter.insert(k, v)
         case previous =>
-          new Put(
-            settings.tableKey(k),
-            settings.valueSerializer
-              .serialize(
-                combine(
-                  settings.valueSerializer.deserialize(previous.getValue),
-                  v
-                )
-              ),
-            previous.getVersion
-          )
+          kvpWriter.put(k, v, previous, combine)
       }
       .flatMap { mod =>
         ZIO
@@ -197,13 +184,17 @@ private final case class PravegaTableImpl(
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] =
-    table(tableName, settings.keyValueTableClientConfiguration)
-      .map { table =>
-        ZSink.foreach { case (k, v) =>
-          upsert(k, v, table, settings, combine)
+  ): Task[ZSink[Any, Throwable, (K, V), Nothing, Unit]] = ZIO.attemptBlocking(
+    ZSink.unwrapScoped(
+      table(tableName, settings.keyValueTableClientConfiguration)
+        .map { table =>
+          val kvpWriter = new KVPWriter[K, V](settings)
+          ZSink.foreach { case (k, v) =>
+            upsert(k, v, table, kvpWriter, combine)
+          }
         }
-      }
+    )
+  )
 
   private def iterator(
       table: KeyValueTable,
@@ -216,33 +207,36 @@ private final case class PravegaTableImpl(
   override def source[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
-  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]] =
-    for {
-      table <- table(tableName, settings.keyValueTableClientConfiguration)
-      it = iterator(table, settings.maxEntriesAtOnce).asSequential(
-        Executors.newSingleThreadExecutor()
-      )
-    } yield ZStream
-      .repeatZIOChunkOption {
-        ZIO
-          .fromCompletableFuture(it.getNext())
-          .asSomeError
-          .flatMap {
-            case null =>
-              ZIO.fail(None)
-            case el =>
-              val res = el.getItems().asScala.map { tableEntry =>
-                TableEntry(
-                  tableEntry.getKey(),
-                  tableEntry.getVersion(),
-                  settings.valueSerializer
-                    .deserialize(tableEntry.getValue())
-                )
-              }
-              ZIO
-                .succeed(Chunk.fromArray(res.toArray))
-          }
-      }
+  ): Task[ZStream[Any, Throwable, TableEntry[V]]] = ZIO.attemptBlocking(
+    ZStream.unwrapScoped(
+      for {
+        table <- table(tableName, settings.keyValueTableClientConfiguration)
+        it = iterator(table, settings.maxEntriesAtOnce).asSequential(
+          Executors.newSingleThreadExecutor()
+        )
+      } yield ZStream
+        .repeatZIOChunkOption {
+          ZIO
+            .fromCompletableFuture(it.getNext())
+            .asSomeError
+            .flatMap {
+              case null =>
+                ZIO.fail(None)
+              case el =>
+                val res = el.getItems().asScala.map { tableEntry =>
+                  TableEntry(
+                    tableEntry.getKey(),
+                    tableEntry.getVersion(),
+                    settings.valueSerializer
+                      .deserialize(tableEntry.getValue())
+                  )
+                }
+                ZIO
+                  .succeed(Chunk.fromArray(res.toArray))
+            }
+        }
+    )
+  )
 
   def writerFlow[K, V](
       tableName: String,
@@ -252,7 +246,8 @@ private final case class PravegaTableImpl(
     table(tableName, settings.keyValueTableClientConfiguration)
       .map { table =>
         ZPipeline.mapZIO { case (k, v) =>
-          upsert(k, v, table, settings, combine)
+          val kvpWriter = new KVPWriter[K, V](settings)
+          upsert(k, v, table, kvpWriter, combine)
             .map(version =>
               TableEntry(
                 settings.tableKey(k),
