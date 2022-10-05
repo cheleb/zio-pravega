@@ -56,7 +56,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
     def writeFlowToTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTable
-          .flow(
+          .writerFlow(
             pravegaTableName,
             tableWriterSettings,
             (a: Int, b: Int) => a + b
@@ -70,7 +70,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
     def flowFromTable: ZIO[PravegaTable, Throwable, Int] =
       ZIO.scoped(for {
         flow <- PravegaTable
-          .flow(pravegaTableName, tableReaderSettings)
+          .readerFlow(pravegaTableName, tableReaderSettings)
 
         count <- stringTestStream(0, 1001)
           .map(_._1)

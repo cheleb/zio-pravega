@@ -8,7 +8,10 @@ import io.pravega.client.tables.KeyValueTableClientConfiguration
 import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
 import io.pravega.client.tables.KeyValueTable
-import io.pravega.client.tables
+import io.pravega.client.tables.Version
+import io.pravega.client.tables.Insert
+import io.pravega.client.tables.Put
+import io.pravega.client.tables.{TableEntry => JTableEntry}
 import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
 import java.util.concurrent.Executors
@@ -30,23 +33,42 @@ trait PravegaTable {
       combine: (V, V) => V
   ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]]
 
-  def flow[K, V](
+  /** Create a writer flow
+    *
+    * @param tableName
+    * @param settings
+    * @param combine
+    *   old and new entries.
+    */
+  def writerFlow[K, V](
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
   ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]]
 
-  def flow[K, V](
+  /** Create a reader flow
+    *
+    * @param tableName
+    * @param settings
+    */
+  def readerFlow[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
   ): RIO[Scope, ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]]
 
+  /** Create a reader source
+    *
+    * @param tableName
+    * @param settings
+    */
   def source[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
   ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]]
 }
 
+/** Pravega Table API.
+  */
 object PravegaTable {
   def sink[K, V](
       tableName: String,
@@ -63,7 +85,7 @@ object PravegaTable {
       _.sink(tableName, settings, combine)
     )
 
-  def flow[K, V](
+  def writerFlow[K, V](
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
@@ -73,16 +95,16 @@ object PravegaTable {
     (K, V),
     TableEntry[V]
   ]] = ZIO.serviceWithZIO[PravegaTable](
-    _.flow(tableName, settings, combine)
+    _.writerFlow(tableName, settings, combine)
   )
 
-  def flow[K, V](
+  def readerFlow[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
   ): RIO[PravegaTable & Scope, ZPipeline[Any, Throwable, K, Option[
     TableEntry[V]
   ]]] = ZIO.serviceWithZIO[PravegaTable](
-    _.flow(tableName, settings)
+    _.readerFlow(tableName, settings)
   )
 
   def source[K, V](
@@ -106,6 +128,11 @@ object PravegaTable {
         .withFinalizerAuto
     } yield new PravegaTableImpl(clientFactory)
 
+  /** Create a Pravega Table API.
+    *
+    * @param scope
+    * @param clientConfig
+    */
   def fromScope(
       scope: String,
       clientConfig: ClientConfig
@@ -137,26 +164,26 @@ private final case class PravegaTableImpl(
       table: KeyValueTable,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
-  ): ZIO[Any, Throwable, tables.Version] =
+  ): ZIO[Any, Throwable, Version] =
     ZIO
       .fromCompletableFuture(table.get(settings.tableKey(k)))
       .map {
         case null =>
-          new tables.Insert(
+          new Insert(
             settings.tableKey(k),
             settings.valueSerializer.serialize(v)
           )
-        case el =>
-          new tables.Put(
+        case previous =>
+          new Put(
             settings.tableKey(k),
             settings.valueSerializer
               .serialize(
                 combine(
-                  settings.valueSerializer.deserialize(el.getValue),
+                  settings.valueSerializer.deserialize(previous.getValue),
                   v
                 )
               ),
-            el.getVersion
+            previous.getVersion
           )
       }
       .flatMap { mod =>
@@ -181,7 +208,7 @@ private final case class PravegaTableImpl(
   private def iterator(
       table: KeyValueTable,
       maxEntries: Int
-  ): AsyncIterator[IteratorItem[tables.TableEntry]] = table
+  ): AsyncIterator[IteratorItem[JTableEntry]] = table
     .iterator()
     .maxIterationSize(maxEntries)
     .all()
@@ -217,7 +244,7 @@ private final case class PravegaTableImpl(
           }
       }
 
-  def flow[K, V](
+  def writerFlow[K, V](
       tableName: String,
       settings: TableWriterSettings[K, V],
       combine: (V, V) => V
@@ -235,7 +262,7 @@ private final case class PravegaTableImpl(
             )
         }
       }
-  def flow[K, V](
+  def readerFlow[K, V](
       tableName: String,
       settings: TableReaderSettings[K, V]
   ): RIO[Scope, ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]] =
