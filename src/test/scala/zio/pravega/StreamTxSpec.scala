@@ -4,6 +4,7 @@ import zio._
 
 import zio.test._
 import zio.test.Assertion._
+import zio.test.TestAspect._
 
 object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
@@ -33,7 +34,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
               .take(50)
               .runCount
               .fork
-            _ <- (ZIO.attemptBlocking(Thread.sleep(2000)) *> ZIO.logDebug(
+            _ <- (ZIO.sleep(2000.millis) *> ZIO.logDebug(
               "(( Re-start producing ))"
             ) *> testStream(50, 100)
               .run(sink2)).fork
@@ -42,7 +43,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
             count = count1 + count2
             _ <- ZIO.logDebug(s"count $count1 + $count2 = $count")
           } yield assert(count)(equalTo(100L))
-        },
+        } @@ withLiveClock,
         test("Roll back sinks") {
           for {
             _ <- PravegaAdmin.createStream(aScope, "s2", streamConfig(1))
