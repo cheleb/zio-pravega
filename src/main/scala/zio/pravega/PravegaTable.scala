@@ -210,8 +210,11 @@ private final case class PravegaTableImpl(
     ZStream.unwrapScoped(
       for {
         table <- table(tableName, settings.keyValueTableClientConfiguration)
+        executor <- ZIO
+          .succeed(Executors.newSingleThreadExecutor())
+          .withFinalizerAuto
         it = iterator(table, settings.maxEntriesAtOnce).asSequential(
-          Executors.newSingleThreadExecutor()
+          executor
         )
       } yield ZStream
         .repeatZIOChunkOption {
