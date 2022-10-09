@@ -15,7 +15,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
       suite("Tx Stream support")(
         test("Stream support timeouts") {
           for {
-            _ <- PravegaAdmin.createStream(aScope, "s1", streamConfig(2))
+            _ <- PravegaAdmin.createStream(aScope, "s1", staticStreamConfig(2))
 
             _ <- createGroup("g1", "s1")
 
@@ -46,7 +46,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         } @@ withLiveClock,
         test("Roll back sinks") {
           for {
-            _ <- PravegaAdmin.createStream(aScope, "s2", streamConfig(1))
+            _ <- PravegaAdmin.createStream(aScope, "s2", staticStreamConfig(1))
 
             sink0 = sink("s2")
             sinkAborted = sinkTx("s2")

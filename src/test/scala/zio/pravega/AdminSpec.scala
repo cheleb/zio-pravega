@@ -42,7 +42,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
           .createStream(
             aScope,
             "stream",
-            streamConfig(2)
+            staticStreamConfig(2)
           )
           .map(once => assert(once)(isTrue))
       ),
@@ -51,7 +51,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
           .createStream(
             aScope,
             "stream",
-            streamConfig(2)
+            staticStreamConfig(2)
           )
           .map(twice => assert(twice)(isFalse))
       )

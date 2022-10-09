@@ -13,7 +13,7 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
   override def spec: Spec[Environment with TestEnvironment, Any] =
     scopedSuite(test("Stream support timeouts") {
       for {
-        _ <- PravegaAdmin.createStream(aScope, "s1", streamConfig(2))
+        _ <- PravegaAdmin.createStream(aScope, "s1", staticStreamConfig(2))
 
         _ <- PravegaAdmin
           .createReaderGroup(

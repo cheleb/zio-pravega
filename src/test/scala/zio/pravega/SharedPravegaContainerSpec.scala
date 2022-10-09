@@ -1,7 +1,7 @@
 package zio.pravega
 
 import zio.test._
-import zio.test.Assertion._
+
 import zio.test.TestAspect._
 
 import zio.pravega.test.PravegaContainer
@@ -27,7 +27,17 @@ abstract class SharedPravegaContainerSpec(val aScope: String)
 
   val clientConfig = PravegaClientConfig.default
 
-  def streamConfig(partitions: Int) = StreamConfiguration.builder
+  def dynamicStreamConfig(
+      targetRate: Int,
+      scaleFactor: Int,
+      minNumSegments: Int
+  ) = StreamConfiguration.builder
+    .scalingPolicy(
+      ScalingPolicy.byEventRate(targetRate, scaleFactor, minNumSegments)
+    )
+    .build
+
+  def staticStreamConfig(partitions: Int) = StreamConfiguration.builder
     .scalingPolicy(ScalingPolicy.fixed(partitions))
     .build
 
@@ -49,7 +59,7 @@ abstract class SharedPravegaContainerSpec(val aScope: String)
       test(s"Created scope")(
         PravegaAdmin
           .createScope(aScope)
-          .map(once => assert(once)(isTrue))
+          .map(_ => assertCompletes)
       ),
       aSuite
     ).provide(
@@ -64,7 +74,7 @@ abstract class SharedPravegaContainerSpec(val aScope: String)
     PravegaContainer.pravega
 
   def createStream(name: String, partition: Int = 2) =
-    PravegaAdmin.createStream(aScope, name, streamConfig(partition))
+    PravegaAdmin.createStream(aScope, name, staticStreamConfig(partition))
   def table(name: String) =
     PravegaAdmin.createTable(aScope, name, tableConfig)
 

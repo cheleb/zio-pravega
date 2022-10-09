@@ -16,6 +16,7 @@ class PravegaContainer(
   withStartupTimeout(Duration.ofMinutes(2))
   addFixedExposedPort(9090, 9090)
   addFixedExposedPort(12345, 12345)
+
   waitingFor(
     Wait.forLogMessage(
       ".*Pravega Sandbox is running locally now. You could access it at 127.0.0.1:9090.*",

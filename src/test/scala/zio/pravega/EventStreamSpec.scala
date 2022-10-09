@@ -15,7 +15,7 @@ object EventStreamSpec extends SharedPravegaContainerSpec("event-streaming") {
 
 //          _ <- PravegaAdmin.openReaderGroup("zio-scope", groupName)
 
-          _ <- PravegaAdmin.createStream(aScope, "s1", streamConfig(2))
+          _ <- PravegaAdmin.createStream(aScope, "s1", staticStreamConfig(2))
 
           _ <- PravegaAdmin
             .createReaderGroup(
