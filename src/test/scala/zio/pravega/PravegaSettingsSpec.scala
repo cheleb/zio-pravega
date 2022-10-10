@@ -11,9 +11,7 @@ import java.nio.ByteBuffer
 
 class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
-  val clientConfig = PravegaClientConfig.builder
-    .enableTlsToController(true)
-    .build()
+  val clientConfig = PravegaClientConfig.builder.enableTlsToController(true).build()
 
   "Pravega stream settings builders" must {
 
@@ -46,10 +44,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
   "Pravega table setting builder" must {
     "Allow table reader settings" in {
-      val tableReaderSettings = TableReaderSettingsBuilder(
-        new UTF8StringSerializer,
-        new UTF8StringSerializer
-      )
+      val tableReaderSettings = TableReaderSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
         .withMaximumInflightMessages(10)
         .withConfigurationCustomiser(_.backoffMultiple(2))
         .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes())))
@@ -59,10 +54,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
       tableReaderSettings.maximumInflightMessages mustEqual 10
       tableReaderSettings.maxEntriesAtOnce mustEqual 1000
 
-      val tableReaderSettingsDefault = TableReaderSettingsBuilder(
-        new UTF8StringSerializer,
-        new UTF8StringSerializer
-      )
+      val tableReaderSettingsDefault = TableReaderSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
         .withMaximumInflightMessages(10)
         .withConfigurationCustomiser(_.backoffMultiple(2))
         .withMaxEntriesAtOnce(1000)
@@ -73,10 +65,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
     }
     "Allow table writter settings" in {
-      val tableWritterSettings = TableWriterSettingsBuilder(
-        new UTF8StringSerializer,
-        new UTF8StringSerializer
-      )
+      val tableWritterSettings = TableWriterSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
         .withMaximumInflightMessages(100)
         .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes())))
         .withConfigurationCustomiser(_.retryAttempts(3))
@@ -84,13 +73,11 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
       tableWritterSettings.maximumInflightMessages mustEqual 100
 
-      val tableWritterSettingsDefaultExtractor = TableWriterSettingsBuilder(
-        new UTF8StringSerializer,
-        new UTF8StringSerializer
-      )
-        .withMaximumInflightMessages(100)
-        .withConfigurationCustomiser(_.retryAttempts(3))
-        .build()
+      val tableWritterSettingsDefaultExtractor =
+        TableWriterSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
+          .withMaximumInflightMessages(100)
+          .withConfigurationCustomiser(_.retryAttempts(3))
+          .build()
 
       tableWritterSettingsDefaultExtractor.maximumInflightMessages mustEqual 100
 

@@ -3,9 +3,10 @@ val scala32 = "3.2.0"
 val mainScala = scala213
 val allScala = Seq(scala32, mainScala)
 
-val zioVersion = "2.0.2"
+val zioVersion = "2.0.2+128-26bcdea4-SNAPSHOT"
+//val zioVersion = "2.0.2+105-f518b996-SNAPSHOT"
 val pravegaVersion = "0.12.0"
-val zioConfigVersion = "2.0.4"
+//val zioConfigVersion = "2.0.4"
 
 inThisBuild(
   List(
@@ -45,10 +46,10 @@ inThisBuild(
   )
 )
 
-val zioConfig =
-  Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
-    "dev.zio" %% d % zioConfigVersion
-  )
+// val zioConfig =
+//   Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
+//     "dev.zio" %% d % zioConfigVersion
+//   )
 
 lazy val pravega =
   project
@@ -73,6 +74,7 @@ lazy val pravega =
     .settings(
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       libraryDependencies ++= Seq(
+        "com.typesafe" % "config" % "1.4.2",
         "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-test" % zioVersion % Test,
         "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
@@ -80,13 +82,13 @@ lazy val pravega =
         "org.scalatest" %% "scalatest" % "3.2.14" % Test,
         "io.pravega" % "pravega-client" % pravegaVersion,
         "org.testcontainers" % "testcontainers" % "1.17.5" % Test,
-        "dev.zio" %% "zio-zmx" % "2.0.0-RC4" % Test,
+//        "dev.zio" %% "zio-zmx" % "2.0.0-RC4" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.1",
         "ch.qos.logback" % "logback-classic" % "1.4.4" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub" % "0.6.13" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
-      ) ++ zioConfig,
+      ) ,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
     )
     .settings(

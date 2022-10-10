@@ -10,21 +10,18 @@ class KVPWriter[K, V](settings: TableWriterSettings[K, V]) {
 
   def tableKey(key: K): TableKey = settings.tableKey(key)
 
-  def insert(key: K, value: V): Insert = new Insert(
-    settings.tableKey(key),
-    settings.valueSerializer.serialize(value)
-  )
+  def insert(key: K, value: V): (Insert, V) =
+    (new Insert(settings.tableKey(key), settings.valueSerializer.serialize(value)), value)
 
-  def put(key: K, value: V, previous: TableEntry, combine: (V, V) => V): Put =
-    new Put(
-      settings.tableKey(key),
-      settings.valueSerializer
-        .serialize(
-          combine(
-            settings.valueSerializer.deserialize(previous.getValue()),
-            value
-          )
-        ),
-      previous.getVersion
+  def put(key: K, value: V, previous: TableEntry, combine: (V, V) => V): (Put, V) = {
+    val newValue = combine(settings.valueSerializer.deserialize(previous.getValue), value)
+    (
+      new Put(
+        settings.tableKey(key),
+        settings.valueSerializer.serialize(newValue),
+        previous.getVersion
+      ),
+      newValue
     )
+  }
 }
