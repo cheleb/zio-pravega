@@ -64,101 +64,6 @@ trait PravegaAdmin {
 
 }
 
-object PravegaAdmin {
-  def createReaderGroup[A](
-      scope: String,
-      readerGroupName: String,
-      streamNames: String*
-  ): ZIO[PravegaAdmin & Scope, Throwable, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](
-      _.createReaderGroup(
-        scope,
-        readerGroupName,
-        ReaderGroupConfig.builder(),
-        streamNames: _*
-      )
-    )
-  def createReaderGroup[A](
-      scope: String,
-      readerGroupName: String,
-      builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
-      streamNames: String*
-  ): ZIO[PravegaAdmin & Scope, Throwable, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](
-      _.createReaderGroup(scope, readerGroupName, builder, streamNames: _*)
-    )
-
-  def openReaderGroup[A](
-      scope: String,
-      readerGroupName: String
-  ): ZIO[PravegaAdmin & Scope, Throwable, ReaderGroup] =
-    ZIO.serviceWithZIO[PravegaAdmin](
-      _.openReaderGroup(scope, readerGroupName)
-    )
-
-  def dropReaderGroup(
-      scope: String,
-      readerGroupName: String
-  ): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](
-      _.dropReaderGroup(scope, readerGroupName)
-    )
-
-  def createScope(scope: String): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](_.createScope(scope))
-
-  def dropScope(scope: String): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](_.dropScope(scope))
-
-  def createStream(
-      scope: String,
-      streamName: String,
-      config: StreamConfiguration
-  ): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](
-      _.createStream(scope, streamName, config)
-    )
-
-  def sealStream(
-      scope: String,
-      streamName: String
-  ): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](_.sealStream(scope, streamName))
-
-  def dropStream(
-      scope: String,
-      streamName: String
-  ): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](_.dropStream(scope, streamName))
-
-  def createTable(
-      scope: String,
-      tableName: String,
-      config: KeyValueTableConfiguration
-  ): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](
-      _.createTable(scope, tableName, config)
-    )
-
-  def dropTable(
-      scope: String,
-      tableName: String
-  ): RIO[PravegaAdmin & Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaAdmin](_.dropTable(scope, tableName))
-
-  def readerOffline(
-      scope: String,
-      groupName: String
-  ): RIO[PravegaAdmin & Scope, Int] =
-    ZIO.serviceWithZIO[PravegaAdmin](_.readerOffline(scope, groupName))
-
-  def live(
-      clientConfig: ClientConfig
-  ): ZLayer[Any, Nothing, PravegaAdmin] =
-    ZLayer.succeed(new PravegaAdminImpl(clientConfig))
-
-}
-
 private class PravegaAdminImpl(clientConfig: ClientConfig)
     extends PravegaAdmin {
 
@@ -317,5 +222,100 @@ private class PravegaAdminImpl(clientConfig: ClientConfig)
         )
 
     } yield freed.size
+
+}
+
+object PravegaAdmin {
+  def createReaderGroup[A](
+      scope: String,
+      readerGroupName: String,
+      streamNames: String*
+  ): ZIO[PravegaAdmin & Scope, Throwable, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](
+      _.createReaderGroup(
+        scope,
+        readerGroupName,
+        ReaderGroupConfig.builder(),
+        streamNames: _*
+      )
+    )
+  def createReaderGroup[A](
+      scope: String,
+      readerGroupName: String,
+      builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
+      streamNames: String*
+  ): ZIO[PravegaAdmin & Scope, Throwable, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](
+      _.createReaderGroup(scope, readerGroupName, builder, streamNames: _*)
+    )
+
+  def openReaderGroup[A](
+      scope: String,
+      readerGroupName: String
+  ): ZIO[PravegaAdmin & Scope, Throwable, ReaderGroup] =
+    ZIO.serviceWithZIO[PravegaAdmin](
+      _.openReaderGroup(scope, readerGroupName)
+    )
+
+  def dropReaderGroup(
+      scope: String,
+      readerGroupName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](
+      _.dropReaderGroup(scope, readerGroupName)
+    )
+
+  def createScope(scope: String): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.createScope(scope))
+
+  def dropScope(scope: String): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.dropScope(scope))
+
+  def createStream(
+      scope: String,
+      streamName: String,
+      config: StreamConfiguration
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](
+      _.createStream(scope, streamName, config)
+    )
+
+  def sealStream(
+      scope: String,
+      streamName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.sealStream(scope, streamName))
+
+  def dropStream(
+      scope: String,
+      streamName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.dropStream(scope, streamName))
+
+  def createTable(
+      scope: String,
+      tableName: String,
+      config: KeyValueTableConfiguration
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](
+      _.createTable(scope, tableName, config)
+    )
+
+  def dropTable(
+      scope: String,
+      tableName: String
+  ): RIO[PravegaAdmin & Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.dropTable(scope, tableName))
+
+  def readerOffline(
+      scope: String,
+      groupName: String
+  ): RIO[PravegaAdmin & Scope, Int] =
+    ZIO.serviceWithZIO[PravegaAdmin](_.readerOffline(scope, groupName))
+
+  def live(
+      clientConfig: ClientConfig
+  ): ZLayer[Any, Nothing, PravegaAdmin] =
+    ZLayer.succeed(new PravegaAdminImpl(clientConfig))
 
 }
