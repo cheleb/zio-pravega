@@ -1,4 +1,4 @@
-val scala213 = "2.13.9"
+val scala213 = "2.13.10"
 val scala32 = "3.2.0"
 val mainScala = scala213
 val allScala = Seq(scala32, mainScala)
@@ -91,10 +91,10 @@ lazy val pravega =
     )
     .settings(
       libraryDependencies ++= Seq(
-        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.5.0-3" % "protobuf",
-        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.5.0-3" % Test,
-        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.3-0" % "protobuf",
-        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.3-0" % Test
+        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0" % "protobuf",
+        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0" % Test,
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.13-0" % "protobuf",
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.13-0" % Test
       ),
       Test / PB.targets := Seq(
         scalapb.gen() -> (Test / sourceManaged).value / "scalapb"
