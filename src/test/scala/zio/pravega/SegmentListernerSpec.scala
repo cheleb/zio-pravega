@@ -9,6 +9,7 @@ import java.util.concurrent.Executors
 
 import io.pravega.client.stream.notifications.Listener
 import io.pravega.client.stream.notifications.SegmentNotification
+import zio.pravega.admin._
 
 /**
  * Test the Pravega Stream API.
@@ -21,11 +22,11 @@ object SegmentListernerSpec extends SharedPravegaContainerSpec("segment-listener
 
   override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(test("Stream rebalance") {
     for {
-      _ <- PravegaAdmin.createStream(aScope, "s1", dynamicStreamConfig(10, 2, 1))
+      _ <- PravegaStreamManager.createStream(aScope, "s1", dynamicStreamConfig(10, 2, 1))
 
-      _ <- PravegaAdmin.createReaderGroup(aScope, "g1", "s1")
+      _ <- PravegaReaderGroupManager.createReaderGroup("g1", "s1")
 
-      group    <- PravegaAdmin.openReaderGroup(aScope, "g1")
+      group    <- PravegaReaderGroupManager.openReaderGroup("g1")
       executor <- ZIO.succeed(Executors.newScheduledThreadPool(1)).withFinalizerAuto
       not       = group.getSegmentNotifier(executor)
       _ <- ZIO.attemptBlocking {

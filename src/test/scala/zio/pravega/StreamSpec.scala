@@ -5,6 +5,7 @@ import zio._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.pravega.admin._
 
 object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
 
@@ -12,9 +13,9 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
 
   override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(test("Stream support timeouts") {
     for {
-      _ <- PravegaAdmin.createStream(aScope, "s1", staticStreamConfig(2))
+      _ <- PravegaStreamManager.createStream(aScope, "s1", staticStreamConfig(2))
 
-      _ <- PravegaAdmin.createReaderGroup(aScope, "g1", "s1")
+      _ <- PravegaReaderGroupManager.createReaderGroup("g1", "s1")
 
       sink1   = sink("s1")
       sink2   = sinkTx("s1")

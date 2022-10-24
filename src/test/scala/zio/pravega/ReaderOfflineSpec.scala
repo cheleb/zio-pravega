@@ -8,6 +8,7 @@ import io.pravega.client.EventStreamClientFactory
 import java.util.UUID
 import io.pravega.client.stream.impl.UTF8StringSerializer
 import io.pravega.client.stream.ReaderConfig
+import zio.pravega.admin.PravegaReaderGroupManager
 
 object ReaderOfflineSpec extends SharedPravegaContainerSpec("reader-offline") {
 
@@ -29,7 +30,7 @@ object ReaderOfflineSpec extends SharedPravegaContainerSpec("reader-offline") {
                  new UTF8StringSerializer,
                  ReaderConfig.builder().build()
                )
-             ) *> PravegaAdmin.readerOffline(aScope, "unclosed")
+             ) *> PravegaReaderGroupManager.readerOffline("unclosed")
          )
   } yield assert(n)(equalTo(1))))
 

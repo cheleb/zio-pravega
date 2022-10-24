@@ -7,6 +7,7 @@ import zio.test.TestAspect._
 
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.stream.ReaderGroupConfig
+import zio.pravega.admin._
 
 object AdminSpec extends SharedPravegaContainerSpec("admin") {
 
@@ -19,62 +20,74 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     dropTables,
     dropStreams,
     dropScope
-  ).provide(Scope.default, PravegaAdmin.live(clientConfig)) @@ sequential
+  ).provide(
+    Scope.default,
+    ZLayer.succeed(PravegaClientConfig.default),
+    PravegaReaderGroupManager.live(aScope),
+    PravegaStreamManager.live,
+    PravegaTableManager.live(clientConfig)
+  ) @@ sequential
 
   def createScopes = suite("Scopes")(
-    test("Scope created once")(PravegaAdmin.createScope(aScope).map(once => assert(once)(isTrue))),
-    test("Scope skip twice")(PravegaAdmin.createScope(aScope).map(twice => assert(twice)(isFalse)))
+    test("Scope created once")(PravegaStreamManager.createScope(aScope).map(once => assert(once)(isTrue))),
+    test("Scope skip twice")(PravegaStreamManager.createScope(aScope).map(twice => assert(twice)(isFalse)))
   ) @@ sequential
 
   def createStreams = suite("Streams")(
     test("Stream created once")(
-      PravegaAdmin.createStream(aScope, "stream", staticStreamConfig(2)).map(once => assert(once)(isTrue))
+      PravegaStreamManager.createStream(aScope, "stream", staticStreamConfig(2)).map(once => assert(once)(isTrue))
     ),
     test("Stream skip twice")(
-      PravegaAdmin.createStream(aScope, "stream", staticStreamConfig(2)).map(twice => assert(twice)(isFalse))
+      PravegaStreamManager.createStream(aScope, "stream", staticStreamConfig(2)).map(twice => assert(twice)(isFalse))
     )
   ) @@ sequential
 
   def dropStreams = suite("Drop streams")(
     test("Stream dropped once")(
-      PravegaAdmin.sealStream(aScope, "stream") *> PravegaAdmin
+      PravegaStreamManager.sealStream(aScope, "stream") *> PravegaStreamManager
         .dropStream(aScope, "stream")
         .map(once => assert(once)(isTrue))
     ),
-    test("Stream skip twice")(PravegaAdmin.dropStream(aScope, "stream").map(twice => assert(twice)(isFalse)))
+    test("Stream skip twice")(PravegaStreamManager.dropStream(aScope, "stream").map(twice => assert(twice)(isFalse)))
   ) @@ sequential
 
   def createGroups = suite("Groups")(
-    test("Group created")(PravegaAdmin.createReaderGroup(aScope, "group", "stream").map(once => assert(once)(isTrue))),
     test("Group created")(
-      PravegaAdmin
+      PravegaReaderGroupManager.createReaderGroup("group", "stream").map(once => assert(once)(isTrue))
+    ),
+    test("Group created")(
+      PravegaReaderGroupManager
         .createReaderGroup(
-          aScope,
           "group2",
           ReaderGroupConfig.builder.automaticCheckpointIntervalMillis(1000),
           "stream"
         )
         .map(once => assert(once)(isTrue))
     ),
-    test("Open")(PravegaAdmin.openReaderGroup(aScope, "group").map(_ => assertCompletes))
+    test("Open")(PravegaReaderGroupManager.openReaderGroup("group").map(_ => assertCompletes))
   )
 
   def dropGroups = suite("Drop groups")(
-    test("Group dropped once")(PravegaAdmin.dropReaderGroup(aScope, "group").map(once => assert(once)(isTrue))),
-    test("Group skip twice")(PravegaAdmin.dropReaderGroup(aScope, "group2").map(twice => assert(twice)(isTrue)))
+    test("Group dropped once")(
+      PravegaReaderGroupManager.dropReaderGroup(aScope, "group").map(once => assert(once)(isTrue))
+    ),
+    test("Group skip twice")(
+      PravegaReaderGroupManager.dropReaderGroup(aScope, "group2").map(twice => assert(twice)(isTrue))
+    )
   )
 
   def createTables = {
     val tableConfig = KeyValueTableConfiguration.builder().partitionCount(2).primaryKeyLength(4).build()
     suite("Tables")(
       test("Table created once")(
-        PravegaAdmin.createTable(aScope, "table", tableConfig).map(once => assert(once)(isTrue))
+        PravegaTableManager.createTable(aScope, "table", tableConfig).map(once => assert(once)(isTrue))
       ),
       test("Table skip twice")(
-        PravegaAdmin.createTable(aScope, "table", tableConfig).map(twice => assert(twice)(isFalse))
+        PravegaTableManager.createTable(aScope, "table", tableConfig).map(twice => assert(twice)(isFalse))
       )
     ) @@ sequential
   }
-  def dropTables = test("Drop table")(PravegaAdmin.dropTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
-  def dropScope  = test("Drop namespace")(PravegaAdmin.dropScope(aScope).map(dropped => assert(dropped)(isTrue)))
+  def dropTables =
+    test("Drop table")(PravegaTableManager.dropTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
+  def dropScope = test("Drop namespace")(PravegaStreamManager.dropScope(aScope).map(dropped => assert(dropped)(isTrue)))
 }

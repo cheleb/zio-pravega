@@ -15,7 +15,7 @@ import zio.logging.backend.SLF4J
 import model.Person
 
 import zio.stream.ZStream
-
+import zio.pravega.admin._
 import io.pravega.client.tables.KeyValueTableConfiguration
 
 abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[PravegaContainer] {
@@ -39,24 +39,33 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
    * Create a scope and provide it to the test.
    */
   def scopedSuite(
-    aSuite: Spec[PravegaAdmin with PravegaStream with PravegaTable with Scope, Throwable]
+    aSuite: Spec[
+      PravegaStreamManager with PravegaReaderGroupManager with PravegaTableManager with PravegaStream with PravegaTable with Scope,
+      Throwable
+    ]
   ): Spec[Any, Throwable] =
-    suite(s"Within $aScope")(test(s"Created scope")(PravegaAdmin.createScope(aScope).map(_ => assertCompletes)), aSuite)
+    suite(s"Within $aScope")(
+      test(s"Created scope")(PravegaStreamManager.createScope(aScope).map(_ => assertCompletes)),
+      aSuite
+    )
       .provide(
         Scope.default,
         logger,
-        PravegaAdmin.live(clientConfig),
+        ZLayer.succeed(PravegaClientConfig.default),
+        PravegaStreamManager.live,
+        PravegaReaderGroupManager.live(aScope),
+        PravegaTableManager.live(clientConfig),
         PravegaStream.fromScope(aScope, clientConfig),
         PravegaTable.fromScope(aScope, clientConfig)
       ) @@ sequential
 
   override def bootstrap: ZLayer[Any, Nothing, PravegaContainer] = PravegaContainer.pravega
 
-  def createStream(name: String, partition: Int = 2) = PravegaAdmin
+  def createStream(name: String, partition: Int = 2) = PravegaStreamManager
     .createStream(aScope, name, staticStreamConfig(partition))
-  def table(name: String) = PravegaAdmin.createTable(aScope, name, tableConfig)
+  def table(name: String) = PravegaTableManager.createTable(aScope, name, tableConfig)
 
-  def createGroup(name: String, stream: String) = PravegaAdmin.createReaderGroup(aScope, name, stream)
+  def createGroup(name: String, stream: String) = PravegaReaderGroupManager.createReaderGroup(name, stream)
 
   def sink(streamName: String, routingKey: Boolean = false) = PravegaStream
     .sink(streamName, if (routingKey) personStremWritterSettings else personStremWritterSettingsWithKey)

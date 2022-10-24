@@ -2,7 +2,8 @@ package zio.pravega.docs
 
 import zio._
 import zio.Console._
-import zio.pravega._
+import zio.pravega.PravegaClientConfig
+import zio.pravega.admin._
 
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
@@ -12,17 +13,18 @@ object CreateResourcesExample extends ZIOAppDefault {
   private val streamConfiguration = StreamConfiguration.builder.scalingPolicy(ScalingPolicy.fixed(1)).build
 
   private val program = for {
-    scopeCreated  <- PravegaAdmin.createScope("a-scope")
+    scopeCreated  <- PravegaStreamManager.createScope("a-scope")
     _             <- printLine(s"Scope created: $scopeCreated")
-    streamCreated <- PravegaAdmin.createStream("a-scope", "a-stream", streamConfiguration)
+    streamCreated <- PravegaStreamManager.createStream("a-scope", "a-stream", streamConfiguration)
     _             <- printLine(s"Stream created: $streamCreated")
+    _             <- PravegaReaderGroupManager.createReaderGroup("a-reader-group", "a-stream")
   } yield ()
 
-  override def run: ZIO[Any, Throwable, Unit] = program
-    .provide(
-      Scope.default,
-      ZLayer.succeed(PravegaClientConfig.default),
-      PravegaAdmin.live
+  override def run: ZIO[Scope, Throwable, Unit] = program
+    .provideSome(
+      PravegaClientConfig.live,
+      PravegaReaderGroupManager.live("a-scope"),
+      PravegaStreamManager.live
     )
 
 }

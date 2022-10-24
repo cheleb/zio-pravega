@@ -3,7 +3,7 @@ val scala32 = "3.2.0"
 val mainScala = scala213
 val allScala = Seq(scala32, mainScala)
 
-val zioVersion = "2.0.2+128-26bcdea4-SNAPSHOT"
+val zioVersion = "2.0.3-local"
 //val zioVersion = "2.0.2+105-f518b996-SNAPSHOT"
 val pravegaVersion = "0.12.0"
 //val zioConfigVersion = "2.0.4"
@@ -42,14 +42,13 @@ inThisBuild(
     ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
-    scalafixScalaBinaryVersion := "2.13"
+    scalafixScalaBinaryVersion := "2.13",
+    scalafixOnCompile := true,
+    ThisBuild / scalafixDependencies +=
+      "dev.cheleb" %% "zio-module-pattern" % "0.0.2"
   )
 )
 
-// val zioConfig =
-//   Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
-//     "dev.zio" %% d % zioConfigVersion
-//   )
 
 lazy val pravega =
   project
@@ -82,7 +81,6 @@ lazy val pravega =
         "org.scalatest" %% "scalatest" % "3.2.14" % Test,
         "io.pravega" % "pravega-client" % pravegaVersion,
         "org.testcontainers" % "testcontainers" % "1.17.5" % Test,
-//        "dev.zio" %% "zio-zmx" % "2.0.0-RC4" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.1",
         "ch.qos.logback" % "logback-classic" % "1.4.4" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % Test,

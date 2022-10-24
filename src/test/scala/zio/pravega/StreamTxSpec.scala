@@ -5,6 +5,7 @@ import zio._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.pravega.admin._
 
 object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
@@ -14,7 +15,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
     suite("Tx Stream support")(
       test("Stream support timeouts") {
         for {
-          _ <- PravegaAdmin.createStream(aScope, "s1", staticStreamConfig(2))
+          _ <- PravegaStreamManager.createStream(aScope, "s1", staticStreamConfig(2))
 
           _ <- createGroup("g1", "s1")
 
@@ -35,7 +36,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
       } @@ withLiveClock,
       test("Roll back sinks") {
         for {
-          _ <- PravegaAdmin.createStream(aScope, "s2", staticStreamConfig(1))
+          _ <- PravegaStreamManager.createStream(aScope, "s2", staticStreamConfig(1))
 
           sink0       = sink("s2")
           sinkAborted = sinkTx("s2")

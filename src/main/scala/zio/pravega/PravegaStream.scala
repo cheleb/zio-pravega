@@ -140,6 +140,9 @@ object PravegaStream {
     .withFinalizerAuto
     .map(new PravegaStreamImpl(_))
 
+  def fromScope(scope: String): ZLayer[Scope & ClientConfig, Throwable, PravegaStream] =
+    ZLayer.fromZIO(ZIO.serviceWithZIO[ClientConfig](streamService(scope, _)))
+
   def fromScope(scope: String, clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStream] =
     ZLayer(streamService(scope, clientConfig))
 
