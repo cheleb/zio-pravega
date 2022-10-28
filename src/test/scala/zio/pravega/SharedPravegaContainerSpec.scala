@@ -10,7 +10,6 @@ import zio.{Scope, ZLayer}
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import zio.test.Spec
-import zio.logging.backend.SLF4J
 
 import model.Person
 
@@ -21,8 +20,6 @@ import io.pravega.client.tables.KeyValueTableConfiguration
 abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[PravegaContainer] {
 
   import CommonTestSettings._
-
-  val logger = zio.Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
   val clientConfig = PravegaClientConfig.default
 
@@ -50,7 +47,6 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     )
       .provide(
         Scope.default,
-        logger,
         ZLayer.succeed(PravegaClientConfig.default),
         PravegaStreamManager.live,
         PravegaReaderGroupManager.live(aScope),

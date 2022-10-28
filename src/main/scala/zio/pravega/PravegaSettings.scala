@@ -11,14 +11,14 @@ import io.pravega.client.stream.ReaderConfig.ReaderConfigBuilder
 import io.pravega.client.tables.KeyValueTableClientConfiguration
 import io.pravega.client.tables.TableKey
 import com.typesafe.config.ConfigFactory
-import zio.ZLayer
+import zio._
 
 object PravegaClientConfig {
   val configPath = "zio.pravega"
 
   def default: ClientConfig = builder.build()
 
-  val live = ZLayer.succeed(default)
+  val live: ULayer[ClientConfig] = ZLayer.succeed(default)
 
   def builder: ClientConfigBuilder = ConfigHelper.builder(ConfigFactory.load().getConfig(configPath))
 

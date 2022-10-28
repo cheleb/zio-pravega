@@ -5,11 +5,8 @@ import zio.pravega._
 
 import io.pravega.client.stream.impl.UTF8StringSerializer
 import zio.pravega.admin.PravegaReaderGroupManager
-import zio.logging.backend.SLF4J
 
 object StreamReadExample extends ZIOAppDefault {
-
-  val logger = zio.Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
   val stringReaderSettings = ReaderSettingsBuilder().withSerializer(new UTF8StringSerializer)
 

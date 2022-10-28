@@ -27,50 +27,46 @@ trait PravegaStream {
 
 private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFactory) extends PravegaStream {
 
-  override def sink[A](streamName: String, settings: WriterSettings[A]): ZSink[Any, Throwable, A, Nothing, Unit] = {
-    val acquireWriter = ZIO
-      .attemptBlocking(
-        eventStreamClientFactory.createEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
-      )
-      .withFinalizerAuto
-      .map { writer =>
-        val writeEvent: A => Task[Void] = settings.keyExtractor match {
-          case None            => a => ZIO.fromCompletableFuture(writer.writeEvent(a))
-          case Some(extractor) => a => ZIO.fromCompletableFuture(writer.writeEvent(extractor(a), a))
-        }
-        ZSink.foreach(writeEvent)
-      }
-
-    ZSink.unwrapScoped(acquireWriter)
-
-  }
-
-  def sinkTx[A](streamName: String, settings: WriterSettings[A]): ZSink[Any, Throwable, A, Nothing, Unit] = {
-    val acquireWriter = ZIO
-      .attemptBlocking(
-        eventStreamClientFactory
-          .createTransactionalEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
-      )
-      .withFinalizerAuto
-      .flatMap(wtx =>
-        ZIO.acquireReleaseExit(ZIO.attemptBlocking(wtx.beginTxn)) { case (tx, exit) =>
-          exit match {
-            case Failure(e) => ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie
-            case Success(_) => ZIO.attemptBlocking(tx.commit()).orDie
+  override def sink[A](streamName: String, settings: WriterSettings[A]): ZSink[Any, Throwable, A, Nothing, Unit] =
+    ZSink.unwrapScoped(
+      ZIO
+        .attemptBlocking(
+          eventStreamClientFactory.createEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
+        )
+        .withFinalizerAuto
+        .map { writer =>
+          val writeEvent: A => Task[Void] = settings.keyExtractor match {
+            case None            => a => ZIO.fromCompletableFuture(writer.writeEvent(a))
+            case Some(extractor) => a => ZIO.fromCompletableFuture(writer.writeEvent(extractor(a), a))
           }
+          ZSink.foreach(writeEvent)
         }
-      )
-      .map { writer =>
-        val writeEvent: A => Task[Unit] = settings.keyExtractor match {
-          case None            => a => ZIO.attemptBlocking(writer.writeEvent(a))
-          case Some(extractor) => a => ZIO.attemptBlocking(writer.writeEvent(extractor(a), a))
+    )
+
+  def sinkTx[A](streamName: String, settings: WriterSettings[A]): ZSink[Any, Throwable, A, Nothing, Unit] =
+    ZSink.unwrapScoped(
+      ZIO
+        .attemptBlocking(
+          eventStreamClientFactory
+            .createTransactionalEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
+        )
+        .withFinalizerAuto
+        .flatMap(wtx =>
+          ZIO.acquireReleaseExit(ZIO.attemptBlocking(wtx.beginTxn)) { case (tx, exit) =>
+            exit match {
+              case Failure(e) => ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie
+              case Success(_) => ZIO.attemptBlocking(tx.commit()).orDie
+            }
+          }
+        )
+        .map { writer =>
+          val writeEvent: A => Task[Unit] = settings.keyExtractor match {
+            case None            => a => ZIO.attemptBlocking(writer.writeEvent(a))
+            case Some(extractor) => a => ZIO.attemptBlocking(writer.writeEvent(extractor(a), a))
+          }
+          ZSink.foreach(writeEvent)
         }
-        ZSink.foreach(writeEvent)
-      }
-
-    ZSink.unwrapScoped(acquireWriter)
-
-  }
+    )
 
   override def stream[A](readerGroupName: String, settings: ReaderSettings[A]): ZStream[Any, Throwable, A] = ZStream
     .unwrapScoped(

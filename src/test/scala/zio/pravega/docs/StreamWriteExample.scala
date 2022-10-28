@@ -17,9 +17,9 @@ object StreamWriteExample extends ZIOAppDefault {
     .map(i => f"$i%04d_name $i")
 
   val program = for {
-
+    _ <- ZIO.debug("Writing to stream")
     _ <- testStream(1, 10).tap(p => ZIO.debug(p.toString())).run(PravegaStream.sink("a-stream", stringWriterSettings))
-    _ <- ZIO.log("Done")
+    _ <- ZIO.debug("Done")
 
   } yield ()
 
