@@ -16,13 +16,27 @@ trait PravegaStreamManager {
 }
 
 object PravegaStreamManager {
-  def live(clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStreamManager] = ZLayer.fromZIO(ZIO.attemptBlocking(StreamManager.create(clientConfig)).withFinalizerAuto.map(PravegaStreamManagerLive(_)))
-  def live: ZLayer[Scope & ClientConfig, Throwable, PravegaStreamManager] = ZLayer.fromZIO(ZIO.serviceWithZIO[ClientConfig](clientConfig => ZIO.attemptBlocking(StreamManager.create(clientConfig)).withFinalizerAuto.map(PravegaStreamManagerLive(_))))
-  def createScope(scope: String): RIO[PravegaStreamManager, Boolean] = ZIO.serviceWithZIO[PravegaStreamManager](_.createScope(scope))
-  def dropScope(scope: String): RIO[PravegaStreamManager, Boolean] = ZIO.serviceWithZIO[PravegaStreamManager](_.dropScope(scope))
-  def createStream(scope: String, streamName: String, config: StreamConfiguration): RIO[PravegaStreamManager, Boolean] = ZIO.serviceWithZIO[PravegaStreamManager](_.createStream(scope, streamName, config))
-  def sealStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] = ZIO.serviceWithZIO[PravegaStreamManager](_.sealStream(scope, streamName))
-  def dropStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] = ZIO.serviceWithZIO[PravegaStreamManager](_.dropStream(scope, streamName))
+  def live(clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
+    ZIO.attemptBlocking(StreamManager.create(clientConfig)).withFinalizerAuto.map(PravegaStreamManagerLive(_))
+  )
+  def live: ZLayer[Scope & ClientConfig, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
+    ZIO.serviceWithZIO[ClientConfig](clientConfig =>
+      ZIO
+        .attemptBlocking(StreamManager.create(clientConfig))
+        .withFinalizerAuto
+        .map(streamManager => PravegaStreamManagerLive(streamManager))
+    )
+  )
+  def createScope(scope: String): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.createScope(scope))
+  def dropScope(scope: String): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.dropScope(scope))
+  def createStream(scope: String, streamName: String, config: StreamConfiguration): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.createStream(scope, streamName, config))
+  def sealStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.sealStream(scope, streamName))
+  def dropStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.dropStream(scope, streamName))
 }
 
 private case class PravegaStreamManagerLive(streamManager: StreamManager) extends PravegaStreamManager {
