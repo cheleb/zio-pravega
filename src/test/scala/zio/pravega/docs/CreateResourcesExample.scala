@@ -21,7 +21,7 @@ object CreateResourcesExample extends ZIOAppDefault {
   } yield ()
 
   override def run: ZIO[Scope, Throwable, Unit] = program
-    .provideSome(
+    .provideSome[Scope](
       PravegaClientConfig.live,
       PravegaReaderGroupManager.live("a-scope"),
       PravegaStreamManager.live

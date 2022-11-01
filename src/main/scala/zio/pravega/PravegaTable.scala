@@ -96,6 +96,8 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
         .map(version => (version, newValue))
         .tapError(o => ZIO.logDebug(o.toString))
     }
+    .tap(o => ZIO.logDebug(o.toString))
+    .tapError(o => ZIO.logDebug(o.toString))
     .retry(Schedule.forever)
 
   override def sink[K, V](

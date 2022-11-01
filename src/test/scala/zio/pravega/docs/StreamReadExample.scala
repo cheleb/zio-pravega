@@ -17,7 +17,7 @@ object StreamReadExample extends ZIOAppDefault {
     _     <- Console.printLine(s"Read $count elements.")
   } yield ()
 
-  override def run: ZIO[Scope, Throwable, Unit] = program.provideSome(
+  override def run: ZIO[Scope, Throwable, Unit] = program.provideSome[Scope](
     PravegaClientConfig.live,
     PravegaReaderGroupManager.live("a-scope"),
     PravegaStream.fromScope("a-scope")

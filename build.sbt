@@ -3,10 +3,8 @@ val scala32 = "3.2.0"
 val mainScala = scala213
 val allScala = Seq(scala32, mainScala)
 
-val zioVersion = "2.0.3-local"
-//val zioVersion = "2.0.2+105-f518b996-SNAPSHOT"
+val zioVersion = "2.0.3"
 val pravegaVersion = "0.12.0"
-//val zioConfigVersion = "2.0.4"
 
 inThisBuild(
   List(

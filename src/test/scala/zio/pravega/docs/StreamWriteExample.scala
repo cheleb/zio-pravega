@@ -24,6 +24,6 @@ object StreamWriteExample extends ZIOAppDefault {
   } yield ()
 
   override def run: ZIO[Scope, Throwable, Unit] = program
-    .provideSome(PravegaClientConfig.live, PravegaStream.fromScope("a-scope"))
+    .provideSome[Scope](PravegaClientConfig.live, PravegaStream.fromScope("a-scope"))
 
 }
