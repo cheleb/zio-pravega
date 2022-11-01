@@ -3,7 +3,6 @@ sidebar_position: 3
 ---
 
 ```scala mdoc:invisible
-//import zio.Console._
 import zio._
 import zio.stream._
 import zio.pravega._
@@ -47,22 +46,17 @@ To write in a stream.
 
 Given a Key-Value ZStream:
 ```scala mdoc:silent
-private def testStream(a: Int, b: Int): ZStream[Any, Nothing, (String, Int)] =
-    ZStream.fromIterable(a until b).map(i => (f"$i%04d", i))
+private def testStream(a: Int, b: Int):  ZStream[Any, Nothing, (String, Int)] = ZStream
+    .fromIterable(a until b)
+    .map(i => (f"$i%04d", i))
 ```
 
 Just allocate a (K, V) sink ... et voilà.
 
 ```scala mdoc:silent
-def writeToTable: ZIO[PravegaTable, Throwable, Boolean] =
-      ZIO.scoped(for {
-        sink <- PravegaTable
-          .sink("tableName", tableWriterSettings, (a: Int, b: Int) => a + b)
-
-        _ <- testStream(0, 1000)
-          .run(sink)
-
-      } yield true)
+def writeToTable: ZIO[PravegaTable, Throwable, Unit] =
+        testStream(0, 1000) >>>
+        PravegaTable.sink("pravegaTableName", tableWriterSettings, (a: Int, b: Int) => a + b)
 ``` 
 ## Consumer
 

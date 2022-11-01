@@ -13,8 +13,6 @@ import io.pravega.client.stream.impl.UTF8StringSerializer
 
 object StreamWriteExample extends ZIOAppDefault {
 
-  val clientConfig = PravegaClientConfig.default
-
   val stringWriterSettings =
     WriterSettingsBuilder()
       .eventWriterConfigBuilder(_.enableLargeEvents(true))
@@ -26,7 +24,8 @@ object StreamWriteExample extends ZIOAppDefault {
       .map(i => f"$i%04d_name $i")
 
   val program = for {
-    sink <- PravegaStream.sink(
+    _ <- ZIO.debug("Creating stream")
+    sink = PravegaStream.sink(
       "a-stream",
       stringWriterSettings
     )
@@ -40,7 +39,8 @@ object StreamWriteExample extends ZIOAppDefault {
   override def run: ZIO[Any, Throwable, Unit] =
     program.provide(
       Scope.default,
-      PravegaStream.fromScope("a-scope", clientConfig)
+      PravegaClientConfig.live,
+      PravegaStream.fromScope("a-scope")
     )
 
 }

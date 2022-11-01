@@ -30,6 +30,7 @@ Variable number of shards is useful when you want to scale up or down the number
 ```scala mdoc
 import zio._
 import zio.pravega._
+import zio.pravega.admin._
 
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
@@ -43,8 +44,8 @@ object CreateResourcesExample extends ZIOAppDefault {
     .build
 
   private val program = for {
-    _ <- PravegaAdmin.createScope("a-scope")
-    _ <- PravegaAdmin.createStream(
+    _ <- PravegaStreamManager.createScope("a-scope")
+    _ <- PravegaStreamManager.createStream(
       "a-scope",
       "a-stream",
       streamConfiguration
@@ -55,7 +56,8 @@ object CreateResourcesExample extends ZIOAppDefault {
     program
       .provide(
         Scope.default,
-        PravegaAdmin.live(clientConfig)
+        PravegaClientConfig.live,
+        PravegaStreamManager.live
       )
 
 }

@@ -204,12 +204,8 @@ object PravegaTable {
     clientFactory <- ZIO.attemptBlocking(KeyValueTableFactory.withScope(scope, clientConfig)).withFinalizerAuto
   } yield new PravegaTableImpl(clientFactory)
 
-  /**
-   * Create a Pravega Table API.
-   *
-   * @param scope
-   * @param clientConfig
-   */
-  def fromScope(scope: String, clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaTable] = ZLayer
-    .fromZIO(service(scope, clientConfig))
+  def fromScope(scope: String): ZLayer[Scope & ClientConfig, Throwable, PravegaTable] =
+    ZLayer.fromZIO(ZIO.serviceWithZIO[ClientConfig](service(scope, _)))
+  def fromScope(scope: String, clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaTable] =
+    ZLayer.fromZIO(service(scope, clientConfig))
 }

@@ -6,6 +6,7 @@ sidebar_position: 3
 ```scala mdoc
 import zio._
 import zio.pravega._
+import zio.pravega.admin._
 
 import io.pravega.client.stream.impl.UTF8StringSerializer
 
@@ -18,12 +19,11 @@ object StreamReadExample extends ZIOAppDefault {
       .withSerializer(new UTF8StringSerializer)
 
   private val program = for {
-    _ <- PravegaAdmin.createReaderGroup(
-      "a-scope",
+    _ <- PravegaReaderGroupManager.createReaderGroup(
       "a-reader-group",
       "a-stream"
     )
-    stream <- PravegaStream.stream(
+    stream = PravegaStream.stream(
       "a-reader-group",
       stringReaderSettings
     )
@@ -37,8 +37,9 @@ object StreamReadExample extends ZIOAppDefault {
   override def run: ZIO[Any, Throwable, Unit] =
     program.provide(
       Scope.default,
-      PravegaAdmin.live(clientConfig),
-      PravegaStream.fromScope("a-scope", clientConfig)
+      PravegaClientConfig.live,
+      PravegaReaderGroupManager.live("a-scope"),
+      PravegaStream.fromScope("a-scope")
     )
 
 }

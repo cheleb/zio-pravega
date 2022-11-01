@@ -22,10 +22,9 @@ val tableConfig = KeyValueTableConfiguration
     .primaryKeyLength(4)
     .build()
 
-def initTable(tableName: String, pravegaScope: String)
-: ZIO[Scope & Console & PravegaAdmin,Throwable,Unit] =
+def initTable(tableName: String, pravegaScope: String): ZIO[Scope & PravegaTableManager,Throwable,Unit] =
     for {
-      tableCreated <- PravegaAdmin.createTable(
+      tableCreated <- PravegaTableManager.createTable(
             pravegaScope,
             tableName,
             tableConfig

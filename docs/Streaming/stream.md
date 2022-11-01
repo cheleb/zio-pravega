@@ -75,9 +75,8 @@ def testStream(a: Int, b: Int): ZStream[Any, Nothing, String] =
 val n = 10
 
 for {
-      sink <- PravegaStream.sink("my-stream", writerSettings)
-      _ <- testStream(0, 10).run(sink)
-      stream <- PravegaStream.stream("my-group", readerSettings)
+      _ <- testStream(0, 10) >>> PravegaStream.sink("my-stream", writerSettings)
+      stream = PravegaStream.stream("my-group", readerSettings)
       count <- stream
         .take(n.toLong * 2)
         .tap(e => printLine(s"ZStream of [$e]"))

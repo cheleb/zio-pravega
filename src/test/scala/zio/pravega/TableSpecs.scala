@@ -44,7 +44,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
       _   <- ZIO.logInfo("Flow from table")
       flow = PravegaTable.readerFlow(pravegaTableName, tableReaderSettings)
 
-      count <- keyTestStream(0, 2000).via(flow).collect { case Some(str) => str }.runCount
+      count <- keyTestStream(0, 2001).via(flow).collect { case Some(str) => str }.runCount
 
     } yield count
 

@@ -1,0 +1,11 @@
+@startuml ZLauer
+package "Knowledge Base" as kb{
+[RLayer<U+005B>Scope, ZStreamManager<U+005D>] as zlayer
+[ZStreamManager] as sm
+[ZIO<U+005B>ZStreamManager, Boolean<U+005D>] as zio
+}
+
+zlayer - sm : <<provide>>
+zio -up-> sm : <<depends on>>
+
+@enduml

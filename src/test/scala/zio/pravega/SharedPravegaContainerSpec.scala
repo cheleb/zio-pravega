@@ -47,12 +47,12 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     )
       .provide(
         Scope.default,
-        ZLayer.succeed(PravegaClientConfig.default),
+        PravegaClientConfig.live,
         PravegaStreamManager.live,
         PravegaReaderGroupManager.live(aScope),
-        PravegaTableManager.live(clientConfig),
-        PravegaStream.fromScope(aScope, clientConfig),
-        PravegaTable.fromScope(aScope, clientConfig)
+        PravegaTableManager.live,
+        PravegaStream.fromScope(aScope),
+        PravegaTable.fromScope(aScope)
       ) @@ sequential
 
   override def bootstrap: ZLayer[Any, Nothing, PravegaContainer] = PravegaContainer.pravega

@@ -16,9 +16,6 @@ trait PravegaStreamManager {
 }
 
 object PravegaStreamManager {
-  def live(clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
-    ZIO.attemptBlocking(StreamManager.create(clientConfig)).withFinalizerAuto.map(PravegaStreamManagerLive(_))
-  )
   def live: ZLayer[Scope & ClientConfig, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
     ZIO.serviceWithZIO[ClientConfig](clientConfig =>
       ZIO
@@ -26,6 +23,12 @@ object PravegaStreamManager {
         .withFinalizerAuto
         .map(streamManager => PravegaStreamManagerLive(streamManager))
     )
+  )
+  def live(clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
+    ZIO
+      .attemptBlocking(StreamManager.create(clientConfig))
+      .withFinalizerAuto
+      .map(streamManager => PravegaStreamManagerLive(streamManager))
   )
   def createScope(scope: String): RIO[PravegaStreamManager, Boolean] =
     ZIO.serviceWithZIO[PravegaStreamManager](_.createScope(scope))
