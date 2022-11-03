@@ -64,11 +64,36 @@ final case class PravegaReaderGroupManagerLive(scope: String, readerGroupManager
 }
 
 object PravegaReaderGroupManager {
-  def live(scope: String): RLayer[Scope & ClientConfig, PravegaReaderGroupManager] = ZLayer.fromZIO(ZIO.serviceWithZIO[ClientConfig](clientConfig => ZIO.attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig)).withFinalizerAuto.map(rgm => PravegaReaderGroupManagerLive(scope, rgm))))
-  def live(scope: String, clientConfig: ClientConfig): RLayer[Scope, PravegaReaderGroupManager] = ZLayer.fromZIO(ZIO.attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig)).withFinalizerAuto.map(rgm => PravegaReaderGroupManagerLive(scope, rgm)))
-  def createReaderGroup[A](readerGroupName: String, streamNames: String*): ZIO[PravegaReaderGroupManager, Throwable, Boolean] = ZIO.serviceWithZIO[PravegaReaderGroupManager](_.createReaderGroup(readerGroupName, ReaderGroupConfig.builder(), streamNames: _*))
-  def dropReaderGroup(scope: String, readerGroupName: String): RIO[PravegaReaderGroupManager with Scope, Boolean] = ZIO.serviceWithZIO[PravegaReaderGroupManager](_.dropReaderGroup(scope, readerGroupName))
-  def openReaderGroup(readerGroupName: String): ZIO[PravegaReaderGroupManager with Scope, Throwable, ReaderGroup] = ZIO.serviceWithZIO[PravegaReaderGroupManager](_.openReaderGroup(readerGroupName))
-  def readerOffline(groupName: String): RIO[PravegaReaderGroupManager, Int] = ZIO.serviceWithZIO[PravegaReaderGroupManager](_.readerOffline(groupName))
-  def createReaderGroup(readerGroupName: String, builder: ReaderGroupConfig.ReaderGroupConfigBuilder, streamNames: String*): RIO[PravegaReaderGroupManager, Boolean] = ZIO.serviceWithZIO[PravegaReaderGroupManager](_.createReaderGroup(readerGroupName, builder, streamNames: _*))
+  def live(scope: String): RLayer[Scope & ClientConfig, PravegaReaderGroupManager] = ZLayer.fromZIO(
+    ZIO.serviceWithZIO[ClientConfig](clientConfig =>
+      ZIO
+        .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+        .withFinalizerAuto
+        .map(rgm => PravegaReaderGroupManagerLive(scope, rgm))
+    )
+  )
+  def live(scope: String, clientConfig: ClientConfig): RLayer[Scope, PravegaReaderGroupManager] = ZLayer.fromZIO(
+    ZIO
+      .attemptBlocking(ReaderGroupManager.withScope(scope, clientConfig))
+      .withFinalizerAuto
+      .map(rgm => PravegaReaderGroupManagerLive(scope, rgm))
+  )
+  def createReaderGroup[A](
+    readerGroupName: String,
+    streamNames: String*
+  ): ZIO[PravegaReaderGroupManager, Throwable, Boolean] = ZIO.serviceWithZIO[PravegaReaderGroupManager](
+    _.createReaderGroup(readerGroupName, ReaderGroupConfig.builder(), streamNames: _*)
+  )
+  def dropReaderGroup(scope: String, readerGroupName: String): RIO[PravegaReaderGroupManager with Scope, Boolean] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.dropReaderGroup(scope, readerGroupName))
+  def openReaderGroup(readerGroupName: String): ZIO[PravegaReaderGroupManager with Scope, Throwable, ReaderGroup] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.openReaderGroup(readerGroupName))
+  def readerOffline(groupName: String): RIO[PravegaReaderGroupManager, Int] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.readerOffline(groupName))
+  def createReaderGroup(
+    readerGroupName: String,
+    builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
+    streamNames: String*
+  ): RIO[PravegaReaderGroupManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.createReaderGroup(readerGroupName, builder, streamNames: _*))
 }
