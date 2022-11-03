@@ -3,7 +3,6 @@ package zio.pravega
 import zio._
 import zio.stream._
 import io.pravega.client.KeyValueTableFactory
-import io.pravega.client.tables.KeyValueTableClientConfiguration
 
 import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
@@ -14,7 +13,7 @@ import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
 import java.util.concurrent.Executors
 
-import zio.pravega.table.KVPWriter
+import zio.pravega.table.PravegaKeyValueTable
 import io.pravega.client.stream.Serializer
 
 /**
@@ -72,32 +71,24 @@ trait PravegaTable {
 
 private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFactory) extends PravegaTable {
 
-  private def connectTable(
+  private def connectTable[K, V](
     tableName: String,
-    kvtClientConfig: KeyValueTableClientConfiguration
-  ): ZIO[Scope, Throwable, KeyValueTable] = ZIO
-    .attemptBlocking(keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig))
+    tableSetting: TableSettings[K, V]
+  ): ZIO[Scope, Throwable, PravegaKeyValueTable[K, V]] = ZIO
+    .attemptBlocking(keyValueTableFactory.forKeyValueTable(tableName, tableSetting.keyValueTableClientConfiguration))
     .withFinalizerAuto
+    .map(PravegaKeyValueTable(_, tableSetting))
 
   private def upsert[K, V](
     k: K,
     v: V,
-    table: KeyValueTable,
-    kvpWriter: KVPWriter[K, V],
+    table: PravegaKeyValueTable[K, V],
     combine: (V, V) => V
-  ): ZIO[Any, Throwable, (Version, V)] = ZIO
-    .fromCompletableFuture(table.get(kvpWriter.tableKey(k)))
-    .map {
-      case null     => kvpWriter.insert(k, v)
-      case previous => kvpWriter.put(k, v, previous, combine)
-    }
-    .flatMap { case (mod, newValue) =>
-      ZIO
-        .fromCompletableFuture(table.update(mod))
-        .map(version => (version, newValue))
-        .tapError(o => ZIO.logDebug(o.toString))
-    }
-    .retry(Schedule.forever)
+  ): ZIO[Any, Throwable, (Version, V)] =
+    (for {
+      updateMod <- table.updateTask(k, v, combine)
+      result    <- table.pushUpdate(updateMod)
+    } yield result).retry(Schedule.forever)
 
   override def sink[K, V](
     tableName: String,
@@ -105,10 +96,8 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     combine: (V, V) => V
   ): ZSink[Any, Throwable, (K, V), Nothing, Unit] = ZSink
     .unwrapScoped(
-      for {
-        table    <- connectTable(tableName, settings.keyValueTableClientConfiguration)
-        kvpWriter = new KVPWriter[K, V](settings)
-      } yield ZSink.foreach { case (k, v) => upsert(k, v, table, kvpWriter, combine) }
+      connectTable(tableName, settings)
+        .map(table => ZSink.foreach { case (k, v) => upsert(k, v, table, combine) })
     )
 
   private def iterator(table: KeyValueTable, maxEntries: Int): AsyncIterator[IteratorItem[JTableEntry]] = table
@@ -138,9 +127,9 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     settings: TableReaderSettings[K, V]
   ): ZStream[Any, Throwable, TableEntry[V]] = ZStream.unwrapScoped(
     for {
-      table      <- connectTable(tableName, settings.keyValueTableClientConfiguration)
+      table      <- connectTable(tableName, settings)
       executor   <- ZIO.succeed(Executors.newSingleThreadExecutor()).withFinalizerAuto
-      it          = iterator(table, settings.maxEntriesAtOnce).asSequential(executor)
+      it          = iterator(table.table, settings.maxEntriesAtOnce).asSequential(executor)
       nextEntryIO = readNextEntry(it, settings.valueSerializer)
     } yield ZStream.repeatZIOChunkOption(nextEntryIO)
   )
@@ -151,15 +140,18 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     combine: (V, V) => V
   ): ZPipeline[Any, Throwable, (K, V), (K, V)] = ZPipeline
     .unwrapScoped(
-      for {
-        table    <- connectTable(tableName, settings.keyValueTableClientConfiguration)
-        kvpWriter = new KVPWriter[K, V](settings)
-      } yield ZPipeline.mapZIO { case (k, v) =>
-        upsert(k, v, table, kvpWriter, combine).map { case (_, newValue) => (k, newValue) }
-      }
+      connectTable(tableName, settings)
+        .map(table =>
+          ZPipeline.mapZIO { case (k, v) =>
+            upsert(k, v, table, combine).map { case (_, newValue) => (k, newValue) }
+          }
+        )
     )
 
-  private def readEntryIO[K, V](table: KeyValueTable, settings: TableReaderSettings[K, V]) =
+  private def readEntryIO[K, V](
+    table: KeyValueTable,
+    settings: TableReaderSettings[K, V]
+  ): K => Task[Option[TableEntry[V]]] =
     (k: K) =>
       ZIO.fromCompletableFuture(table.get(settings.tableKey(k))).map {
         case null => None
@@ -180,8 +172,8 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     ZPipeline
       .unwrapScoped(
         for {
-          table      <- connectTable(tableName, settings.keyValueTableClientConfiguration)
-          entryIoForK = readEntryIO(table, settings)
+          table      <- connectTable(tableName, settings)
+          entryIoForK = readEntryIO(table.table, settings)
         } yield ZPipeline.mapZIO(entryIoForK)
       )
 }
