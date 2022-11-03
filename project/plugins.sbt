@@ -10,4 +10,4 @@ addSbtPlugin("com.github.sbt"            % "sbt-unidoc"     % "0.5.0")
 addSbtPlugin("org.scalameta"             % "sbt-mdoc"       % "2.3.6")
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"   % "0.4.1")
 
-libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.12"
+libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.12-tmp"
