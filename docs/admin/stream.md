@@ -7,15 +7,15 @@ Central Pravega abstraction, [Stream](https://cncf.pravega.io/docs/nightly/prave
 
 ```scala mdoc:silent
 import zio._
-import zio.Console._
 import zio.pravega._
+import zio.pravega.admin._
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 
 def initStream(streamName: String, scope: String)
-: ZIO[Scope & Console & PravegaAdmin,Throwable,Unit] =
+: ZIO[PravegaStreamManager,Throwable,Unit] =
     for {
-      streamCreated <- PravegaAdmin.createStream(
+      streamCreated <- PravegaStreamManager.createStream(
           scope,
           streamName,
           StreamConfiguration.builder
@@ -23,7 +23,7 @@ def initStream(streamName: String, scope: String)
             .build
         )      
       _ <- ZIO.when(streamCreated)(
-        printLine(s"Stream $streamName just created")
+        Console.printLine(s"Stream $streamName just created")
       )
     } yield ()
 
@@ -36,8 +36,7 @@ A [Reader Group](https://cncf.pravega.io/docs/nightly/pravega-concepts/#writers-
 It must created expliciyly 
 
 ```scala mdoc:silent
-  PravegaAdmin.createReaderGroup(
-              "a-scope",
+  PravegaReaderGroupManager.createReaderGroup(
               "a-group-name",
               "stream-a", "stream-b"
             )

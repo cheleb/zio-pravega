@@ -7,13 +7,12 @@ Scopes are namespaces for [Streams](stream.md), they must be created before bein
 
 ```scala mdoc:silent
 import zio._
-import zio.Console._
-import zio.pravega._
+import zio.pravega.admin._
 
-def initScope(scope: String): ZIO[Scope & PravegaAdmin & Console,Throwable,Unit] =
+def initScope(scope: String): ZIO[PravegaStreamManager,Throwable,Unit] =
     for {
-      scopeCreated <- PravegaAdmin.createScope(scope)
-      _ <- ZIO.when(scopeCreated)(printLine(s"Scope $scope just created"))
+      scopeCreated <- PravegaStreamManager.createScope(scope)
+      _ <- ZIO.when(scopeCreated)(Console.printLine(s"Scope $scope just created"))
     } yield ()
 
 ```

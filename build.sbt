@@ -1,11 +1,10 @@
-val scala213 = "2.13.9"
+val scala213 = "2.13.10"
 val scala32 = "3.2.0"
 val mainScala = scala213
 val allScala = Seq(scala32, mainScala)
 
-val zioVersion = "2.0.2"
+val zioVersion = "2.0.3"
 val pravegaVersion = "0.12.0"
-val zioConfigVersion = "2.0.4"
 
 inThisBuild(
   List(
@@ -41,14 +40,13 @@ inThisBuild(
     ),
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
-    scalafixScalaBinaryVersion := "2.13"
+    scalafixScalaBinaryVersion := "2.13",
+    scalafixOnCompile := true,
+    ThisBuild / scalafixDependencies +=
+      "dev.cheleb" %% "zio-module-pattern" % "0.0.2"
   )
 )
 
-val zioConfig =
-  Seq("zio-config", "zio-config-magnolia", "zio-config-typesafe").map(d =>
-    "dev.zio" %% d % zioConfigVersion
-  )
 
 lazy val pravega =
   project
@@ -73,28 +71,27 @@ lazy val pravega =
     .settings(
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       libraryDependencies ++= Seq(
+        "com.typesafe" % "config" % "1.4.2",
         "dev.zio" %% "zio-streams" % zioVersion,
         "dev.zio" %% "zio-test" % zioVersion % Test,
         "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
-        "dev.zio" %% "zio-logging-slf4j" % "2.1.2" % Test,
+        "dev.zio" %% "zio-logging-slf4j-bridge" % "2.1.3" % Test,
         "org.scalatest" %% "scalatest" % "3.2.14" % Test,
         "io.pravega" % "pravega-client" % pravegaVersion,
         "org.testcontainers" % "testcontainers" % "1.17.5" % Test,
-        "dev.zio" %% "zio-zmx" % "2.0.0-RC4" % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.1",
-        "ch.qos.logback" % "logback-classic" % "1.4.4" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub" % "0.6.13" % Test,
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf"
-      ) ++ zioConfig,
+      ) ,
       testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
     )
     .settings(
       libraryDependencies ++= Seq(
-        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.5.0-3" % "protobuf",
-        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.5.0-3" % Test,
-        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.3-0" % "protobuf",
-        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.3-0" % Test
+        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0" % "protobuf",
+        "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.9.6-0" % Test,
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.13-0" % "protobuf",
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11" % "0.6.13-0" % Test
       ),
       Test / PB.targets := Seq(
         scalapb.gen() -> (Test / sourceManaged).value / "scalapb"

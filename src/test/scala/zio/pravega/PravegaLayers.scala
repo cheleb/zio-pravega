@@ -8,24 +8,37 @@ import zio.test.TestAspect._
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.stream.ReaderGroupConfig
 import zio.pravega.admin._
+import zio.stream.ZStream
 
-object AdminSpec extends SharedPravegaContainerSpec("admin") {
+/**
+ * This test suite is a bit of a mess. It is a work in progress, that just tests
+ * the ZLayer creation from explicit Pravega client configuration.
+ */
+object PravegaLayers extends SharedPravegaContainerSpec("PravegaLayers") {
 
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("Admin")(
+  import CommonTestSettings._
+
+  private def keyValueTestStream(a: Int, b: Int): ZStream[Any, Nothing, (String, Int)] = ZStream
+    .fromIterable(a until b)
+    .map(i => (f"$i%04d", i))
+
+  override def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("PravegaLayers")(
     createScopes,
     createStreams,
     createGroups,
     createTables,
+    runTests,
     dropGroups,
     dropTables,
     dropStreams,
     dropScope
   ).provide(
     Scope.default,
-    PravegaClientConfig.live,
-    PravegaReaderGroupManager.live(aScope),
-    PravegaStreamManager.live,
-    PravegaTableManager.live
+    PravegaReaderGroupManager.live(aScope, clientConfig),
+    PravegaStreamManager.live(clientConfig),
+    PravegaTableManager.live(clientConfig),
+    PravegaStream.fromScope(aScope, clientConfig),
+    PravegaTable.fromScope(aScope, clientConfig)
   ) @@ sequential
 
   def createScopes = suite("Scopes")(
@@ -65,6 +78,15 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
         .map(once => assert(once)(isTrue))
     ),
     test("Open")(PravegaReaderGroupManager.openReaderGroup("group").map(_ => assertCompletes))
+  )
+
+  def runTests = suite("Run tests")(
+    test("Run tests")(
+      for {
+        _ <- testStream(1, 2) >>> sink("stream")
+        _ <- keyValueTestStream(1, 2) >>> PravegaTable.sink("table", tableWriterSettings, (a: Int, b: Int) => a + b)
+      } yield (assertCompletes)
+    )
   )
 
   def dropGroups = suite("Drop groups")(

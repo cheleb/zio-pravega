@@ -3,260 +3,220 @@ package zio.pravega
 import zio._
 import zio.stream._
 import io.pravega.client.KeyValueTableFactory
-import io.pravega.client.tables.KeyValueTableClientConfiguration
 
 import scala.jdk.CollectionConverters._
 import io.pravega.client.ClientConfig
 import io.pravega.client.tables.KeyValueTable
-import io.pravega.client.tables
+import io.pravega.client.tables.Version
+import io.pravega.client.tables.{TableEntry => JTableEntry}
 import io.pravega.client.tables.IteratorItem
 import io.pravega.common.util.AsyncIterator
 import java.util.concurrent.Executors
 
-/** Pravega Table API.
-  */
+import zio.pravega.table.PravegaKeyValueTable
+import io.pravega.client.stream.Serializer
+
+/**
+ * Pravega Table API.
+ */
 trait PravegaTable {
 
-  /** Create a sink
-    *
-    * @param tableName
-    * @param settings
-    * @param combine
-    *   old and new entries.
-    */
+  /**
+   * Create a sink
+   *
+   * @param tableName
+   * @param settings
+   * @param combine
+   *   old and new entries.
+   */
   def sink[K, V](
-      tableName: String,
-      settings: TableWriterSettings[K, V],
-      combine: (V, V) => V
-  ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]]
+    tableName: String,
+    settings: TableWriterSettings[K, V],
+    combine: (V, V) => V
+  ): ZSink[Any, Throwable, (K, V), Nothing, Unit]
 
-  def flow[K, V](
-      tableName: String,
-      settings: TableWriterSettings[K, V],
-      combine: (V, V) => V
-  ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]]
+  /**
+   * Create a writer flow
+   *
+   * @param tableName
+   * @param settings
+   * @param combine
+   *   old and new entries.
+   */
+  def writerFlow[K, V](
+    tableName: String,
+    settings: TableWriterSettings[K, V],
+    combine: (V, V) => V
+  ): ZPipeline[Any, Throwable, (K, V), (K, V)]
 
-  def flow[K, V](
-      tableName: String,
-      settings: TableReaderSettings[K, V]
-  ): RIO[Scope, ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]]
+  /**
+   * Create a reader flow
+   *
+   * @param tableName
+   * @param settings
+   */
+  def readerFlow[K, V](
+    tableName: String,
+    settings: TableReaderSettings[K, V]
+  ): ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]
 
-  def source[K, V](
-      tableName: String,
-      settings: TableReaderSettings[K, V]
-  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]]
+  /**
+   * Create a reader source
+   *
+   * @param tableName
+   * @param settings
+   */
+  def source[K, V](tableName: String, settings: TableReaderSettings[K, V]): ZStream[Any, Throwable, TableEntry[V]]
 }
 
-object PravegaTable {
-  def sink[K, V](
-      tableName: String,
-      settings: TableWriterSettings[K, V],
-      combine: (V, V) => V
-  ): RIO[PravegaTable & Scope, ZSink[
-    Any,
-    Throwable,
-    (K, V),
-    Nothing,
-    Unit
-  ]] =
-    ZIO.serviceWithZIO[PravegaTable](
-      _.sink(tableName, settings, combine)
-    )
+private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFactory) extends PravegaTable {
 
-  def flow[K, V](
-      tableName: String,
-      settings: TableWriterSettings[K, V],
-      combine: (V, V) => V
-  ): RIO[PravegaTable & Scope, ZPipeline[
-    Any,
-    Throwable,
-    (K, V),
-    TableEntry[V]
-  ]] = ZIO.serviceWithZIO[PravegaTable](
-    _.flow(tableName, settings, combine)
-  )
-
-  def flow[K, V](
-      tableName: String,
-      settings: TableReaderSettings[K, V]
-  ): RIO[PravegaTable & Scope, ZPipeline[Any, Throwable, K, Option[
-    TableEntry[V]
-  ]]] = ZIO.serviceWithZIO[PravegaTable](
-    _.flow(tableName, settings)
-  )
-
-  def source[K, V](
-      tableName: String,
-      settings: TableReaderSettings[K, V]
-  ): RIO[PravegaTable & Scope, ZStream[Any, Throwable, TableEntry[V]]] =
-    ZIO
-      .serviceWithZIO[PravegaTable](
-        _.source(tableName, settings)
-      )
-
-  private def service(
-      scope: String,
-      clientConfig: ClientConfig
-  ): ZIO[Scope, Throwable, PravegaTable] =
-    for {
-      clientFactory <- ZIO
-        .attemptBlocking(
-          KeyValueTableFactory.withScope(scope, clientConfig)
-        )
-        .withFinalizerAuto
-    } yield new PravegaTableImpl(clientFactory)
-
-  def fromScope(
-      scope: String,
-      clientConfig: ClientConfig
-  ): ZLayer[Scope, Throwable, PravegaTable] =
-    ZLayer.fromZIO(
-      service(
-        scope,
-        clientConfig
-      )
-    )
-}
-
-private final case class PravegaTableImpl(
-    keyValueTableFactory: KeyValueTableFactory
-) extends PravegaTable {
-
-  private def table(
-      tableName: String,
-      kvtClientConfig: KeyValueTableClientConfiguration
-  ): ZIO[Scope, Throwable, KeyValueTable] = ZIO
-    .attemptBlocking(
-      keyValueTableFactory.forKeyValueTable(tableName, kvtClientConfig)
-    )
+  private def connectTable[K, V](
+    tableName: String,
+    tableSetting: TableSettings[K, V]
+  ): ZIO[Scope, Throwable, PravegaKeyValueTable[K, V]] = ZIO
+    .attemptBlocking(keyValueTableFactory.forKeyValueTable(tableName, tableSetting.keyValueTableClientConfiguration))
     .withFinalizerAuto
+    .map(PravegaKeyValueTable(_, tableSetting))
 
   private def upsert[K, V](
-      k: K,
-      v: V,
-      table: KeyValueTable,
-      settings: TableWriterSettings[K, V],
-      combine: (V, V) => V
-  ): ZIO[Any, Throwable, tables.Version] =
-    ZIO
-      .fromCompletableFuture(table.get(settings.tableKey(k)))
-      .map {
-        case null =>
-          new tables.Insert(
-            settings.tableKey(k),
-            settings.valueSerializer.serialize(v)
-          )
-        case el =>
-          new tables.Put(
-            settings.tableKey(k),
-            settings.valueSerializer
-              .serialize(
-                combine(
-                  settings.valueSerializer.deserialize(el.getValue),
-                  v
-                )
-              ),
-            el.getVersion
-          )
-      }
-      .flatMap { mod =>
-        ZIO
-          .fromCompletableFuture(table.update(mod))
-          .tapError(o => ZIO.logDebug(o.toString))
-      }
-      .retry(Schedule.forever)
+    k: K,
+    v: V,
+    table: PravegaKeyValueTable[K, V],
+    combine: (V, V) => V
+  ): ZIO[Any, Throwable, (Version, V)] =
+    (for {
+      updateMod <- table.updateTask(k, v, combine)
+      result    <- table.pushUpdate(updateMod)
+    } yield result).retry(Schedule.forever)
 
   override def sink[K, V](
-      tableName: String,
-      settings: TableWriterSettings[K, V],
-      combine: (V, V) => V
-  ): RIO[Scope, ZSink[Any, Throwable, (K, V), Nothing, Unit]] =
-    table(tableName, settings.keyValueTableClientConfiguration)
-      .map { table =>
-        ZSink.foreach { case (k, v) =>
-          upsert(k, v, table, settings, combine)
-        }
-      }
+    tableName: String,
+    settings: TableWriterSettings[K, V],
+    combine: (V, V) => V
+  ): ZSink[Any, Throwable, (K, V), Nothing, Unit] = ZSink
+    .unwrapScoped(
+      connectTable(tableName, settings)
+        .map(table => ZSink.foreach { case (k, v) => upsert(k, v, table, combine) })
+    )
 
-  private def iterator(
-      table: KeyValueTable,
-      maxEntries: Int
-  ): AsyncIterator[IteratorItem[tables.TableEntry]] = table
+  private def iterator(table: KeyValueTable, maxEntries: Int): AsyncIterator[IteratorItem[JTableEntry]] = table
     .iterator()
     .maxIterationSize(maxEntries)
     .all()
     .entries()
+
+  private def readNextEntry[V](
+    it: AsyncIterator[IteratorItem[JTableEntry]],
+    valueSerializer: Serializer[V]
+  ): IO[Option[Throwable], Chunk[TableEntry[V]]] =
+    ZIO.fromCompletableFuture(it.getNext()).asSomeError.flatMap {
+      case null => ZIO.fail(None)
+      case el =>
+        val res = el.getItems().asScala.map { tableEntry =>
+          TableEntry(
+            tableEntry.getKey(),
+            tableEntry.getVersion(),
+            valueSerializer.deserialize(tableEntry.getValue())
+          )
+        }
+        ZIO.succeed(Chunk.fromArray(res.toArray))
+    }
   override def source[K, V](
-      tableName: String,
-      settings: TableReaderSettings[K, V]
-  ): RIO[Scope, ZStream[Any, Throwable, TableEntry[V]]] =
+    tableName: String,
+    settings: TableReaderSettings[K, V]
+  ): ZStream[Any, Throwable, TableEntry[V]] = ZStream.unwrapScoped(
     for {
-      table <- table(tableName, settings.keyValueTableClientConfiguration)
-      it = iterator(table, settings.maxEntriesAtOnce).asSequential(
-        Executors.newSingleThreadExecutor()
-      )
-    } yield ZStream
-      .repeatZIOChunkOption {
-        ZIO
-          .fromCompletableFuture(it.getNext())
-          .asSomeError
-          .flatMap {
-            case null =>
-              ZIO.fail(None)
-            case el =>
-              val res = el.getItems().asScala.map { tableEntry =>
-                TableEntry(
-                  tableEntry.getKey(),
-                  tableEntry.getVersion(),
-                  settings.valueSerializer
-                    .deserialize(tableEntry.getValue())
-                )
-              }
-              ZIO
-                .succeed(Chunk.fromArray(res.toArray))
+      table      <- connectTable(tableName, settings)
+      executor   <- ZIO.succeed(Executors.newSingleThreadExecutor()).withFinalizerAuto
+      it          = iterator(table.table, settings.maxEntriesAtOnce).asSequential(executor)
+      nextEntryIO = readNextEntry(it, settings.valueSerializer)
+    } yield ZStream.repeatZIOChunkOption(nextEntryIO)
+  )
+
+  def writerFlow[K, V](
+    tableName: String,
+    settings: TableWriterSettings[K, V],
+    combine: (V, V) => V
+  ): ZPipeline[Any, Throwable, (K, V), (K, V)] = ZPipeline
+    .unwrapScoped(
+      connectTable(tableName, settings)
+        .map(table =>
+          ZPipeline.mapZIO { case (k, v) =>
+            upsert(k, v, table, combine).map { case (_, newValue) => (k, newValue) }
           }
-      }
+        )
+    )
 
-  def flow[K, V](
-      tableName: String,
-      settings: TableWriterSettings[K, V],
-      combine: (V, V) => V
-  ): RIO[Scope, ZPipeline[Any, Throwable, (K, V), TableEntry[V]]] =
-    table(tableName, settings.keyValueTableClientConfiguration)
-      .map { table =>
-        ZPipeline.mapZIO { case (k, v) =>
-          upsert(k, v, table, settings, combine)
-            .map(version =>
-              TableEntry(
-                settings.tableKey(k),
-                version,
-                v
-              )
+  private def readEntryIO[K, V](
+    table: KeyValueTable,
+    settings: TableReaderSettings[K, V]
+  ): K => Task[Option[TableEntry[V]]] =
+    (k: K) =>
+      ZIO.fromCompletableFuture(table.get(settings.tableKey(k))).map {
+        case null => None
+        case tableEntry =>
+          Some(
+            TableEntry(
+              tableEntry.getKey(),
+              tableEntry.getVersion(),
+              settings.valueSerializer.deserialize(tableEntry.getValue())
             )
-        }
-      }
-  def flow[K, V](
-      tableName: String,
-      settings: TableReaderSettings[K, V]
-  ): RIO[Scope, ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]] =
-    table(tableName, settings.keyValueTableClientConfiguration)
-      .map { table =>
-        ZPipeline.mapZIO { in =>
-          ZIO
-            .fromCompletableFuture(table.get(settings.tableKey(in)))
-            .map {
-              case null => None
-              case tableEntry =>
-                Some(
-                  TableEntry(
-                    tableEntry.getKey(),
-                    tableEntry.getVersion(),
-                    settings.valueSerializer
-                      .deserialize(tableEntry.getValue())
-                  )
-                )
-            }
-        }
+          )
       }
 
+  def readerFlow[K, V](
+    tableName: String,
+    settings: TableReaderSettings[K, V]
+  ): ZPipeline[Any, Throwable, K, Option[TableEntry[V]]] =
+    ZPipeline
+      .unwrapScoped(
+        for {
+          table      <- connectTable(tableName, settings)
+          entryIoForK = readEntryIO(table.table, settings)
+        } yield ZPipeline.mapZIO(entryIoForK)
+      )
+}
+
+/**
+ * Pravega Table API.
+ */
+object PravegaTable {
+  def sink[K, V](
+    tableName: String,
+    settings: TableWriterSettings[K, V],
+    combine: (V, V) => V
+  ): ZSink[PravegaTable, Throwable, (K, V), Nothing, Unit] = ZSink
+    .serviceWithSink[PravegaTable](_.sink(tableName, settings, combine))
+
+  /**
+   * Create a writer flow _____ (K,V) --->|_____|--> (K, V)
+   */
+  def writerFlow[K, V](
+    tableName: String,
+    settings: TableWriterSettings[K, V],
+    combine: (V, V) => V
+  ): ZPipeline[PravegaTable, Throwable, (K, V), (K, V)] = ZPipeline
+    .serviceWithPipeline[PravegaTable](_.writerFlow(tableName, settings, combine))
+
+  def readerFlow[K, V](
+    tableName: String,
+    settings: TableReaderSettings[K, V]
+  ): ZPipeline[PravegaTable, Throwable, K, Option[TableEntry[V]]] = ZPipeline
+    .serviceWithPipeline[PravegaTable](_.readerFlow(tableName, settings))
+
+  def source[K, V](
+    tableName: String,
+    settings: TableReaderSettings[K, V]
+  ): ZStream[PravegaTable, Throwable, TableEntry[V]] = ZStream
+    .serviceWithStream[PravegaTable](_.source(tableName, settings))
+
+  private def service(scope: String, clientConfig: ClientConfig): ZIO[Scope, Throwable, PravegaTable] = for {
+    clientFactory <- ZIO.attemptBlocking(KeyValueTableFactory.withScope(scope, clientConfig)).withFinalizerAuto
+  } yield new PravegaTableImpl(clientFactory)
+
+  def fromScope(scope: String): ZLayer[Scope & ClientConfig, Throwable, PravegaTable] =
+    ZLayer.fromZIO(ZIO.serviceWithZIO[ClientConfig](service(scope, _)))
+  def fromScope(scope: String, clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaTable] =
+    ZLayer.fromZIO(service(scope, clientConfig))
 }
