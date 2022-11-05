@@ -7,6 +7,11 @@ This project is a [ZIO](https://zio.dev) 2.x connector to [Pravega](https://prav
 
 Pravega is a distributed, scalable, and fault-tolerant storage system for streaming data.
 
+ZIO Pravega is a work in progress. The API is not stable and may change at any time.
+
+ZIO is an effect system for Scala. It is a principled, purely functional, and type-safe alternative to the Scala standard library. ZIO Pravega is built on top of ZIO.
+
+
 # Quickstart 
 
 Assumming [Pravega](https://pravega.io) is running on tcp://localhost:9090 see https://github.com/pravega/pravega/releases
