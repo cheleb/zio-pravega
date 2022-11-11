@@ -18,20 +18,15 @@ trait PravegaTableManager {
 
 }
 
-private case class PravegaTableManagerImpl(clientConfig: ClientConfig) extends PravegaTableManager {
-
-  def keyValueTableManager(): RIO[Scope, KeyValueTableManager] =
-    ZIO.attemptBlocking(KeyValueTableManager.create(clientConfig)).withFinalizerAuto
+private case class PravegaTableManagerImpl(keyValueTableManager: KeyValueTableManager) extends PravegaTableManager {
 
   override def createTable(scope: String, tableName: String, config: KeyValueTableConfiguration): RIO[Scope, Boolean] =
     for {
-      keyValueTableManager <- keyValueTableManager()
-      created              <- ZIO.attemptBlocking(keyValueTableManager.createKeyValueTable(scope, tableName, config))
+      created <- ZIO.attemptBlocking(keyValueTableManager.createKeyValueTable(scope, tableName, config))
     } yield created
 
   override def dropTable(scope: String, tableName: String): RIO[Scope, Boolean] = for {
-    keyValueTableManager <- keyValueTableManager()
-    deleted              <- ZIO.attemptBlocking(keyValueTableManager.deleteKeyValueTable(scope, tableName))
+    deleted <- ZIO.attemptBlocking(keyValueTableManager.deleteKeyValueTable(scope, tableName))
   } yield deleted
 
 }
@@ -50,10 +45,22 @@ object PravegaTableManager {
 
   def live(
     clientConfig: ClientConfig
-  ): ZLayer[Any, Nothing, PravegaTableManager] =
-    ZLayer.succeed(new PravegaTableManagerImpl(clientConfig))
+  ): RLayer[Scope, PravegaTableManager] =
+    ZLayer.fromZIO(
+      ZIO
+        .attemptBlocking(KeyValueTableManager.create(clientConfig))
+        .withFinalizerAuto
+        .map(keyValueTableManager => PravegaTableManagerImpl(keyValueTableManager))
+    )
 
-  val live: ZLayer[ClientConfig, Nothing, PravegaTableManager] =
-    ZLayer.fromFunction(PravegaTableManagerImpl(_))
+  val live: RLayer[Scope & ClientConfig, PravegaTableManager] =
+    ZLayer.fromZIO(
+      ZIO.serviceWithZIO[ClientConfig](clientConfig =>
+        ZIO
+          .attemptBlocking(KeyValueTableManager.create(clientConfig))
+          .withFinalizerAuto
+          .map(keyValueTableManager => PravegaTableManagerImpl(keyValueTableManager))
+      )
+    )
 
 }
