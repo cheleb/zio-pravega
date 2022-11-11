@@ -43,24 +43,19 @@ object PravegaTableManager {
   def dropTable(scope: String, tableName: String): RIO[PravegaTableManager & Scope, Boolean] = ZIO
     .serviceWithZIO[PravegaTableManager](_.dropTable(scope, tableName))
 
+  private def keyValueTableManager(clientConfig: ClientConfig) = ZIO
+    .attemptBlocking(KeyValueTableManager.create(clientConfig))
+    .withFinalizerAuto
+    .map(keyValueTableManager => PravegaTableManagerImpl(keyValueTableManager))
+
   def live(
     clientConfig: ClientConfig
   ): RLayer[Scope, PravegaTableManager] =
-    ZLayer.fromZIO(
-      ZIO
-        .attemptBlocking(KeyValueTableManager.create(clientConfig))
-        .withFinalizerAuto
-        .map(keyValueTableManager => PravegaTableManagerImpl(keyValueTableManager))
-    )
+    ZLayer.fromZIO(keyValueTableManager(clientConfig))
 
   val live: RLayer[Scope & ClientConfig, PravegaTableManager] =
     ZLayer.fromZIO(
-      ZIO.serviceWithZIO[ClientConfig](clientConfig =>
-        ZIO
-          .attemptBlocking(KeyValueTableManager.create(clientConfig))
-          .withFinalizerAuto
-          .map(keyValueTableManager => PravegaTableManagerImpl(keyValueTableManager))
-      )
+      ZIO.serviceWithZIO[ClientConfig](keyValueTableManager)
     )
 
 }
