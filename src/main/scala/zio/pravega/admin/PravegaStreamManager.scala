@@ -43,24 +43,19 @@ object PravegaStreamManager {
 }
 
 private case class PravegaStreamManagerLive(streamManager: StreamManager) extends PravegaStreamManager {
-
-  override def createScope(scope: String): Task[Boolean] =
-    ZIO.attemptBlocking(streamManager.createScope(scope))
-
-  override def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean] = for {
-    exists <- ZIO.attemptBlocking(streamManager.checkStreamExists(scope, streamName))
+  def createScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.createScope(scope))
+  def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean] = for (
+    exists <- ZIO.attemptBlocking(streamManager.checkStreamExists(scope, streamName));
     created <- exists match {
-                 case true  => ZIO.succeed(false)
-                 case false => ZIO.attemptBlocking(streamManager.createStream(scope, streamName, config))
+                 case true =>
+                   ZIO.succeed(false)
+                 case false =>
+                   ZIO.attemptBlocking(streamManager.createStream(scope, streamName, config))
                }
-  } yield created
-
-  override def sealStream(scope: String, streamName: String): Task[Boolean] =
+  ) yield created
+  def sealStream(scope: String, streamName: String): Task[Boolean] =
     ZIO.attemptBlocking(streamManager.sealStream(scope, streamName))
-
-  override def dropStream(scope: String, streamName: String): Task[Boolean] =
+  def dropStream(scope: String, streamName: String): Task[Boolean] =
     ZIO.attemptBlocking(streamManager.deleteStream(scope, streamName))
-
   def dropScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.deleteScope(scope))
-
 }

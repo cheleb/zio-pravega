@@ -14,15 +14,15 @@ import io.pravega.client.stream.ReaderGroup
 
 @Accessible
 trait PravegaReaderGroupManager {
-  def createReaderGroup[A](
+  def createReaderGroup(
     readerGroupName: String,
     builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
     streamNames: String*
   ): Task[Boolean]
 
-  def openReaderGroup[A](readerGroupName: String): ZIO[Scope, Throwable, ReaderGroup]
+  def openReaderGroup(readerGroupName: String): RIO[Scope, ReaderGroup]
 
-  def dropReaderGroup(scope: String, readerGroupName: String): RIO[Scope, Boolean]
+  def dropReaderGroup(scope: String, readerGroupName: String): Task[Boolean]
 
   def readerOffline(groupName: String): Task[Int]
 
@@ -30,37 +30,27 @@ trait PravegaReaderGroupManager {
 
 final case class PravegaReaderGroupManagerLive(scope: String, readerGroupManager: ReaderGroupManager)
     extends PravegaReaderGroupManager {
-
-  override def openReaderGroup[A](readerGroupName: String): ZIO[Scope, Throwable, ReaderGroup] =
+  def openReaderGroup(readerGroupName: String): RIO[Scope, ReaderGroup] =
     ZIO.attemptBlocking(readerGroupManager.getReaderGroup(readerGroupName)).withFinalizerAuto
-
-  override def dropReaderGroup(scope: String, readerGroupName: String) =
+  def dropReaderGroup(scope: String, readerGroupName: String): Task[Boolean] =
     ZIO.attemptBlocking(readerGroupManager.deleteReaderGroup(readerGroupName)).as(true)
-
-  override def createReaderGroup[A](
+  def createReaderGroup(
     readerGroupName: String,
     builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
     streamNames: String*
   ): Task[Boolean] = {
-
     val config = streamNames.foldLeft(builder) { case (builder, streamName) =>
       builder.stream(Stream.of(scope, streamName))
     }
-
     ZIO.attemptBlocking(readerGroupManager.createReaderGroup(readerGroupName, config.build()))
-
   }
-
-  def readerOffline(groupName: String): Task[Int] =
-    ZIO.scoped {
-      for {
-        group <- ZIO.attemptBlocking(readerGroupManager.getReaderGroup(groupName)).withFinalizerAuto
-        freed <-
-          ZIO
-            .foreach(group.getOnlineReaders().asScala.toSeq)(id => ZIO.attemptBlocking(group.readerOffline(id, null)))
-
-      } yield freed.size
-    }
+  def readerOffline(groupName: String): Task[Int] = ZIO.scoped {
+    for (
+      group <- ZIO.attemptBlocking(readerGroupManager.getReaderGroup(groupName)).withFinalizerAuto;
+      freed <-
+        ZIO.foreach(group.getOnlineReaders().asScala.toSeq)(id => ZIO.attemptBlocking(group.readerOffline(id, null)))
+    ) yield freed.size
+  }
 }
 
 object PravegaReaderGroupManager {
@@ -84,10 +74,6 @@ object PravegaReaderGroupManager {
   ): ZIO[PravegaReaderGroupManager, Throwable, Boolean] = ZIO.serviceWithZIO[PravegaReaderGroupManager](
     _.createReaderGroup(readerGroupName, ReaderGroupConfig.builder(), streamNames: _*)
   )
-  def dropReaderGroup(scope: String, readerGroupName: String): RIO[PravegaReaderGroupManager with Scope, Boolean] =
-    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.dropReaderGroup(scope, readerGroupName))
-  def openReaderGroup(readerGroupName: String): ZIO[PravegaReaderGroupManager with Scope, Throwable, ReaderGroup] =
-    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.openReaderGroup(readerGroupName))
   def readerOffline(groupName: String): RIO[PravegaReaderGroupManager, Int] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.readerOffline(groupName))
   def createReaderGroup(
@@ -96,4 +82,8 @@ object PravegaReaderGroupManager {
     streamNames: String*
   ): RIO[PravegaReaderGroupManager, Boolean] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.createReaderGroup(readerGroupName, builder, streamNames: _*))
+  def openReaderGroup(readerGroupName: String): RIO[PravegaReaderGroupManager with Scope, ReaderGroup] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.openReaderGroup(readerGroupName))
+  def dropReaderGroup(scope: String, readerGroupName: String): RIO[PravegaReaderGroupManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.dropReaderGroup(scope, readerGroupName))
 }

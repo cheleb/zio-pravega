@@ -1,5 +1,5 @@
 val scala213 = "2.13.10"
-val scala32 = "3.2.0"
+val scala32 = "3.2.1"
 val mainScala = scala213
 val allScala = Seq(scala32, scala213)
 
@@ -43,7 +43,7 @@ inThisBuild(
     scalafixScalaBinaryVersion := "2.13",
     scalafixOnCompile := true,
     ThisBuild / scalafixDependencies +=
-      "dev.cheleb" %% "zio-module-pattern" % "0.0.2"
+      "dev.cheleb" %% "zio-module-pattern" % "0.0.3"
   )
 )
 
