@@ -84,7 +84,7 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     v: V,
     table: PravegaKeyValueTable[K, V],
     combine: (V, V) => V
-  ): ZIO[Any, Throwable, (Version, V)] =
+  ): Task[(Version, V)] =
     (for {
       updateMod <- table.updateTask(k, v, combine)
       result    <- table.pushUpdate(updateMod)
