@@ -1,0 +1,15 @@
+@startuml "stateful-streaming"
+
+actor User
+participant "Streaming Client" as Client
+participant "Streaming Server" as Server
+participant "KVP Table" as KVP
+
+Client -> Server  : Start Streaming
+activate Server
+Server <-> KVP : get value
+KVP --> Server : value
+deactivate Server
+Client <-- Server : value 
+
+@enduml
