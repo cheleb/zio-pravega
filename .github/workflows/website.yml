@@ -19,4 +19,6 @@ jobs:
           java-version: '19'
           distribution: 'zulu'
           cache: sbt
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v1
       - run: sbt clean docs/docusaurusCreateSite
