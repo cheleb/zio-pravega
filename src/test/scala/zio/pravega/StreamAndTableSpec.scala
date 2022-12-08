@@ -4,17 +4,29 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.ZIO
+import zio.ZLayer
+import zio.pravega.test.PravegaContainer
+import zio.LogLevel
+import zio.logging.{LogFormat, console}
 
 object StreamAndTableSpec extends SharedPravegaContainerSpec("stream-and-table") {
 
   import CommonTestSettings._
 
+  override val bootstrap: ZLayer[Any, Nothing, PravegaContainer] =
+    super.bootstrap ++ (zio.Runtime.removeDefaultLoggers >>> console(
+      format = LogFormat.colored,
+      logLevel = LogLevel.Info
+    ))
+
   override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(
     suite("Table concurency writes")(
-      test("Write concurently from stream to table")(stream2table.map(count => assert(count)(equalTo(80)))),
+      test("Write concurently from stream to table")(
+        stream2table.map(_ => assertCompletes)
+      ),
       test("Sum table") {
         for {
-          _     <- ZIO.logInfo("Sum table")
+          _     <- ZIO.logDebug("Sum table")
           source = PravegaTable.source("ages", tableReaderSettings)
           sum   <- source.runFold(0)((s, i) => s + i.value)
         } yield assert(sum)(equalTo(1560))
@@ -41,10 +53,10 @@ object StreamAndTableSpec extends SharedPravegaContainerSpec("stream-and-table")
                .broadcast(2, 1)
                .flatMap(streams =>
                  for {
-                   sink0 <- streams(0).tapSink(tableSink).runFold(0)((s, _) => s + 1).fork
-                   sink1 <- streams(1).tapSink(tableSink).runFold(0)((s, _) => s + 1).fork
-                   x     <- sink0.join.zipPar(sink1.join)
-                 } yield x._1 + x._2
+                   sink0 <- (streams(0) >>> tableSink).fork
+                   sink1 <- (streams(1) >>> tableSink).fork
+                   _     <- sink0.join.zipPar(sink1.join)
+                 } yield ()
                )
 
   } yield count
