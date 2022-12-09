@@ -64,10 +64,10 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
   def createGroup(name: String, stream: String) = PravegaReaderGroupManager.createReaderGroup(name, stream)
 
   def sink(streamName: String, routingKey: Boolean = false) = PravegaStream
-    .sink(streamName, if (routingKey) personStremWritterSettings else personStremWritterSettingsWithKey)
+    .sink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
 
   def sinkTx(streamName: String, routingKey: Boolean = false) = PravegaStream
-    .sinkTx(streamName, if (routingKey) personStremWritterSettings else personStremWritterSettingsWithKey)
+    .sinkTx(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
 
   protected def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
     .fromIterable(a until b)
