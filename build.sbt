@@ -43,7 +43,7 @@ inThisBuild(
     scalafixScalaBinaryVersion := "2.13",
     scalafixOnCompile          := true,
     ThisBuild / scalafixDependencies +=
-      "dev.cheleb" %% "zio-module-pattern" % "0.0.4"
+      "dev.cheleb" %% "zio-module-pattern" % "0.0.5"
   )
 )
 
