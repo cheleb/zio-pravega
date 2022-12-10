@@ -40,10 +40,10 @@ inThisBuild(
     ),
     semanticdbEnabled          := true,
     semanticdbVersion          := scalafixSemanticdb.revision, // only required for Scala 2.x
-    scalafixScalaBinaryVersion := "2.13"
-    // scalafixOnCompile          := true,
-    // ThisBuild / scalafixDependencies +=
-    //   "dev.cheleb" %% "zio-module-pattern" % "0.0.4"
+    scalafixScalaBinaryVersion := "2.13",
+    scalafixOnCompile          := true,
+    ThisBuild / scalafixDependencies +=
+      "dev.cheleb" %% "zio-module-pattern" % "0.0.5"
   )
 )
 
