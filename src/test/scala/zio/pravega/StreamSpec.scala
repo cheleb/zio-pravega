@@ -20,18 +20,19 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
       sink1     = sink("s1")
       sink2     = sinkTx("s1")
       writeFlow = PravegaStream.writeFlow("s1", personStreamWriterSettings)
-      _        <- testStream(0, 50).run(sink1).fork
       stream1   = PravegaStream.stream("g1", personReaderSettings)
-      fib1     <- stream1.take(50).runCount.fork
       stream2   = PravegaStream.stream("g1", personReaderSettings)
-      fib2     <- stream2.take(50).runCount.fork
-      _        <- (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> testStream(50, 100).run(sink2)).fork
-      fib3     <- testStream(100, 150).via(writeFlow).runCount.fork
-      count1   <- fib1.join
-      count2   <- fib2.join
-      count3   <- fib3.join
-      count     = count1 + count2 + count3
-      _        <- ZIO.logDebug(s"count $count1 + $count2 = $count")
+
+      _      <- testStream(0, 50).run(sink1).fork
+      fib1   <- stream1.take(75).runCount.fork
+      fib2   <- stream2.take(75).runCount.fork
+      _      <- (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> testStream(50, 100).run(sink2)).fork
+      fib3   <- testStream(100, 150).via(writeFlow).runDrain.fork
+      count1 <- fib1.join
+      count2 <- fib2.join
+      _      <- fib3.join
+      count   = count1 + count2
+      _      <- ZIO.logDebug(s"count $count1 + $count2 = $count")
     } yield assert(count)(equalTo(150L))
   } @@ withLiveClock)
 
