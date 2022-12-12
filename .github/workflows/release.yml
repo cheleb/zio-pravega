@@ -19,14 +19,6 @@ jobs:
         cache: sbt
     - name: Run tests crosscompile
       run: sbt ++ test
-    - name: Run coverage test
-      run: sbt coverage test
-    - name: Coverage Report
-      run: sbt coverageReport
-    - name: "Upload coverage to Codecov"
-      uses: "codecov/codecov-action@v3"
-      with:
-        fail_ci_if_error: true
   publish:
     if: github.event.base_ref=='refs/heads/master' && github.event_name != 'pull_request'  # check the branch, if it's not master, skip the job.
     runs-on: ubuntu-20.04
