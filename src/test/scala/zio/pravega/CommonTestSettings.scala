@@ -42,9 +42,9 @@ object CommonTestSettings {
 
   val personReaderSettings = ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(personSerializer)
 
-  val personStremWritterSettings = WriterSettingsBuilder().withSerializer(personSerializer)
+  val personStreamWriterSettings = WriterSettingsBuilder().withSerializer(personSerializer)
 
-  val personStremWritterSettingsWithKey = WriterSettingsBuilder[Person]()
+  val personStreamWriterSettingsWithKey = WriterSettingsBuilder[Person]()
     .withKeyExtractor(_.key)
     .withSerializer(personSerializer)
 }
