@@ -8,12 +8,14 @@ on:
       - "master"
     paths-ignore:
       - 'docs/**'    
-      - 'website/**'    
+      - 'website/**'
+      - '.github/**' 
   pull_request:
     branches: [ master ]
     paths-ignore:
       - 'docs/**'    
       - 'website/**'    
+      - '.github/**' 
 jobs:
   build:
     runs-on: ubuntu-latest
