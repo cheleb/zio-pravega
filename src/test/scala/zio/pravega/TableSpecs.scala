@@ -21,7 +21,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
     .fromIterable(a until b)
     .map(i => (f"$i%04d", i))
 
-  def tableSuite(pravegaTableName: String) = {
+  private def tableSuite(pravegaTableName: String) = {
 
     def writeToTable: ZIO[PravegaTable, Throwable, Unit] =
       keyValueTestStream(0, 1000) >>>
@@ -31,7 +31,7 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
       _     <- ZIO.logDebug(s"Read from table $pravegaTableName.")
       source = PravegaTable.source(pravegaTableName, tableReaderSettings)
       count <- source.runCount
-      _     <- ZIO.logDebug(s"Read $count from table $pravegaTableName.")
+      _     <- ZIO.logDebug(f"Read $count%d from table $pravegaTableName.")
     } yield count
 
     def writeFlowToTable: ZIO[PravegaTable, Throwable, Long] = for {

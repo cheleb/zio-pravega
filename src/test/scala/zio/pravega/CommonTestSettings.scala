@@ -10,29 +10,32 @@ import model.Person
 
 object CommonTestSettings {
 
-  val intSerializer = new Serializer[Int] {
+  val intSerializer: Serializer[Int] = new Serializer[Int] {
     override def serialize(value: Int): ByteBuffer = {
       val buff = ByteBuffer.allocate(4).putInt(value)
       buff.position(0)
-      buff
     }
 
     override def deserialize(serializedValue: ByteBuffer): Int = serializedValue.getInt
   }
 
-  val writterSettings = WriterSettingsBuilder()
+  val writterSettings: WriterSettings[String] = WriterSettingsBuilder()
     .eventWriterConfigBuilder(_.enableLargeEvents(true))
     .withSerializer(new UTF8StringSerializer)
 
-  val readerSettings = ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(new UTF8StringSerializer)
+  val readerSettings: ReaderSettings[String] =
+    ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(new UTF8StringSerializer)
 
-  val readerSettings2 = ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(new UTF8StringSerializer)
+  val readerSettings2: ReaderSettings[String] =
+    ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(new UTF8StringSerializer)
 
-  val tableWriterSettings = TableWriterSettingsBuilder(new UTF8StringSerializer, intSerializer).build()
+  val tableWriterSettings: TableWriterSettings[String, Int] =
+    TableWriterSettingsBuilder(new UTF8StringSerializer, intSerializer).build()
 
-  val tableReaderSettings = TableReaderSettingsBuilder(new UTF8StringSerializer, intSerializer).build()
+  val tableReaderSettings: TableReaderSettings[String, Int] =
+    TableReaderSettingsBuilder(new UTF8StringSerializer, intSerializer).build()
 
-  val personSerializer = new Serializer[Person] {
+  val personSerializer: Serializer[Person] = new Serializer[Person] {
 
     override def serialize(person: Person): ByteBuffer = ByteBuffer.wrap(person.toByteArray)
 
@@ -40,11 +43,12 @@ object CommonTestSettings {
 
   }
 
-  val personReaderSettings = ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(personSerializer)
+  val personReaderSettings: ReaderSettings[Person] =
+    ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(personSerializer)
 
-  val personStreamWriterSettings = WriterSettingsBuilder().withSerializer(personSerializer)
+  val personStreamWriterSettings: WriterSettings[Person] = WriterSettingsBuilder().withSerializer(personSerializer)
 
-  val personStreamWriterSettingsWithKey = WriterSettingsBuilder[Person]()
+  val personStreamWriterSettingsWithKey: WriterSettings[Person] = WriterSettingsBuilder[Person]()
     .withKeyExtractor(_.key)
     .withSerializer(personSerializer)
 }

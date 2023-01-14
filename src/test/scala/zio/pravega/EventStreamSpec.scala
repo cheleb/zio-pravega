@@ -9,6 +9,7 @@ import zio.pravega.admin._
 object EventStreamSpec extends SharedPravegaContainerSpec("event-streaming") {
 
   import CommonTestSettings._
+  @SuppressWarnings(Array("org.wartremover.warts.ThreadSleep"))
   override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(
     test("EventStream support timeouts")(for {
 

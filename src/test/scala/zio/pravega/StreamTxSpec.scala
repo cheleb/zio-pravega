@@ -11,6 +11,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
   import CommonTestSettings._
 
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(
     suite("Tx Stream support")(
       test("Stream support timeouts") {
@@ -31,7 +32,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           count1 <- fib1.join
           count2 <- fib2.join
           count   = count1 + count2
-          _      <- ZIO.logDebug(s"count $count1 + $count2 = $count")
+          _      <- ZIO.logDebug(f"count $count1%d + $count2%d = $count%d")
         } yield assert(count)(equalTo(100L))
       } @@ withLiveClock,
       test("Roll back sinks") {
@@ -42,7 +43,11 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           sinkAborted = sinkTx("s2")
 
           _ <- createGroup("g2", "s2")
-          _ <- testStream(1, 100).tap(p => ZIO.when(p.age % 50 == 0)(ZIO.fail("Boom"))).run(sinkAborted).sandbox.ignore
+          _ <- testStream(1, 100)
+                 .tap(p => ZIO.when(p.age.equals(50))(ZIO.die(new RuntimeException("Boom"))))
+                 .run(sinkAborted)
+                 .sandbox
+                 .ignore
           _ <- testStream(50, 100).run(sink0)
 
           stream = PravegaStream.stream("g2", personReaderSettings)

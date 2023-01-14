@@ -16,18 +16,25 @@ import model.Person
 import zio.stream.ZStream
 import zio.pravega.admin._
 import io.pravega.client.tables.KeyValueTableConfiguration
+import io.pravega.client.ClientConfig
+import zio.RIO
+import zio.RIO
+import zio.&
+import zio.ZIO
+import zio.stream.ZSink
 
 abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[PravegaContainer] {
 
   import CommonTestSettings._
 
-  val clientConfig = PravegaClientConfig.default
+  val clientConfig: ClientConfig = PravegaClientConfig.default
 
-  def dynamicStreamConfig(targetRate: Int, scaleFactor: Int, minNumSegments: Int) = StreamConfiguration.builder
-    .scalingPolicy(ScalingPolicy.byEventRate(targetRate, scaleFactor, minNumSegments))
-    .build
+  def dynamicStreamConfig(targetRate: Int, scaleFactor: Int, minNumSegments: Int): StreamConfiguration =
+    StreamConfiguration.builder
+      .scalingPolicy(ScalingPolicy.byEventRate(targetRate, scaleFactor, minNumSegments))
+      .build
 
-  def staticStreamConfig(partitions: Int) =
+  def staticStreamConfig(partitions: Int): StreamConfiguration =
     StreamConfiguration.builder.scalingPolicy(ScalingPolicy.fixed(partitions)).build
 
   private val tableConfig = KeyValueTableConfiguration.builder().partitionCount(2).primaryKeyLength(4).build()
@@ -57,20 +64,24 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
 
   override def bootstrap: ZLayer[Any, Nothing, PravegaContainer] = PravegaContainer.pravega
 
-  def createStream(name: String, partition: Int = 2) = PravegaStreamManager
+  def createStream(name: String, partition: Int = 2): RIO[PravegaStreamManager, Boolean] = PravegaStreamManager
     .createStream(aScope, name, staticStreamConfig(partition))
-  def table(name: String) = PravegaTableManager.createTable(aScope, name, tableConfig)
+  def table(name: String): RIO[PravegaTableManager & Scope, Boolean] =
+    PravegaTableManager.createTable(aScope, name, tableConfig)
 
-  def createGroup(name: String, stream: String) = PravegaReaderGroupManager.createReaderGroup(name, stream)
+  def createGroup(name: String, stream: String): ZIO[PravegaReaderGroupManager, Throwable, Boolean] =
+    PravegaReaderGroupManager.createReaderGroup(name, stream)
 
-  def sink(streamName: String, routingKey: Boolean = false) = PravegaStream
-    .sink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
+  def sink(streamName: String, routingKey: Boolean = false): ZSink[PravegaStream, Throwable, Person, Nothing, Unit] =
+    PravegaStream
+      .sink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
 
-  def sinkTx(streamName: String, routingKey: Boolean = false) = PravegaStream
-    .sinkTx(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
+  def sinkTx(streamName: String, routingKey: Boolean = false): ZSink[PravegaStream, Throwable, Person, Nothing, Unit] =
+    PravegaStream
+      .sinkTx(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
 
   protected def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
     .fromIterable(a until b)
-    .map(i => Person(key = f"$i%04d", name = s"name $i", age = i % 111))
+    .map(i => Person(key = f"$i%04d", name = f"name $i%d", age = i % 111))
 
 }

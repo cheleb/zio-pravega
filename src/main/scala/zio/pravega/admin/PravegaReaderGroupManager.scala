@@ -24,6 +24,7 @@ trait PravegaReaderGroupManager {
 
   def dropReaderGroup(scope: String, readerGroupName: String): Task[Boolean]
 
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   def readerOffline(groupName: String): Task[Int]
 
 }
@@ -44,6 +45,7 @@ final case class PravegaReaderGroupManagerLive(scope: String, readerGroupManager
     }
     ZIO.attemptBlocking(readerGroupManager.createReaderGroup(readerGroupName, config.build()))
   }
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   def readerOffline(groupName: String): Task[Int] = ZIO.scoped {
     for (
       group <- ZIO.attemptBlocking(readerGroupManager.getReaderGroup(groupName)).withFinalizerAuto;

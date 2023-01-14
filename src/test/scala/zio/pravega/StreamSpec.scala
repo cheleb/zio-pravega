@@ -32,7 +32,7 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
       count2 <- fib2.join
       _      <- fib3.join
       count   = count1 + count2
-      _      <- ZIO.logDebug(s"count $count1 + $count2 = $count")
+      _      <- ZIO.logDebug(f"count $count1%d + $count2%d = $count%d")
     } yield assert(count)(equalTo(150L))
   } @@ withLiveClock)
 

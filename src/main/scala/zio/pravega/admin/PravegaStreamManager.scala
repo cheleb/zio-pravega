@@ -42,7 +42,7 @@ object PravegaStreamManager {
     ZIO.serviceWithZIO[PravegaStreamManager](_.dropStream(scope, streamName))
 }
 
-private case class PravegaStreamManagerLive(streamManager: StreamManager) extends PravegaStreamManager {
+final private case class PravegaStreamManagerLive(streamManager: StreamManager) extends PravegaStreamManager {
   def createScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.createScope(scope))
   def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean] = for (
     exists <- ZIO.attemptBlocking(streamManager.checkStreamExists(scope, streamName));

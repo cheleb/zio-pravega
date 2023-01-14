@@ -8,10 +8,11 @@ import io.pravega.client.tables.KeyValueTable
 import zio._
 import io.pravega.client.tables.TableEntryUpdate
 import zio.pravega.TableSettings
+import io.pravega.client.tables.Version
 
-case class UpdateAndNewValue[V](update: TableEntryUpdate, newValue: V)
-case class PravegaKeyValueTable[K, V](val table: KeyValueTable, settings: TableSettings[K, V]) {
-
+final case class UpdateAndNewValue[V](update: TableEntryUpdate, newValue: V)
+final case class PravegaKeyValueTable[K, V](val table: KeyValueTable, settings: TableSettings[K, V]) {
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   def updateTask(k: K, v: V, combine: (V, V) => V): Task[UpdateAndNewValue[V]] = ZIO
     .fromCompletableFuture(table.get(tableKey(k)))
     .map {
@@ -19,7 +20,7 @@ case class PravegaKeyValueTable[K, V](val table: KeyValueTable, settings: TableS
       case previous => put(k, v, previous, combine)
     }
 
-  def pushUpdate(updateAndNewValue: UpdateAndNewValue[V]) =
+  def pushUpdate(updateAndNewValue: UpdateAndNewValue[V]): ZIO[Any, Throwable, (Version, V)] =
     ZIO
       .fromCompletableFuture(table.update(updateAndNewValue.update))
       .map(version => (version, updateAndNewValue.newValue))

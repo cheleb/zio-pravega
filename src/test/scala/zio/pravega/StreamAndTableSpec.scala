@@ -34,7 +34,7 @@ object StreamAndTableSpec extends SharedPravegaContainerSpec("stream-and-table")
     ) @@ sequential
   )
 
-  def stream2table = for {
+  private def stream2table = for {
     _ <- table("ages")
     _ <- createStream("persons")
     _ <- createGroup("g1", "persons")
