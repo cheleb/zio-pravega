@@ -124,6 +124,7 @@ lazy val docs = project // new documentation project
       "ORG"     -> organization.value
     )
   )
+  .disablePlugins(WartRemover)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin, PlantUMLPlugin)
   .settings(
     plantUMLSource           := (pravega / baseDirectory).value / "docs",
