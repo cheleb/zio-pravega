@@ -6,7 +6,7 @@ import zio.test.TestAspect._
 
 import zio.pravega.test.PravegaContainer
 
-import zio.{Scope, ZLayer}
+import zio._
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 import zio.test.Spec
@@ -17,10 +17,6 @@ import zio.stream.ZStream
 import zio.pravega.admin._
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.ClientConfig
-import zio.RIO
-import zio.RIO
-import zio.&
-import zio.ZIO
 import zio.stream.ZSink
 
 abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[PravegaContainer] {
