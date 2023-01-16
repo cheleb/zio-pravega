@@ -105,7 +105,7 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     .maxIterationSize(maxEntries)
     .all()
     .entries()
-
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   private def readNextEntry[V](
     it: AsyncIterator[IteratorItem[JTableEntry]],
     valueSerializer: Serializer[V]
@@ -147,7 +147,7 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
           }
         )
     )
-
+  @SuppressWarnings(Array("org.wartremover.warts.Null"))
   private def readEntryIO[K, V](
     table: KeyValueTable,
     settings: TableReaderSettings[K, V]

@@ -41,9 +41,16 @@ inThisBuild(
     semanticdbEnabled          := true,
     semanticdbVersion          := scalafixSemanticdb.revision, // only required for Scala 2.x
     scalafixScalaBinaryVersion := "2.13",
-    scalafixOnCompile          := true,
+//    scalafixOnCompile          := true,
     ThisBuild / scalafixDependencies +=
-      "dev.cheleb" %% "zio-module-pattern" % "0.0.5"
+      "dev.cheleb" %% "zio-module-pattern" % "0.0.5",
+    Compile / wartremoverErrors ++= Warts.allBut(
+      Wart.Any,
+      Wart.Nothing,
+      Wart.DefaultArguments,
+      Wart.ImplicitParameter,
+      Wart.Overloading
+    )
   )
 )
 
@@ -117,6 +124,7 @@ lazy val docs = project // new documentation project
       "ORG"     -> organization.value
     )
   )
+  .disablePlugins(WartRemover)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin, PlantUMLPlugin)
   .settings(
     plantUMLSource           := (pravega / baseDirectory).value / "docs",

@@ -7,11 +7,11 @@ import zio.pravega.admin.PravegaReaderGroupManager
 
 object ReleaseReader extends ZIOAppDefault {
 
-  val clientConfig = ClientConfig.builder().build()
+  private val clientConfig = ClientConfig.builder().build()
 
-  val program = for {
+  private val program = for {
     n <- PravegaReaderGroupManager.readerOffline("a-reader-group")
-    _ <- printLine(s"Offined $n reader(s).")
+    _ <- ZIO.debug(f"Offined $n%d reader(s).")
   } yield ()
 
   override def run = program

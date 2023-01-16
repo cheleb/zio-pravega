@@ -34,7 +34,7 @@ object SegmentListernerSpec extends SharedPravegaContainerSpec("segment-listener
                def onNotification(
                  segmentNotification: io.pravega.client.stream.notifications.SegmentNotification
                ): Unit =
-                 println(s"SegmentNotification $segmentNotification")
+                 println(s"SegmentNotification ${segmentNotification.toString()}")
              })
            }
       stream1 = PravegaStream.stream("g1", personReaderSettings)
@@ -45,7 +45,7 @@ object SegmentListernerSpec extends SharedPravegaContainerSpec("segment-listener
 
       count <- fib1.join
 
-      _ <- ZIO.logDebug(s"count = $count")
+      _ <- ZIO.logDebug(f"count = $count%d")
     } yield assert(count)(equalTo(1000000L))
   } @@ withLiveClock @@ ignore)
 

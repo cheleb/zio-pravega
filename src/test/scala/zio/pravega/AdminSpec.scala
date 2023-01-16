@@ -28,12 +28,12 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     PravegaTableManager.live
   ) @@ sequential
 
-  def createScopes = suite("Scopes")(
+  private def createScopes = suite("Scopes")(
     test("Scope created once")(PravegaStreamManager.createScope(aScope).map(once => assert(once)(isTrue))),
     test("Scope skip twice")(PravegaStreamManager.createScope(aScope).map(twice => assert(twice)(isFalse)))
   ) @@ sequential
 
-  def createStreams = suite("Streams")(
+  private def createStreams = suite("Streams")(
     test("Stream created once")(
       PravegaStreamManager.createStream(aScope, "stream", staticStreamConfig(2)).map(once => assert(once)(isTrue))
     ),
@@ -42,7 +42,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     )
   ) @@ sequential
 
-  def dropStreams = suite("Drop streams")(
+  private def dropStreams = suite("Drop streams")(
     test("Stream dropped once")(
       PravegaStreamManager.sealStream(aScope, "stream") *> PravegaStreamManager
         .dropStream(aScope, "stream")
@@ -51,7 +51,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     test("Stream skip twice")(PravegaStreamManager.dropStream(aScope, "stream").map(twice => assert(twice)(isFalse)))
   ) @@ sequential
 
-  def createGroups = suite("Groups")(
+  private def createGroups = suite("Groups")(
     test("Group created")(
       PravegaReaderGroupManager.createReaderGroup("group", "stream").map(once => assert(once)(isTrue))
     ),
@@ -67,7 +67,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     test("Open")(PravegaReaderGroupManager.openReaderGroup("group").map(_ => assertCompletes))
   )
 
-  def dropGroups = suite("Drop groups")(
+  private def dropGroups = suite("Drop groups")(
     test("Group dropped once")(
       PravegaReaderGroupManager.dropReaderGroup(aScope, "group").map(once => assert(once)(isTrue))
     ),
@@ -76,7 +76,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     )
   )
 
-  def createTables = {
+  private def createTables = {
     val tableConfig = KeyValueTableConfiguration.builder().partitionCount(2).primaryKeyLength(4).build()
     suite("Tables")(
       test("Table created once")(
@@ -87,7 +87,8 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
       )
     ) @@ sequential
   }
-  def dropTables =
+  private def dropTables =
     test("Drop table")(PravegaTableManager.dropTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
-  def dropScope = test("Drop namespace")(PravegaStreamManager.dropScope(aScope).map(dropped => assert(dropped)(isTrue)))
+  private def dropScope =
+    test("Drop namespace")(PravegaStreamManager.dropScope(aScope).map(dropped => assert(dropped)(isTrue)))
 }

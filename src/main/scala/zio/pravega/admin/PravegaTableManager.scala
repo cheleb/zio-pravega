@@ -18,7 +18,8 @@ trait PravegaTableManager {
 
 }
 
-private case class PravegaTableManagerImpl(keyValueTableManager: KeyValueTableManager) extends PravegaTableManager {
+final private case class PravegaTableManagerImpl(keyValueTableManager: KeyValueTableManager)
+    extends PravegaTableManager {
 
   override def createTable(scope: String, tableName: String, config: KeyValueTableConfiguration): RIO[Scope, Boolean] =
     for {

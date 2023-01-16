@@ -14,9 +14,9 @@ object CreateResourcesExample extends ZIOAppDefault {
 
   private val program = for {
     scopeCreated  <- PravegaStreamManager.createScope("a-scope")
-    _             <- printLine(s"Scope created: $scopeCreated")
+    _             <- printLine(f"Scope created: $scopeCreated%b")
     streamCreated <- PravegaStreamManager.createStream("a-scope", "a-stream", streamConfiguration)
-    _             <- printLine(s"Stream created: $streamCreated")
+    _             <- printLine(f"Stream created: $streamCreated%b")
     _             <- PravegaReaderGroupManager.createReaderGroup("a-reader-group", "a-stream")
   } yield ()
 

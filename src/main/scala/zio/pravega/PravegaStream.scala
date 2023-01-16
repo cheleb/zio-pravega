@@ -28,6 +28,7 @@ trait PravegaStream {
 
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A]
 
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def eventStream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, EventRead[A]]
 }
 
@@ -48,20 +49,15 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     )
     .withFinalizerAuto
   def sink[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit] = ZSink.unwrapScoped(
-    for {
-      writer     <- createEventWriter(streamName, settings)
-      eventWriter = EventWriter.writeEventTask(writer, settings)
-    } yield ZSink.foreach(eventWriter)
+    for (writer <- createEventWriter(streamName, settings); eventWriter = EventWriter.writeEventTask(writer, settings))
+      yield ZSink.foreach(eventWriter)
   )
-
   def writeFlow[A](streamName: String, settings: WriterSettings[A]): ZPipeline[Any, Throwable, A, A] =
     ZPipeline.unwrapScoped {
-      for {
-        writer     <- createEventWriter(streamName, settings)
-        eventWriter = EventWriter.writeEventTask(writer, settings)
-      } yield ZPipeline.tap(eventWriter)
+      for (
+        writer <- createEventWriter(streamName, settings); eventWriter = EventWriter.writeEventTask(writer, settings)
+      ) yield ZPipeline.tap(eventWriter)
     }
-
   private def createTxEventWriter[A](streamName: String, settings: WriterSettings[A]) = ZIO
     .attemptBlocking(
       eventStreamClientFactory
@@ -84,36 +80,35 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         writeEventTask = EventWriter.writeEventTask(tx, settings)
       ) yield ZSink.foreach(writeEventTask)
     )
-  private def readNextEvent[A](reader: EventStreamReader[A], timeout: Long): Task[Chunk[A]] =
-    ZIO.attemptBlocking(reader.readNextEvent(timeout) match {
-      case eventRead if eventRead.isCheckpoint =>
-        Chunk.empty
-      case eventRead =>
-        val event = eventRead.getEvent()
-        if (event == null) Chunk.empty else Chunk.single(event)
-    })
-  def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A] =
-    ZStream.unwrapScoped(
-      for (
-        reader <- createEventStreamReader(readerGroupName, settings); readTask = readNextEvent(reader, settings.timeout)
-      ) yield ZStream.repeatZIOChunk(readTask)
-    )
-  def eventStream[A](
-    readerGroupName: String,
-    settings: ReaderSettings[A]
-  ): Stream[Throwable, EventRead[A]] = ZStream.unwrapScoped(
-    createEventStreamReader(readerGroupName, settings).map(reader =>
-      ZStream.repeatZIOChunk(ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
-        case eventRead if eventRead.isCheckpoint =>
-          Chunk.single(eventRead)
-        case eventRead if eventRead.getEvent() == null =>
-          Chunk.empty
-        case eventRead =>
-          Chunk.single(eventRead)
-      }))
-    )
+  @SuppressWarnings(Array("org.wartremover.warts.Equals")) private def readNextEvent[A](
+    reader: EventStreamReader[A],
+    timeout: Long
+  ): Task[Chunk[A]] = ZIO.attemptBlocking(reader.readNextEvent(timeout) match {
+    case eventRead if eventRead.isCheckpoint =>
+      Chunk.empty
+    case eventRead =>
+      val event = eventRead.getEvent()
+      if (event == null) Chunk.empty else Chunk.single(event)
+  })
+  def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A] = ZStream.unwrapScoped(
+    for (
+      reader <- createEventStreamReader(readerGroupName, settings); readTask = readNextEvent(reader, settings.timeout)
+    ) yield ZStream.repeatZIOChunk(readTask)
   )
-
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  def eventStream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, EventRead[A]] =
+    ZStream.unwrapScoped(
+      createEventStreamReader(readerGroupName, settings).map(reader =>
+        ZStream.repeatZIOChunk(ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
+          case eventRead if eventRead.isCheckpoint =>
+            Chunk.single(eventRead)
+          case eventRead if eventRead.getEvent() == null =>
+            Chunk.empty
+          case eventRead =>
+            Chunk.single(eventRead)
+        }))
+      )
+    )
 }
 
 object PravegaStream {

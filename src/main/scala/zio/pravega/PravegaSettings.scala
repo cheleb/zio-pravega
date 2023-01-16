@@ -158,7 +158,7 @@ object WriterSettingsBuilder {
   private def eventWriterConfig(readerConfig: Config): EventWriterConfigBuilder = {
     val builder = EventWriterConfig.builder()
 
-    implicit val config = readerConfig.getConfig("config")
+    implicit val config: Config = readerConfig.getConfig("config")
 
     extractBoolean("automatically-note-time")(builder.automaticallyNoteTime)
     extractInt("backoff-multiple")(builder.backoffMultiple)
@@ -369,6 +369,7 @@ object TableWriterSettingsBuilder {
   }
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.Var"))
 private[pravega] class ReaderBasicSetting(
   var groupName: Option[String] = None,
   var timeout: Duration = Duration.ofSeconds(5)
@@ -426,7 +427,7 @@ private[pravega] object ConfigHelper {
   def buildReaderConfig(config: Config): ReaderConfigBuilder = {
     val builder = ReaderConfig.builder()
 
-    implicit val c = config.getConfig("config")
+    implicit val c: Config = config.getConfig("config")
     extractBoolean("disable-time-windows")(builder.disableTimeWindows)
     extractLong("initial-allocation-delay")(builder.initialAllocationDelay)
 
@@ -436,7 +437,7 @@ private[pravega] object ConfigHelper {
   def builder(config: Config): ClientConfigBuilder = {
     val builder = ClientConfig.builder()
 
-    implicit val c = config.getConfig("client-config")
+    implicit val c: Config = config.getConfig("client-config")
     extractString("controller-uri")(uri => builder.controllerURI(new URI(uri)))
     extractBoolean("enable-tls-to-controller")(builder.enableTlsToController)
     extractBoolean("enable-tls-to-segment-store")(builder.enableTlsToSegmentStore)
@@ -445,13 +446,16 @@ private[pravega] object ConfigHelper {
     extractBoolean("validate-host-name")(builder.validateHostName)
     builder
   }
-
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractString(path: String)(f: String => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getString(path)): Unit
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractBoolean(path: String)(f: Boolean => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getBoolean(path)): Unit
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractInt(path: String)(f: Int => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getInt(path)): Unit
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractLong(path: String)(f: Long => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getLong(path)): Unit
   def extractDuration(path: String)(f: Duration => Unit)(implicit config: Config): Unit =
