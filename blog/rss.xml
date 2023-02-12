@@ -11,7 +11,7 @@
         <item>
             <title><![CDATA[Release 0.2.0]]></title>
             <link>https://cheleb.github.io/zio-pravega/blog/Release 0.2.0</link>
-            <guid>Release 0.2.0</guid>
+            <guid>https://cheleb.github.io/zio-pravega/blog/Release 0.2.0</guid>
             <pubDate>Sat, 17 Sep 2022 00:00:00 GMT</pubDate>
             <description><![CDATA[ZIO Pravega 0.2.0:]]></description>
             <content:encoded><![CDATA[<p>ZIO Pravega 0.2.0:</p><ul><li>Minor renaming and lisibility improvements</li><li>Update to ZIO 2.0.2</li></ul>]]></content:encoded>
@@ -21,7 +21,7 @@
         <item>
             <title><![CDATA[Release 0.1.1]]></title>
             <link>https://cheleb.github.io/zio-pravega/blog/Release 0.1.1</link>
-            <guid>Release 0.1.1</guid>
+            <guid>https://cheleb.github.io/zio-pravega/blog/Release 0.1.1</guid>
             <pubDate>Tue, 23 Aug 2022 00:00:00 GMT</pubDate>
             <description><![CDATA[ZIO Pravega 0.1.0 - fix log level]]></description>
             <content:encoded><![CDATA[<p>ZIO Pravega 0.1.0 - fix log level</p>]]></content:encoded>
@@ -31,7 +31,7 @@
         <item>
             <title><![CDATA[Release 0.1.0]]></title>
             <link>https://cheleb.github.io/zio-pravega/blog/Release 0.1.0</link>
-            <guid>Release 0.1.0</guid>
+            <guid>https://cheleb.github.io/zio-pravega/blog/Release 0.1.0</guid>
             <pubDate>Mon, 22 Aug 2022 00:00:00 GMT</pubDate>
             <description><![CDATA[ZIO Pravega 0.1.0.]]></description>
             <content:encoded><![CDATA[<p>ZIO Pravega 0.1.0. </p><p>Exposes an event read (event metadata) stream.</p>]]></content:encoded>
@@ -41,7 +41,7 @@
         <item>
             <title><![CDATA[Release 0.0.1]]></title>
             <link>https://cheleb.github.io/zio-pravega/blog/Release 0.0.1</link>
-            <guid>Release 0.0.1</guid>
+            <guid>https://cheleb.github.io/zio-pravega/blog/Release 0.0.1</guid>
             <pubDate>Sun, 26 Jun 2022 00:00:00 GMT</pubDate>
             <description><![CDATA[ZIO Pravega 0.0.1 first release.]]></description>
             <content:encoded><![CDATA[<p>ZIO Pravega 0.0.1 first release.</p>]]></content:encoded>

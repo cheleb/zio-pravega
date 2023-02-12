@@ -9,7 +9,7 @@
     <icon>https://cheleb.github.io/zio-pravega/img/favicon.ico</icon>
     <entry>
         <title type="html"><![CDATA[Release 0.2.0]]></title>
-        <id>Release 0.2.0</id>
+        <id>https://cheleb.github.io/zio-pravega/blog/Release 0.2.0</id>
         <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.2.0"/>
         <updated>2022-09-17T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[ZIO Pravega 0.2.0:]]></summary>
@@ -23,7 +23,7 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[Release 0.1.1]]></title>
-        <id>Release 0.1.1</id>
+        <id>https://cheleb.github.io/zio-pravega/blog/Release 0.1.1</id>
         <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.1.1"/>
         <updated>2022-08-23T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[ZIO Pravega 0.1.0 - fix log level]]></summary>
@@ -37,7 +37,7 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[Release 0.1.0]]></title>
-        <id>Release 0.1.0</id>
+        <id>https://cheleb.github.io/zio-pravega/blog/Release 0.1.0</id>
         <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.1.0"/>
         <updated>2022-08-22T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[ZIO Pravega 0.1.0.]]></summary>
@@ -51,7 +51,7 @@
     </entry>
     <entry>
         <title type="html"><![CDATA[Release 0.0.1]]></title>
-        <id>Release 0.0.1</id>
+        <id>https://cheleb.github.io/zio-pravega/blog/Release 0.0.1</id>
         <link href="https://cheleb.github.io/zio-pravega/blog/Release 0.0.1"/>
         <updated>2022-06-26T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[ZIO Pravega 0.0.1 first release.]]></summary>
