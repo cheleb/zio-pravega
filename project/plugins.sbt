@@ -11,6 +11,6 @@ addSbtPlugin("org.scoverage"  % "sbt-scoverage"  % "2.0.7")
 addSbtPlugin("com.github.sbt" % "sbt-unidoc"     % "0.5.0")
 addSbtPlugin("org.scalameta"  % "sbt-mdoc"       % "2.3.7")
 //addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"   % "0.4.1")
-addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.0.10")
+addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.0.11")
 
 libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.13"
