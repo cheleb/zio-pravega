@@ -4,7 +4,7 @@ val mainScala = scala213
 val allScala  = Seq(scala33, scala213)
 
 val zioVersion     = "2.0.17"
-val pravegaVersion = "0.12.0"
+val pravegaVersion = "0.13.0"
 
 inThisBuild(
   List(
@@ -76,12 +76,13 @@ lazy val pravega =
     )
     .settings(
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+      resolvers += "Pravega RC" at "https://oss.sonatype.org/content/repositories/iopravega-1206",
       libraryDependencies ++= Seq(
         "com.typesafe"                      % "config"                   % "1.4.2",
         "dev.zio"                          %% "zio-streams"              % zioVersion,
         "dev.zio"                          %% "zio-test"                 % zioVersion                              % Test,
         "dev.zio"                          %% "zio-test-sbt"             % zioVersion                              % Test,
-        "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.1.14"                                 % Test,
+        "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.1.14"                                % Test,
         "org.scalatest"                    %% "scalatest"                % "3.2.17"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
         "org.testcontainers"                % "testcontainers"           % "1.19.0"                                % Test,
