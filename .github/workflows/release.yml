@@ -61,7 +61,7 @@ jobs:
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
       - run: sbt clean docs/docusaurusCreateSite
-      - uses: webfactory/ssh-agent@v0.7.0
+      - uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY }}
       - name: Deploy to GitHub Pages
