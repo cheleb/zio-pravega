@@ -4,6 +4,7 @@ import zio._
 import io.pravega.client.ClientConfig
 import io.pravega.client.admin.StreamManager
 import io.pravega.client.stream.StreamConfiguration
+import io.pravega.client.stream.StreamCut
 
 @Accessible
 trait PravegaStreamManager {
@@ -12,6 +13,7 @@ trait PravegaStreamManager {
   def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean]
   def sealStream(scope: String, streamName: String): Task[Boolean]
   def dropStream(scope: String, streamName: String): Task[Boolean]
+  def truncateStream(scope: String, streamName: String, streamCut: StreamCut): Task[Boolean]
 
 }
 
@@ -40,9 +42,12 @@ object PravegaStreamManager {
     ZIO.serviceWithZIO[PravegaStreamManager](_.sealStream(scope, streamName))
   def dropStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] =
     ZIO.serviceWithZIO[PravegaStreamManager](_.dropStream(scope, streamName))
+  def truncateStream(scope: String, streamName: String, streamCut: StreamCut): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.truncateStream(scope, streamName, streamCut))
 }
 
 final private case class PravegaStreamManagerLive(streamManager: StreamManager) extends PravegaStreamManager {
+
   def createScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.createScope(scope))
   def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean] = for (
     exists <- ZIO.attemptBlocking(streamManager.checkStreamExists(scope, streamName));
@@ -58,4 +63,8 @@ final private case class PravegaStreamManagerLive(streamManager: StreamManager) 
   def dropStream(scope: String, streamName: String): Task[Boolean] =
     ZIO.attemptBlocking(streamManager.deleteStream(scope, streamName))
   def dropScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.deleteScope(scope))
+
+  def truncateStream(scope: String, streamName: String, streamCut: StreamCut): Task[Boolean] =
+    ZIO.attemptBlocking(streamManager.truncateStream(scope, streamName, streamCut))
+
 }

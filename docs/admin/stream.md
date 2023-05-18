@@ -12,6 +12,9 @@ import zio.pravega.admin._
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
 
+import scala.jdk.CollectionConverters._
+
+
 def initStream(streamName: String, scope: String)
 : ZIO[PravegaStreamManager,Throwable,Unit] =
     for {
@@ -40,4 +43,19 @@ It must created expliciyly
               "a-group-name",
               "stream-a", "stream-b"
             )
+```
+
+# Truncation
+
+A [Truncation](https://pravega.io/docs/snapshot/retention/#retention-service) is a mechanism to remove data from a Stream.
+
+```scala mdoc:silent
+  for {
+          readerGroup <- PravegaReaderGroupManager.openReaderGroup("g1")
+          streamCuts   = readerGroup.getStreamCuts()
+          _ <- ZIO.foreach(streamCuts.asScala.toList) { case (stream, streamCut) =>
+                 ZIO.logDebug(s"Stream: ${stream.getStreamName}, StreamCut: $streamCut") *>
+                   PravegaStreamManager.truncateStream("a-scope", stream.getStreamName(), streamCut)
+               }
+  } yield ()
 ```
