@@ -65,13 +65,12 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     )
     .withFinalizerAuto
   private def beginTransaction[A](writer: TransactionalEventStreamWriter[A]): RIO[Scope, Transaction[A]] =
-    ZIO.acquireReleaseExit(ZIO.attemptBlocking(writer.beginTxn)) { case (tx, exit) =>
-      exit match {
-        case Failure(e) =>
-          ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie
-        case Success(_) =>
-          ZIO.attemptBlocking(tx.commit()).orDie
-      }
+    ZIO.acquireReleaseExit(ZIO.attemptBlocking(writer.beginTxn)) {
+      case (tx, Failure(e)) =>
+        ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie
+      case (tx, Success(_)) =>
+        ZIO.attemptBlocking(tx.commit()).orDie
+
     }
   def sinkTx[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit] =
     ZSink.unwrapScoped(
