@@ -76,7 +76,7 @@ lazy val pravega =
     )
     .settings(
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
-      resolvers += "Pravega RC" at "https://oss.sonatype.org/content/repositories/iopravega-1206",
+//      resolvers += "Pravega RC" at "https://oss.sonatype.org/content/repositories/iopravega-1206",
       libraryDependencies ++= Seq(
         "com.typesafe"                      % "config"                   % "1.4.2",
         "dev.zio"                          %% "zio-streams"              % zioVersion,
