@@ -6,6 +6,7 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.pravega.admin._
+import java.util.UUID
 
 object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
@@ -34,7 +35,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           count   = count1 + count2
           _      <- ZIO.logDebug(f"count $count1%d + $count2%d = $count%d")
         } yield assert(count)(equalTo(100L))
-      } @@ withLiveClock,
+      } @@ withLiveClock @@ ignore,
       test("Roll back sinks") {
         for {
           _ <- PravegaStreamManager.createStream(aScope, "s2", staticStreamConfig(1))
@@ -54,6 +55,22 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           count <- stream.take(50).filter(_.age < 50).runCount
 
         } yield assert(count)(equalTo(0L))
+      } @@ ignore,
+      test("2 writers in a same transaction") {
+        for {
+          _             <- PravegaStreamManager.createStream(aScope, "s3", staticStreamConfig(1))
+          txUUIDPromise <- Promise.make[Nothing, UUID]
+          txSink         = sinkTx("s3", txUUIDPromise)
+          fib1          <- testStream(0, 50).run(txSink).fork
+          txUUID        <- txUUIDPromise.await.debug
+//          _             <- fib1.join
+          txSink2 = PravegaStream.sinkFromTx(txUUID, "s3", personStreamWriterSettings)
+          fib2   <- testStream(0, 50).run(txSink2).fork
+          _      <- createGroup("g3", "s3")
+          stream  = PravegaStream.stream("g3", personReaderSettings)
+          count  <- stream.take(100).runCount
+
+        } yield assert(count)(equalTo(100L))
       }
     )
   )

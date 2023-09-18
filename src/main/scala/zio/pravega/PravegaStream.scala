@@ -22,7 +22,15 @@ import zio.stream._
 trait PravegaStream {
   def sink[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
 
+  def sinkTx[A](
+    streamName: String,
+    settings: WriterSettings[A],
+    txUUID: Promise[Nothing, UUID]
+  ): Sink[Throwable, A, Nothing, Unit]
+
   def sinkTx[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
+
+  def sinkFromTx[A](txUUID: UUID, streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
 
   def writeFlow[A](streamName: String, settings: WriterSettings[A]): ZPipeline[Any, Throwable, A, A]
 
@@ -33,6 +41,7 @@ trait PravegaStream {
 }
 
 private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFactory) extends PravegaStream {
+
   private def createEventWriter[A](streamName: String, settings: WriterSettings[A]) = ZIO
     .attemptBlocking(
       eventStreamClientFactory.createEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
@@ -74,11 +83,41 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     }
   def sinkTx[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit] =
     ZSink.unwrapScoped(
-      for (
-        writer        <- createTxEventWriter(streamName, settings); tx <- beginTransaction(writer);
+      for {
+        writer        <- createTxEventWriter(streamName, settings)
+        tx            <- beginTransaction(writer)
         writeEventTask = EventWriter.writeEventTask(tx, settings)
-      ) yield ZSink.foreach(writeEventTask)
+      } yield ZSink.foreach(writeEventTask)
     )
+
+  def sinkTx[A](
+    streamName: String,
+    settings: WriterSettings[A],
+    txUUID: Promise[Nothing, UUID]
+  ): Sink[Throwable, A, Nothing, Unit] =
+    ZSink.unwrapScoped(
+      for {
+        writer <- createTxEventWriter(streamName, settings)
+        tx     <- beginTransaction(writer)
+
+        _             <- txUUID.complete(ZIO.succeed(tx.getTxnId))
+        writeEventTask = EventWriter.writeEventTask(tx, settings)
+      } yield ZSink.foreach(writeEventTask)
+    )
+
+  override def sinkFromTx[A](
+    txUUID: UUID,
+    streamName: String,
+    settings: WriterSettings[A]
+  ): Sink[Throwable, A, Nothing, Unit] = ZSink.unwrapScoped(
+    for {
+      writer <- createTxEventWriter(streamName, settings)
+      tx      = writer.getTxn(txUUID)
+
+      writeEventTask = EventWriter.writeEventTask(tx, settings)
+    } yield ZSink.foreach(writeEventTask)
+  )
+
   @SuppressWarnings(Array("org.wartremover.warts.Equals")) private def readNextEvent[A](
     reader: EventStreamReader[A],
     timeout: Long
@@ -115,6 +154,18 @@ object PravegaStream {
     ZSink.serviceWithSink[PravegaStream](_.sink(streamName, settings))
   def sinkTx[A](streamName: String, settings: WriterSettings[A]): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
     ZSink.serviceWithSink[PravegaStream](_.sinkTx(streamName, settings))
+  def sinkTx[A](
+    streamName: String,
+    settings: WriterSettings[A],
+    txUUID: Promise[Nothing, UUID]
+  ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
+    ZSink.serviceWithSink[PravegaStream](_.sinkTx(streamName, settings, txUUID))
+  def sinkFromTx[A](
+    txUUID: UUID,
+    streamName: String,
+    settings: WriterSettings[A]
+  ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
+    ZSink.serviceWithSink[PravegaStream](_.sinkFromTx(txUUID, streamName, settings))
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): ZStream[PravegaStream, Throwable, A] =
     ZStream.serviceWithStream[PravegaStream](_.stream(readerGroupName, settings))
   def eventStream[A](
