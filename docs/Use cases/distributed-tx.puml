@@ -1,20 +1,49 @@
 @startuml "Distruted tx"
+skinparam sequenceMessageAlign center
 
-actor User
 participant "Service A" as A
+queue "Queue A" as QueueA
 participant "Service B" as B
-queue "Pravega" as Pravega
+queue "Queue B" as QueueB
+participant "Service C" as C
+queue "Queue C" as QueueC
+queue "Event Store" as EventStore
 
+Entity "Aggregate" as Aggregate
 
-A -> Pravega  : Open Tx
-activate Pravega
-A -> Pravega  : Write Events
-activate Pravega
-deactivate Pravega
-A -> B  : Call with txUUID
-B -> Pravega : get Tx
-B -> Pravega : Write Events
-activate Pravega
-deactivate Pravega
+activate A #BBBBBB
+A -> EventStore  : Open Tx
+activate EventStore
+A -[#0000FF]-> EventStore  : Write Events
+activate EventStore #0000FF
+deactivate EventStore
+A -> QueueB  : command(txUUID)
+deactivate A
+
+B <- QueueB  : trigger
+activate B #BBBBBB
+B -[#0000FF]-> EventStore : Write Events
+activate EventStore #0000FF
+deactivate EventStore
+
+B -> QueueC  : command(txUUID)
+deactivate B
+C <- QueueC  : trigger
+activate C #BBBBBB
+C -[#0000FF]-> EventStore : Write Events
+
+activate EventStore #0000FF
+deactivate EventStore
+C -> QueueA  : command(txUUID)
+deactivate C
+A <- QueueA  : trigger
+activate A #BBBBBB
+A -> EventStore : Commit Tx
+
+deactivate EventStore
+deactivate A
+
+EventStore -> Aggregate : Apply Events
+
 
 @enduml
