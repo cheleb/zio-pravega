@@ -22,7 +22,7 @@ import zio.stream._
 trait PravegaStream {
   def sink[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
 
-  def sinkTx[A](
+  def sinkUnclosingTx[A](
     streamName: String,
     settings: WriterSettings[A],
     txUUID: Promise[Nothing, UUID]
@@ -30,7 +30,12 @@ trait PravegaStream {
 
   def sinkTx[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
 
-  def sinkFromTx[A](txUUID: UUID, streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
+  def sinkFromTx[A](
+    streamName: String,
+    txUUID: UUID,
+    settings: WriterSettings[A],
+    commitOnExit: Boolean
+  ): Sink[Throwable, A, Nothing, Unit]
 
   def writeFlow[A](streamName: String, settings: WriterSettings[A]): ZPipeline[Any, Throwable, A, A]
 
@@ -73,24 +78,35 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         .createTransactionalEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
     )
     .withFinalizerAuto
-  private def beginTransaction[A](writer: TransactionalEventStreamWriter[A]): RIO[Scope, Transaction[A]] =
+
+  private def beginScopedUnclosingTransaction[A](
+    writer: TransactionalEventStreamWriter[A]
+  ): RIO[Scope, Transaction[A]] =
+    ZIO.acquireReleaseExit(ZIO.attemptBlocking(writer.beginTxn)) {
+      case (tx, Failure(e)) =>
+        ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie
+      case (tx, Success(_)) =>
+        ZIO.logDebug(s"Wrote to tx [${tx.getTxnId}]")
+    }
+
+  private def beginScopedTransaction[A](writer: TransactionalEventStreamWriter[A]): RIO[Scope, Transaction[A]] =
     ZIO.acquireReleaseExit(ZIO.attemptBlocking(writer.beginTxn)) {
       case (tx, Failure(e)) =>
         ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie
       case (tx, Success(_)) =>
         ZIO.attemptBlocking(tx.commit()).orDie
-
     }
+
   def sinkTx[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit] =
     ZSink.unwrapScoped(
       for {
         writer        <- createTxEventWriter(streamName, settings)
-        tx            <- beginTransaction(writer)
+        tx            <- beginScopedTransaction(writer)
         writeEventTask = EventWriter.writeEventTask(tx, settings)
       } yield ZSink.foreach(writeEventTask)
     )
 
-  def sinkTx[A](
+  def sinkUnclosingTx[A](
     streamName: String,
     settings: WriterSettings[A],
     txUUID: Promise[Nothing, UUID]
@@ -98,7 +114,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     ZSink.unwrapScoped(
       for {
         writer <- createTxEventWriter(streamName, settings)
-        tx     <- beginTransaction(writer)
+        tx     <- beginScopedUnclosingTransaction(writer)
 
         _             <- txUUID.complete(ZIO.succeed(tx.getTxnId))
         writeEventTask = EventWriter.writeEventTask(tx, settings)
@@ -106,13 +122,18 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     )
 
   override def sinkFromTx[A](
-    txUUID: UUID,
     streamName: String,
-    settings: WriterSettings[A]
+    txUUID: UUID,
+    settings: WriterSettings[A],
+    commitOnExit: Boolean
   ): Sink[Throwable, A, Nothing, Unit] = ZSink.unwrapScoped(
     for {
       writer <- createTxEventWriter(streamName, settings)
-      tx      = writer.getTxn(txUUID)
+
+      txIO = ZIO.attemptBlocking(writer.getTxn(txUUID))
+      tx <- if (commitOnExit)
+              txIO.withFinalizer(tx => ZIO.attemptBlocking(tx.commit()).orDie)
+            else txIO
 
       writeEventTask = EventWriter.writeEventTask(tx, settings)
     } yield ZSink.foreach(writeEventTask)
@@ -154,18 +175,19 @@ object PravegaStream {
     ZSink.serviceWithSink[PravegaStream](_.sink(streamName, settings))
   def sinkTx[A](streamName: String, settings: WriterSettings[A]): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
     ZSink.serviceWithSink[PravegaStream](_.sinkTx(streamName, settings))
-  def sinkTx[A](
+  def sinkUnclosingTx[A](
     streamName: String,
     settings: WriterSettings[A],
     txUUID: Promise[Nothing, UUID]
   ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
-    ZSink.serviceWithSink[PravegaStream](_.sinkTx(streamName, settings, txUUID))
+    ZSink.serviceWithSink[PravegaStream](_.sinkUnclosingTx(streamName, settings, txUUID))
   def sinkFromTx[A](
-    txUUID: UUID,
     streamName: String,
-    settings: WriterSettings[A]
+    txUUID: UUID,
+    settings: WriterSettings[A],
+    commitOnExit: Boolean
   ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
-    ZSink.serviceWithSink[PravegaStream](_.sinkFromTx(txUUID, streamName, settings))
+    ZSink.serviceWithSink[PravegaStream](_.sinkFromTx(streamName, txUUID, settings, commitOnExit))
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): ZStream[PravegaStream, Throwable, A] =
     ZStream.serviceWithStream[PravegaStream](_.stream(readerGroupName, settings))
   def eventStream[A](

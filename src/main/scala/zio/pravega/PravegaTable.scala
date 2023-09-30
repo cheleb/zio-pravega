@@ -122,13 +122,15 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
         }
         ZIO.succeed(Chunk.fromArray(res.toArray))
     }
+
   override def source[K, V](
     tableName: String,
     settings: TableReaderSettings[K, V]
   ): ZStream[Any, Throwable, TableEntry[V]] = ZStream.unwrapScoped(
     for {
-      table      <- connectTable(tableName, settings)
-      executor   <- ZIO.succeed(Executors.newSingleThreadExecutor()).withFinalizerAuto
+      table <- connectTable(tableName, settings)
+      executor <-
+        ZIO.succeed(Executors.newSingleThreadExecutor()).withFinalizer(e => ZIO.attemptBlocking(e.shutdown()).ignore)
       it          = iterator(table.table, settings.maxEntriesAtOnce).asSequential(executor)
       nextEntryIO = readNextEntry(it, settings.valueSerializer)
     } yield ZStream.repeatZIOChunkOption(nextEntryIO)

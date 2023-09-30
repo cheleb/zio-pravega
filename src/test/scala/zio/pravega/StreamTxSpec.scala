@@ -60,12 +60,12 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         for {
           _             <- PravegaStreamManager.createStream(aScope, "s3", staticStreamConfig(1))
           txUUIDPromise <- Promise.make[Nothing, UUID]
-          txSink         = sinkTx("s3", txUUIDPromise)
-          fib1          <- testStream(0, 50).run(txSink).fork
+          txSink         = sinkUnclosingTx("s3", txUUIDPromise)
+          _             <- testStream(0, 50).run(txSink).fork
           txUUID        <- txUUIDPromise.await.debug
 //          _             <- fib1.join
-          txSink2 = PravegaStream.sinkFromTx(txUUID, "s3", personStreamWriterSettings)
-          fib2   <- testStream(0, 50).run(txSink2).fork
+          txSink2 = PravegaStream.sinkFromTx("s3", txUUID, personStreamWriterSettings, true)
+          _      <- testStream(0, 50).run(txSink2).fork
           _      <- createGroup("g3", "s3")
           stream  = PravegaStream.stream("g3", personReaderSettings)
           count  <- stream.take(100).runCount
