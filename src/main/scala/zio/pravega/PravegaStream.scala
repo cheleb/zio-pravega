@@ -123,8 +123,8 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
 
   def sinkUnclosingTx[A](
     streamName: String,
-    settings: WriterSettings[A],
-    txUUID: Promise[Nothing, UUID]
+    txUUID: Promise[Nothing, UUID],
+    settings: WriterSettings[A]
   ): Sink[Throwable, A, Nothing, Unit] =
     ZSink.unwrapScoped(
       for {
@@ -232,10 +232,10 @@ object PravegaStream {
 
   def sinkUnclosingTx[A](
     streamName: String,
-    settings: WriterSettings[A],
-    txUUID: Promise[Nothing, UUID]
+    txUUID: Promise[Nothing, UUID],
+    settings: WriterSettings[A]
   ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
-    ZSink.serviceWithSink[PravegaStream](_.sinkUnclosingTx(streamName, settings, txUUID))
+    ZSink.serviceWithSink[PravegaStream](_.sinkUnclosingTx(streamName, txUUID, settings))
   def sinkFromTx[A](
     streamName: String,
     txUUID: UUID,

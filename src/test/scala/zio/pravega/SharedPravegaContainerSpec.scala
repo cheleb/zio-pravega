@@ -82,7 +82,7 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     txUUID: Promise[Nothing, UUID]
   ): ZSink[PravegaStream, Throwable, Person, Nothing, Unit] =
     PravegaStream
-      .sinkUnclosingTx(streamName, personStreamWriterSettingsWithKey, txUUID)
+      .sinkUnclosingTx(streamName, txUUID, personStreamWriterSettingsWithKey)
 
   protected def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
     .fromIterable(a until b)
