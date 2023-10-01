@@ -147,8 +147,16 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
 
       txIO = ZIO.attemptBlocking(writer.getTxn(txUUID))
       tx <- if (commitOnExit)
-              txIO.withFinalizer(tx => ZIO.attemptBlocking(tx.commit()).orDie)
+              txIO.withFinalizerExit {
+                case (tx, Failure(e)) =>
+                  ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie
+                case (tx, Success(_)) =>
+                  ZIO.logDebug(s"Commiting tx [$txUUID]") *> ZIO.attemptBlocking(tx.commit()).orDie
+              }
             else txIO
+      _ <- ZIO.unless(tx.checkStatus() == Transaction.Status.OPEN)(
+             ZIO.dieMessage(s"Transaction $txUUID is not open")
+           )
 
       writeEventTask = EventWriter.writeEventTask(tx, settings)
     } yield ZSink.foreach(writeEventTask)
