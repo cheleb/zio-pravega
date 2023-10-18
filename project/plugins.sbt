@@ -13,4 +13,4 @@ addSbtPlugin("org.scalameta"  % "sbt-mdoc"       % "2.3.7")
 //addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat"   % "0.4.1")
 addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.1.4")
 
-libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.13"
+libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin" % "0.11.14"
