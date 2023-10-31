@@ -3,12 +3,13 @@ package zio.pravega.docs
 import zio._
 import zio.pravega._
 
-import io.pravega.client.stream.impl.UTF8StringSerializer
+import zio.pravega.serder.*
 import zio.pravega.admin.PravegaReaderGroupManager
 
 object StreamReadExample extends ZIOAppDefault {
 
-  val stringReaderSettings: ReaderSettings[String] = ReaderSettingsBuilder().withSerializer(new UTF8StringSerializer)
+  val stringReaderSettings: ReaderSettings[String] =
+    ReaderSettingsBuilder().withDeserializer(UTF8StringScalaDeserializer)
 
   private val program = for {
     _     <- PravegaReaderGroupManager.createReaderGroup("a-reader-group", "a-stream")

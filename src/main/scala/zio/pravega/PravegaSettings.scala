@@ -12,6 +12,7 @@ import io.pravega.client.tables.KeyValueTableClientConfiguration
 import io.pravega.client.tables.TableKey
 import com.typesafe.config.ConfigFactory
 import zio._
+import zio.pravega.serder.ScalaDeserializer
 
 object PravegaClientConfig {
   val configPath = "zio.pravega"
@@ -39,11 +40,11 @@ class ReaderSettingsBuilder(
 
   def withTimeout(timeout: Duration): ReaderSettingsBuilder = copy(timeout = Duration.ofMillis(timeout.toMillis))
 
-  def withSerializer[Message](serializer: Serializer[Message]): ReaderSettings[Message] = {
+  def withDeserializer[Message](deserializer: ScalaDeserializer[Message]): ReaderSettings[Message] = {
 
     readerConfigCustomizer.foreach(_(readerConfigBuilder))
 
-    new ReaderSettings[Message](readerConfigBuilder.build(), timeout.toMillis, serializer, readerId)
+    new ReaderSettings[Message](readerConfigBuilder.build(), timeout.toMillis, deserializer, readerId)
   }
 
   private def copy(
@@ -66,11 +67,11 @@ class ReaderSettingsBuilder(
  * @param readerId
  * @tparam Message
  */
-class ReaderSettings[Message] private[pravega] (
-  val readerConfig: ReaderConfig,
-  val timeout: Long,
-  val serializer: Serializer[Message],
-  val readerId: Option[String]
+final case class ReaderSettings[Message] private[pravega] (
+  readerConfig: ReaderConfig,
+  timeout: Long,
+  deserializer: ScalaDeserializer[Message],
+  readerId: Option[String]
 )
 
 object ReaderSettingsBuilder {

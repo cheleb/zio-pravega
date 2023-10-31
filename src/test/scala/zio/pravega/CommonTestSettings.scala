@@ -1,12 +1,15 @@
 package zio.pravega
 
+import serder.*
+
 import zio._
-import io.pravega.client.stream.impl.UTF8StringSerializer
+
 import io.pravega.client.stream.Serializer
 import java.nio.ByteBuffer
 
 import scala.language.postfixOps
 import model.Person
+import io.pravega.client.stream.impl.UTF8StringSerializer
 
 object CommonTestSettings {
 
@@ -24,10 +27,10 @@ object CommonTestSettings {
     .withSerializer(new UTF8StringSerializer)
 
   val readerSettings: ReaderSettings[String] =
-    ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(new UTF8StringSerializer)
+    ReaderSettingsBuilder().withTimeout(2 seconds).withDeserializer(UTF8StringScalaDeserializer)
 
   val readerSettings2: ReaderSettings[String] =
-    ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(new UTF8StringSerializer)
+    ReaderSettingsBuilder().withTimeout(2 seconds).withDeserializer(UTF8StringScalaDeserializer)
 
   val tableWriterSettings: TableWriterSettings[String, Int] =
     TableWriterSettingsBuilder(new UTF8StringSerializer, intSerializer).build()
@@ -43,8 +46,14 @@ object CommonTestSettings {
 
   }
 
+  val personDeserializer: ScalaDeserializer[Person] = new ScalaDeserializer[Person] {
+
+    override def deserialize(buffer: Array[Byte]): Person = Person.parseFrom(buffer)
+
+  }
+
   val personReaderSettings: ReaderSettings[Person] =
-    ReaderSettingsBuilder().withTimeout(2 seconds).withSerializer(personSerializer)
+    ReaderSettingsBuilder().withTimeout(2 seconds).withDeserializer(personDeserializer)
 
   val personStreamWriterSettings: WriterSettings[Person] = WriterSettingsBuilder().withSerializer(personSerializer)
 

@@ -13,7 +13,9 @@ import zio._
 import zio.Exit.Failure
 import zio.Exit.Success
 import zio.pravega.stream.EventWriter
+import zio.pravega.stream.ScalaEventRead
 import zio.stream._
+import io.pravega.client.stream.impl.ByteArraySerializer
 
 /**
  * Pravega Stream API.
@@ -72,7 +74,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       eventStreamClientFactory.createReader(
         settings.readerId.getOrElse(UUID.randomUUID().toString),
         readerGroupName,
-        settings.serializer,
+        new ByteArraySerializer,
         settings.readerConfig
       )
     )
@@ -162,20 +164,22 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     } yield ZSink.foreach(writeEventTask)
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals")) private def readNextEvent[A](
-    reader: EventStreamReader[A],
-    timeout: Long
-  ): Task[Chunk[A]] = ZIO.attemptBlocking(reader.readNextEvent(timeout) match {
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  private def readNextEvent[A](
+    reader: EventStreamReader[Array[Byte]],
+    settings: ReaderSettings[A]
+  ): Task[Chunk[A]] = ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
     case eventRead if eventRead.isCheckpoint =>
       Chunk.empty
     case eventRead =>
       val event = eventRead.getEvent()
-      if (event == null) Chunk.empty else Chunk.single(event)
+      if (event == null) Chunk.empty else Chunk.single(settings.deserializer.deserialize(event))
   })
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A] = ZStream.unwrapScoped(
-    for (
-      reader <- createEventStreamReader(readerGroupName, settings); readTask = readNextEvent(reader, settings.timeout)
-    ) yield ZStream.repeatZIOChunk(readTask)
+    for {
+      reader  <- createEventStreamReader(readerGroupName, settings);
+      readTask = readNextEvent(reader, settings)
+    } yield ZStream.repeatZIOChunk(readTask)
   )
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def eventStream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, EventRead[A]] =
@@ -183,11 +187,11 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       createEventStreamReader(readerGroupName, settings).map(reader =>
         ZStream.repeatZIOChunk(ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
           case eventRead if eventRead.isCheckpoint =>
-            Chunk.single(eventRead)
+            Chunk.single(ScalaEventRead(null.asInstanceOf[A], eventRead))
           case eventRead if eventRead.getEvent() == null =>
             Chunk.empty
           case eventRead =>
-            Chunk.single(eventRead)
+            Chunk.single(ScalaEventRead(settings.deserializer.deserialize(eventRead.getEvent()), eventRead))
         }))
       )
     )

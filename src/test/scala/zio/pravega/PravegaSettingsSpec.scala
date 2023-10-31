@@ -9,6 +9,7 @@ import scala.language.postfixOps
 import io.pravega.client.tables.TableKey
 import java.nio.ByteBuffer
 import org.scalatest.Assertions
+import zio.pravega.serder.UTF8StringScalaDeserializer
 
 class PravegaSettingsSpec extends AnyWordSpec with Matchers {
 
@@ -37,7 +38,7 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
         .readerConfigBuilder(_.bufferSize(1024))
         .withReaderId("dummy")
         .withTimeout(10 seconds)
-        .withSerializer(new UTF8StringSerializer)
+        .withDeserializer(UTF8StringScalaDeserializer)
 
       readerSettings.readerConfig.getBufferSize() mustEqual 1024
 //      readerSettings.readerId mustEqual Some("dummy")
