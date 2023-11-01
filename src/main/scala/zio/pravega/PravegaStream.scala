@@ -168,13 +168,17 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
   private def readNextEvent[A](
     reader: EventStreamReader[Array[Byte]],
     settings: ReaderSettings[A]
-  ): Task[Chunk[A]] = ZIO.attemptBlocking(reader.readNextEvent(settings.timeout) match {
-    case eventRead if eventRead.isCheckpoint =>
-      Chunk.empty
-    case eventRead =>
-      val event = eventRead.getEvent()
-      if (event == null) Chunk.empty else Chunk.single(settings.deserializer.deserialize(event))
-  })
+  ): Task[Chunk[A]] = ZIO
+    .attemptBlocking(reader.readNextEvent(settings.timeout))
+    .tap(e => ZIO.logDebug(s"${e.getPosition}")) // FIXME DEBUG
+    .map {
+      case eventRead if eventRead.isCheckpoint =>
+        Chunk.empty
+      case eventRead =>
+        val event = eventRead.getEvent()
+
+        if (event == null) Chunk.empty else Chunk.single(settings.deserializer.deserialize(event))
+    }
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A] = ZStream.unwrapScoped(
     for {
       reader  <- createEventStreamReader(readerGroupName, settings);
