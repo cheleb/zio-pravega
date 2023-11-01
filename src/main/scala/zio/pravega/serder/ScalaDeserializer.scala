@@ -1,5 +1,5 @@
 package zio.pravega.serder
 
-trait ScalaDeserializer[+T] {
+trait ScalaDeserializer[T] {
   def deserialize(bytes: Array[Byte]): T
 }

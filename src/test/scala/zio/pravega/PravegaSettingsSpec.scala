@@ -1,38 +1,29 @@
 package zio.pravega
 
 import zio._
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.must.Matchers
 import io.pravega.client.stream.impl.UTF8StringSerializer
 
 import scala.language.postfixOps
 import io.pravega.client.tables.TableKey
 import java.nio.ByteBuffer
-import org.scalatest.Assertions
 import zio.pravega.serder.UTF8StringScalaDeserializer
 
-class PravegaSettingsSpec extends AnyWordSpec with Matchers {
+class PravegaSettingsSpec extends munit.FunSuite {
 
   private val clientConfig = PravegaClientConfig.builder.enableTlsToController(true).build()
 
-  "Pravega stream settings builders" must {
+  test("Allows writer to set client config") {
 
-    "Allows writer to set client config" in {
+    val writterSettings = WriterSettingsBuilder()
+      .eventWriterConfigBuilder(_.enableConnectionPooling(true))
+      .withMaximumInflightMessages(100)
+      .withKeyExtractor((str: String) => str.substring(0, 2))
+      .withSerializer(new UTF8StringSerializer)
 
-      val writterSettings = WriterSettingsBuilder()
-        .eventWriterConfigBuilder(_.enableConnectionPooling(true))
-        .withMaximumInflightMessages(100)
-        .withKeyExtractor((str: String) => str.substring(0, 2))
-        .withSerializer(new UTF8StringSerializer)
+    assert(writterSettings.eventWriterConfig.isEnableConnectionPooling(), "Connection pooling should be enabled")
+    assertEquals(writterSettings.maximumInflightMessages, 100)
 
-      (
-        writterSettings.eventWriterConfig.isEnableConnectionPooling(),
-        writterSettings.maximumInflightMessages
-      ) mustBe (true, 100)
-
-    }
-
-    "Allows client config customisation" in {
+    test("Allows client config customisation") {
 
       val readerSettings = ReaderSettingsBuilder()
         .readerConfigBuilder(_.bufferSize(1024))
@@ -40,54 +31,58 @@ class PravegaSettingsSpec extends AnyWordSpec with Matchers {
         .withTimeout(10 seconds)
         .withDeserializer(UTF8StringScalaDeserializer)
 
-      readerSettings.readerConfig.getBufferSize() mustEqual 1024
+      assertEquals(readerSettings.readerConfig.getBufferSize(), 1024)
 //      readerSettings.readerId mustEqual Some("dummy")
 
     }
   }
 
-  "Pravega table setting builder" must {
-    "Allow table reader settings" in {
-      val tableReaderSettings = TableReaderSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
-        .withMaximumInflightMessages(10)
-        .withConfigurationCustomiser(_.backoffMultiple(2))
-        .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes("UTF-8"))))
-        .withMaxEntriesAtOnce(1000)
-        .build()
+  test("Allow table reader settings") {
+    val tableReaderSettings = TableReaderSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
+      .withMaximumInflightMessages(10)
+      .withConfigurationCustomiser(_.backoffMultiple(2))
+      .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes("UTF-8"))))
+      .withMaxEntriesAtOnce(1000)
+      .build()
 
-      val tableReaderSettingsDefault = TableReaderSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
-        .withMaximumInflightMessages(10)
-        .withConfigurationCustomiser(_.backoffMultiple(2))
-        .withMaxEntriesAtOnce(1000)
-        .build()
+    val tableReaderSettingsDefault = TableReaderSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
+      .withMaximumInflightMessages(10)
+      .withConfigurationCustomiser(_.backoffMultiple(2))
+      .withMaxEntriesAtOnce(1000)
+      .build()
 
+    assertEquals(
       (
         tableReaderSettings.maximumInflightMessages,
         tableReaderSettings.maxEntriesAtOnce,
         tableReaderSettingsDefault.maximumInflightMessages,
         tableReaderSettingsDefault.maxEntriesAtOnce
-      ) mustEqual (10, 1000, 10, 1000)
+      ),
+      (10, 1000, 10, 1000)
+    )
 
-    }
-    "Allow table writter settings" in {
-      val tableWritterSettings = TableWriterSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
+  }
+  test("Allow table writter settings") {
+    val tableWritterSettings = TableWriterSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
+      .withMaximumInflightMessages(100)
+      .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes("UTF-8"))))
+      .withConfigurationCustomiser(_.retryAttempts(3))
+      .build()
+
+    val tableWritterSettingsDefaultExtractor =
+      TableWriterSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
         .withMaximumInflightMessages(100)
-        .withKeyExtractor(str => new TableKey(ByteBuffer.wrap(str.getBytes("UTF-8"))))
         .withConfigurationCustomiser(_.retryAttempts(3))
         .build()
 
-      val tableWritterSettingsDefaultExtractor =
-        TableWriterSettingsBuilder(new UTF8StringSerializer, new UTF8StringSerializer)
-          .withMaximumInflightMessages(100)
-          .withConfigurationCustomiser(_.retryAttempts(3))
-          .build()
-
+    assertEquals(
       (
         tableWritterSettings.maximumInflightMessages,
         tableWritterSettingsDefaultExtractor.maximumInflightMessages
-      ) mustEqual (100, 100)
+      ),
+      (100, 100)
+    )
 
-    }
   }
 
 }
