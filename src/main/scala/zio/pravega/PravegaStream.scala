@@ -162,7 +162,8 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     } yield ZSink.foreach(writeEventTask)
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals")) private def readNextEvent[A](
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  private def readNextEvent[A](
     reader: EventStreamReader[A],
     timeout: Long
   ): Task[Chunk[A]] = ZIO.attemptBlocking(reader.readNextEvent(timeout) match {
@@ -173,9 +174,10 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       if (event == null) Chunk.empty else Chunk.single(event)
   })
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A] = ZStream.unwrapScoped(
-    for (
-      reader <- createEventStreamReader(readerGroupName, settings); readTask = readNextEvent(reader, settings.timeout)
-    ) yield ZStream.repeatZIOChunk(readTask)
+    for {
+      reader  <- createEventStreamReader(readerGroupName, settings)
+      readTask = readNextEvent(reader, settings.timeout)
+    } yield ZStream.repeatZIOChunk(readTask)
   )
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   def eventStream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, EventRead[A]] =
