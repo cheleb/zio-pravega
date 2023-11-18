@@ -65,26 +65,27 @@ trait PravegaStreamManager {
 object PravegaStreamManager {
 
   /**
+   * ZIO to create a PravegaStreamManager from a ClientConfig.
+   */
+  private def streamManager(clientConfig: ClientConfig): ZIO[Scope, Throwable, PravegaStreamManagerLive] =
+    ZIO
+      .attemptBlocking(StreamManager.create(clientConfig))
+      .withFinalizerAuto
+      .map(streamManager => PravegaStreamManagerLive(streamManager))
+
+  /**
    * ZLayer to provide a PravegaStreamManager from a environment with a
    * ClientConfig.
    */
   def live: ZLayer[Scope & ClientConfig, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
-    ZIO.serviceWithZIO[ClientConfig](clientConfig =>
-      ZIO
-        .attemptBlocking(StreamManager.create(clientConfig))
-        .withFinalizerAuto
-        .map(streamManager => PravegaStreamManagerLive(streamManager))
-    )
+    ZIO.serviceWithZIO[ClientConfig](streamManager)
   )
 
   /**
    * ZLayer to provide a PravegaStreamManager from a ClientConfig.
    */
   def live(clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
-    ZIO
-      .attemptBlocking(StreamManager.create(clientConfig))
-      .withFinalizerAuto
-      .map(streamManager => PravegaStreamManagerLive(streamManager))
+    streamManager(clientConfig)
   )
 
   /**

@@ -88,7 +88,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     ) @@ sequential
   }
   private def dropTables =
-    test("Drop table")(PravegaTableManager.dropTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
+    test("Drop table")(PravegaTableManager.deleteTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
   private def dropScope =
     test("Drop namespace")(PravegaStreamManager.deleteScope(aScope).map(dropped => assert(dropped)(isTrue)))
 }
