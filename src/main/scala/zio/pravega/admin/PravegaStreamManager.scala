@@ -27,7 +27,7 @@ trait PravegaStreamManager {
    * Will return false if the scope does not exist, hence true if it was
    * effectively dropped.
    */
-  def dropScope(scope: String): Task[Boolean]
+  def deleteScope(scope: String): Task[Boolean]
 
   /**
    * Create a stream with the given name and config. Note: This method is
@@ -44,12 +44,30 @@ trait PravegaStreamManager {
    * Will return false if the stream does not exist, hence true if it was
    */
   def sealStream(scope: String, streamName: String): Task[Boolean]
-  def dropStream(scope: String, streamName: String): Task[Boolean]
+
+  /**
+   * Drop a stream with the given name. This method may block.
+   */
+  def deleteStream(scope: String, streamName: String): Task[Boolean]
+
+  /**
+   * Truncate a stream with the given name. This method may block.
+   */
   def truncateStream(scope: String, streamName: String, streamCut: StreamCut): Task[Boolean]
 
 }
 
+/**
+ * PravegaStreamManager is a wrapper around the StreamManager Java API.
+ *
+ * Basically it's allow to create, drop, seal, truncate, etc. streams.
+ */
 object PravegaStreamManager {
+
+  /**
+   * ZLayer to provide a PravegaStreamManager from a environment with a
+   * ClientConfig.
+   */
   def live: ZLayer[Scope & ClientConfig, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
     ZIO.serviceWithZIO[ClientConfig](clientConfig =>
       ZIO
@@ -58,29 +76,87 @@ object PravegaStreamManager {
         .map(streamManager => PravegaStreamManagerLive(streamManager))
     )
   )
+
+  /**
+   * ZLayer to provide a PravegaStreamManager from a ClientConfig.
+   */
   def live(clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStreamManager] = ZLayer.fromZIO(
     ZIO
       .attemptBlocking(StreamManager.create(clientConfig))
       .withFinalizerAuto
       .map(streamManager => PravegaStreamManagerLive(streamManager))
   )
+
+  /**
+   * Create a scope with the given name.
+   *
+   * Returns true if the scope was created, false if it already exists.
+   */
   def createScope(scope: String): RIO[PravegaStreamManager, Boolean] =
     ZIO.serviceWithZIO[PravegaStreamManager](_.createScope(scope))
-  def dropScope(scope: String): RIO[PravegaStreamManager, Boolean] =
-    ZIO.serviceWithZIO[PravegaStreamManager](_.dropScope(scope))
+
+  /**
+   * Drop a scope with the given name.
+   *
+   * Returns true if the scope was dropped, false if it does not exist.
+   */
+  def deleteScope(scope: String): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.deleteScope(scope))
+
+  /**
+   * Create a stream with the given name and config.
+   *
+   * Returns true if the stream was created, false if it already exists.
+   */
   def createStream(scope: String, streamName: String, config: StreamConfiguration): RIO[PravegaStreamManager, Boolean] =
     ZIO.serviceWithZIO[PravegaStreamManager](_.createStream(scope, streamName, config))
+
+  /**
+   * Seal a stream with the given name.
+   *
+   * Returns true if the stream is sealed.
+   */
   def sealStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] =
     ZIO.serviceWithZIO[PravegaStreamManager](_.sealStream(scope, streamName))
-  def dropStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] =
-    ZIO.serviceWithZIO[PravegaStreamManager](_.dropStream(scope, streamName))
+
+  /**
+   * Drop a stream with the given name.
+   *
+   * Returns true if the stream is deleted.
+   */
+  def deleteStream(scope: String, streamName: String): RIO[PravegaStreamManager, Boolean] =
+    ZIO.serviceWithZIO[PravegaStreamManager](_.deleteStream(scope, streamName))
+
+  /**
+   * Truncate a stream with the given name.
+   *
+   * Returns true if the stream is truncated.
+   */
   def truncateStream(scope: String, streamName: String, streamCut: StreamCut): RIO[PravegaStreamManager, Boolean] =
     ZIO.serviceWithZIO[PravegaStreamManager](_.truncateStream(scope, streamName, streamCut))
 }
 
+/*
+ * PravegaStreamManagerLive is the implementation of PravegaStreamManager.
+ *
+ * It's a wrapper around the StreamManager Java API.
+ *
+ * Basically it's allow to create, drop, seal, truncate, etc. streams and scope.
+ */
 final private case class PravegaStreamManagerLive(streamManager: StreamManager) extends PravegaStreamManager {
 
+  /**
+   * Create a scope with the given name.
+   *
+   * Returns true if the scope was created, false if it already exists.
+   */
   def createScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.createScope(scope))
+
+  /**
+   * Create a stream with the given name and config.
+   *
+   * Returns true if the stream was created, false if it already exists.
+   */
   def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean] = for (
     exists <- ZIO.attemptBlocking(streamManager.checkStreamExists(scope, streamName));
     created <- exists match {
@@ -90,12 +166,35 @@ final private case class PravegaStreamManagerLive(streamManager: StreamManager) 
                    ZIO.attemptBlocking(streamManager.createStream(scope, streamName, config))
                }
   ) yield created
+
+  /**
+   * Seal a stream with the given name.
+   *
+   * Returns true if the stream is sealed.
+   */
   def sealStream(scope: String, streamName: String): Task[Boolean] =
     ZIO.attemptBlocking(streamManager.sealStream(scope, streamName))
-  def dropStream(scope: String, streamName: String): Task[Boolean] =
-    ZIO.attemptBlocking(streamManager.deleteStream(scope, streamName))
-  def dropScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.deleteScope(scope))
 
+  /**
+   * Drop a stream with the given name.
+   *
+   * Returns true if the stream is deleted.
+   */
+  def deleteStream(scope: String, streamName: String): Task[Boolean] =
+    ZIO.attemptBlocking(streamManager.deleteStream(scope, streamName))
+
+  /**
+   * Drop a scope with the given name.
+   *
+   * Returns true if the scope is deleted.
+   */
+  def deleteScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.deleteScope(scope))
+
+  /**
+   * Truncate a stream with the given name.
+   *
+   * Returns true if the stream is truncated.
+   */
   def truncateStream(scope: String, streamName: String, streamCut: StreamCut): Task[Boolean] =
     ZIO.attemptBlocking(streamManager.truncateStream(scope, streamName, streamCut))
 

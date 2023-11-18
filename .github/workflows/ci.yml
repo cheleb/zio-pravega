@@ -33,7 +33,7 @@ jobs:
       - name: Run tests crosscompile
         run: sbt ++ test
       - name: Run coverage test
-        run: sbt ++ 2.13.12 coverage test coverageReport
+        run: sbt "++ 2.13.12; coverage; test; coverageReport"
       # - name: Coverage Report
       #   run: sbt coverageReport
       - name: "Upload coverage to Codecov"
