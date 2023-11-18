@@ -6,11 +6,43 @@ import io.pravega.client.admin.StreamManager
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.StreamCut
 
+/**
+ * PravegaStreamManager is a wrapper around the StreamManager Java API.
+ *
+ * Basically it's allow to create, drop, seal, truncate, etc. streams.
+ */
 @Accessible
 trait PravegaStreamManager {
+  /*
+   * Create a scope with the given name. Note: This method is idempotent
+   * assuming called with the same name. This method may block.
+   *
+   * Will return false if the scope already exists, hence true if it was effectively created.
+   */
   def createScope(scope: String): Task[Boolean]
+
+  /**
+   * Drop a scope with the given name. This method may block.
+   *
+   * Will return false if the scope does not exist, hence true if it was
+   * effectively dropped.
+   */
   def dropScope(scope: String): Task[Boolean]
+
+  /**
+   * Create a stream with the given name and config. Note: This method is
+   * idempotent, may block.
+   *
+   * Will return false if the stream already exists, hence true if it was
+   * effectively created.
+   */
   def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean]
+
+  /**
+   * Seal a stream with the given name. This method may block.
+   *
+   * Will return false if the stream does not exist, hence true if it was
+   */
   def sealStream(scope: String, streamName: String): Task[Boolean]
   def dropStream(scope: String, streamName: String): Task[Boolean]
   def truncateStream(scope: String, streamName: String, streamCut: StreamCut): Task[Boolean]

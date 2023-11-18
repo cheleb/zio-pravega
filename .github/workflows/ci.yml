@@ -24,18 +24,18 @@ jobs:
         uses: actions/checkout@v3
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
-      - name: Set up JDK 19
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          java-version: "19"
+          java-version: "21"
           distribution: "zulu"
           cache: sbt
       - name: Run tests crosscompile
         run: sbt ++ test
       - name: Run coverage test
-        run: sbt coverage test
-      - name: Coverage Report
-        run: sbt coverageReport
+        run: sbt ++ 2.13.12 coverage test coverageReport
+      # - name: Coverage Report
+      #   run: sbt coverageReport
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v3"
         with:
