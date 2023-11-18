@@ -65,7 +65,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
             _             <- testStream(0, 50).run(txSink)
             txUUID        <- txUUIDPromise.await
 //          _             <- fib1.join
-            txSink2 = PravegaStream.sinkFromTx("s3", txUUID, personStreamWriterSettings, true)
+            txSink2 = PravegaStream.sharedTransactionalSink("s3", txUUID, personStreamWriterSettings, true)
             _      <- testStream(0, 50).run(txSink2).fork
             _      <- createGroup("g3", "s3")
             stream  = PravegaStream.stream("g3", personReaderSettings)
@@ -81,9 +81,9 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
             _             <- testStream(0, 50).run(txSink)
             txUUID        <- txUUIDPromise.await
 //          _             <- fib1.join
-            txSink2 = PravegaStream.sinkFromTx("s3.1", txUUID, personStreamWriterSettings, false)
+            txSink2 = PravegaStream.sharedTransactionalSink("s3.1", txUUID, personStreamWriterSettings, false)
             _      <- testStream(0, 50).run(txSink2).fork
-            txSink3 = PravegaStream.sinkFromTx("s3.1", txUUID, personStreamWriterSettings, true)
+            txSink3 = PravegaStream.sharedTransactionalSink("s3.1", txUUID, personStreamWriterSettings, true)
             _      <- testStream(0, 50).run(txSink3).fork
             // Read from the stream
             _     <- createGroup("g3.1", "s3.1")
@@ -102,9 +102,9 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
             _             <- testStream(0, 50).run(txSink)
             txUUID        <- txUUIDPromise.await
 //          _             <- fib1.join
-            txSink2 = PravegaStream.sinkFromTx(aStreamName, txUUID, personStreamWriterSettings, true)
+            txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
             _      <- testStream(0, 50).run(txSink2)
-            txSink3 = PravegaStream.sinkFromTx(aStreamName, txUUID, personStreamWriterSettings, true)
+            txSink3 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
             _      <- testStream(0, 50).run(txSink3).fork
             // Read from the stream
             _     <- createGroup(aGroupName, aStreamName)
@@ -127,7 +127,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
                    .ignore
             txUUID <- txUUIDPromise.await
 
-            txSink2 = PravegaStream.sinkFromTx("s4", txUUID, personStreamWriterSettings, true)
+            txSink2 = PravegaStream.sharedTransactionalSink("s4", txUUID, personStreamWriterSettings, true)
             _      <- testStream(0, 50).run(txSink2).sandbox.ignore
             _      <- createGroup("g4", "s4")
             stream  = PravegaStream.stream("g4", personReaderSettings)
@@ -144,7 +144,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
                    .run(txSink)
             txUUID <- txUUIDPromise.await
 
-            txSink2 = PravegaStream.sinkFromTx("s5", txUUID, personStreamWriterSettings, true)
+            txSink2 = PravegaStream.sharedTransactionalSink("s5", txUUID, personStreamWriterSettings, true)
             _ <- testStream(0, 50)
                    .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
                    .run(txSink2)

@@ -12,8 +12,20 @@ import io.pravega.client.stream.ReaderGroupConfig
 
 import io.pravega.client.stream.ReaderGroup
 
+/**
+ * PravegaReaderGroupManager is a wrapper around the ReaderGroupManager Java
+ * API. It provides a ZIO interface to the ReaderGroupManager API.
+ */
 @Accessible
 trait PravegaReaderGroupManager {
+
+  /**
+   * Create a reader group with the given name and stream names. Note: This
+   * method is idempotent assuming called with the same name and config. This
+   * method may block.
+   *
+   * Will fail if the reader group already exists and the config is different.
+   */
   def createReaderGroup(
     readerGroupName: String,
     builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
