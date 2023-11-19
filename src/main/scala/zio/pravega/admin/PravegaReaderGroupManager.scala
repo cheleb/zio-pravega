@@ -12,24 +12,51 @@ import io.pravega.client.stream.ReaderGroupConfig
 
 import io.pravega.client.stream.ReaderGroup
 
+/**
+ * PravegaReaderGroupManager is a wrapper around the ReaderGroupManager Java
+ * API. It provides a ZIO interface to the ReaderGroupManager API.
+ */
 @Accessible
 trait PravegaReaderGroupManager {
+
+  /**
+   * Create a reader group with the given name and stream names. Note: This
+   * method is idempotent assuming called with the same name and config. This
+   * method may block.
+   *
+   * Will fail if the reader group already exists and the config is different.
+   */
   def createReaderGroup(
     readerGroupName: String,
     builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
     streamNames: String*
   ): Task[Boolean]
 
+  /**
+   * Open a reader group with the given name. This method may block.
+   */
   def openReaderGroup(readerGroupName: String): RIO[Scope, ReaderGroup]
 
+  /**
+   * Drop a reader group with the given name. This method may block.
+   */
   def dropReaderGroup(scope: String, readerGroupName: String): Task[Boolean]
 
-  @SuppressWarnings(Array("org.wartremover.warts.Null"))
+  /**
+   * Mark a reader as offline. This method may block.
+   *
+   * This can be used to force a reader to be re-created. This is useful if a
+   * reader is stuck in a bad state.
+   */
   def readerOffline(groupName: String): Task[Int]
 
 }
 
-final case class PravegaReaderGroupManagerLive(scope: String, readerGroupManager: ReaderGroupManager)
+/**
+ * PravegaReaderGroupManagerLive is the live implementation of the
+ * PravegaReaderGroupManager interface.
+ */
+private final case class PravegaReaderGroupManagerLive(scope: String, readerGroupManager: ReaderGroupManager)
     extends PravegaReaderGroupManager {
   def openReaderGroup(readerGroupName: String): RIO[Scope, ReaderGroup] =
     ZIO.attemptBlocking(readerGroupManager.getReaderGroup(readerGroupName)).withFinalizerAuto
@@ -45,7 +72,7 @@ final case class PravegaReaderGroupManagerLive(scope: String, readerGroupManager
     }
     ZIO.attemptBlocking(readerGroupManager.createReaderGroup(readerGroupName, config.build()))
   }
-  @SuppressWarnings(Array("org.wartremover.warts.Null"))
+
   def readerOffline(groupName: String): Task[Int] = ZIO.scoped {
     for (
       group <- ZIO.attemptBlocking(readerGroupManager.getReaderGroup(groupName)).withFinalizerAuto;

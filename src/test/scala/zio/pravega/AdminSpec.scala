@@ -45,10 +45,10 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
   private def dropStreams = suite("Drop streams")(
     test("Stream dropped once")(
       PravegaStreamManager.sealStream(aScope, "stream") *> PravegaStreamManager
-        .dropStream(aScope, "stream")
+        .deleteStream(aScope, "stream")
         .map(once => assert(once)(isTrue))
     ),
-    test("Stream skip twice")(PravegaStreamManager.dropStream(aScope, "stream").map(twice => assert(twice)(isFalse)))
+    test("Stream skip twice")(PravegaStreamManager.deleteStream(aScope, "stream").map(twice => assert(twice)(isFalse)))
   ) @@ sequential
 
   private def createGroups = suite("Groups")(
@@ -88,7 +88,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     ) @@ sequential
   }
   private def dropTables =
-    test("Drop table")(PravegaTableManager.dropTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
+    test("Drop table")(PravegaTableManager.deleteTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
   private def dropScope =
-    test("Drop namespace")(PravegaStreamManager.dropScope(aScope).map(dropped => assert(dropped)(isTrue)))
+    test("Drop namespace")(PravegaStreamManager.deleteScope(aScope).map(dropped => assert(dropped)(isTrue)))
 }

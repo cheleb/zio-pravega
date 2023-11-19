@@ -1,6 +1,6 @@
 val scala213  = "2.13.12"
 val scala33   = "3.3.1"
-val mainScala = scala213
+val mainScala = scala33
 val allScala  = Seq(scala33, scala213)
 
 val zioVersion     = "2.0.18"
@@ -85,7 +85,7 @@ lazy val pravega =
         "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.1.14"                                % Test,
         "org.scalatest"                    %% "scalatest"                % "3.2.17"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
-        "org.testcontainers"                % "testcontainers"           % "1.19.1"                                % Test,
+        "org.testcontainers"                % "testcontainers"           % "1.19.2"                                % Test,
         "org.scala-lang.modules"           %% "scala-collection-compat"  % "2.11.0",
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub"            % "0.6.13"                                % Test,
