@@ -33,9 +33,8 @@ jobs:
       - name: Run tests crosscompile
         run: sbt ++ test
       - name: Run coverage test
+        # Scala 3 is not fully supported for coverage yet
         run: sbt "++ 2.13.12; coverage; test; coverageReport"
-      # - name: Coverage Report
-      #   run: sbt coverageReport
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v3"
         with:
