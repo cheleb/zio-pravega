@@ -22,12 +22,9 @@ import io.pravega.client.stream.Serializer
 trait PravegaTable {
 
   /**
-   * Create a sink
+   * Create a sink to write to a KVP Pravega table.
    *
-   * @param tableName
-   * @param settings
-   * @param combine
-   *   old and new entries.
+   * A @combine function is used to merge old and new entries.
    */
   def sink[K, V](
     tableName: String,
@@ -36,12 +33,10 @@ trait PravegaTable {
   ): ZSink[Any, Throwable, (K, V), Nothing, Unit]
 
   /**
-   * Create a writer flow
+   * Create a writer flow to a KVP Pravega table.
    *
-   * @param tableName
-   * @param settings
-   * @param combine
-   *   old and new entries.
+   * A @combine function is used to merge old and new entries, and new values
+   * are emitted.
    */
   def writerFlow[K, V](
     tableName: String,
@@ -50,10 +45,10 @@ trait PravegaTable {
   ): ZPipeline[Any, Throwable, (K, V), (K, V)]
 
   /**
-   * Create a reader flow
+   * Create a reader flow, which reads from a KVP Pravega table.
    *
-   * @param tableName
-   * @param settings
+   * The reader flow emits an optional value, which is None if the key is not
+   * found.
    */
   def readerFlow[K, V](
     tableName: String,
@@ -61,16 +56,21 @@ trait PravegaTable {
   ): ZPipeline[Any, Throwable, K, Option[TableEntry[V]]]
 
   /**
-   * Create a reader source
+   * Create a reader source, which reads from a KVP Pravega table.
    *
-   * @param tableName
-   * @param settings
+   * Read entries are emitted in chunks.
    */
   def source[K, V](tableName: String, settings: TableReaderSettings[K, V]): ZStream[Any, Throwable, TableEntry[V]]
 }
 
-private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFactory) extends PravegaTable {
+/**
+ * Pravega Table API.
+ */
+private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFactory) extends PravegaTable {
 
+  /**
+   * Connect to a Pravega table.
+   */
   private def connectTable[K, V](
     tableName: String,
     tableSetting: TableSettings[K, V]
@@ -79,6 +79,9 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     .withFinalizerAuto
     .map(PravegaKeyValueTable(_, tableSetting))
 
+  /**
+   * Upsert a value in a Pravega table, will retry forever.
+   */
   private def upsert[K, V](
     k: K,
     v: V,
@@ -90,6 +93,9 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
       result    <- table.pushUpdate(updateMod)
     } yield result).retry(Schedule.forever)
 
+  /**
+   * Create a sink to write to a KVP Pravega table.
+   */
   override def sink[K, V](
     tableName: String,
     settings: TableWriterSettings[K, V],
@@ -105,7 +111,7 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     .maxIterationSize(maxEntries)
     .all()
     .entries()
-  @SuppressWarnings(Array("org.wartremover.warts.Null"))
+
   private def readNextEntry[V](
     it: AsyncIterator[IteratorItem[JTableEntry]],
     valueSerializer: Serializer[V]
@@ -123,6 +129,11 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
         ZIO.succeed(Chunk.fromArray(res.toArray))
     }
 
+  /**
+   * Create a reader source, which reads from a KVP Pravega table.
+   *
+   * Read entries are emitted in chunks.
+   */
   override def source[K, V](
     tableName: String,
     settings: TableReaderSettings[K, V]
@@ -136,6 +147,12 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
     } yield ZStream.repeatZIOChunkOption(nextEntryIO)
   )
 
+  /**
+   * Create a writer flow to a KVP Pravega table.
+   *
+   * A @combine function is used to merge old and new entries, and new values
+   * are emitted.
+   */
   def writerFlow[K, V](
     tableName: String,
     settings: TableWriterSettings[K, V],
@@ -149,7 +166,7 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
           }
         )
     )
-  @SuppressWarnings(Array("org.wartremover.warts.Null"))
+
   private def readEntryIO[K, V](
     table: KeyValueTable,
     settings: TableReaderSettings[K, V]
@@ -167,6 +184,12 @@ private final case class PravegaTableImpl(keyValueTableFactory: KeyValueTableFac
           )
       }
 
+  /**
+   * Create a reader flow, which reads from a KVP Pravega table.
+   *
+   * The reader flow emits an optional value, which is None if the key is not
+   * found.
+   */
   def readerFlow[K, V](
     tableName: String,
     settings: TableReaderSettings[K, V]
@@ -192,7 +215,10 @@ object PravegaTable {
     .serviceWithSink[PravegaTable](_.sink(tableName, settings, combine))
 
   /**
-   * Create a writer flow _____ (K,V) --->|_____|--> (K, V)
+   * Create a writer flow to a KVP Pravega table.
+   *
+   * A @combine function is used to merge old and new entries, and new values
+   * are emitted.
    */
   def writerFlow[K, V](
     tableName: String,
@@ -201,12 +227,23 @@ object PravegaTable {
   ): ZPipeline[PravegaTable, Throwable, (K, V), (K, V)] = ZPipeline
     .serviceWithPipeline[PravegaTable](_.writerFlow(tableName, settings, combine))
 
+  /**
+   * Create a reader flow, which reads from a KVP Pravega table.
+   *
+   * The reader flow emits an optional value, which is None if the key is not
+   * found.
+   */
   def readerFlow[K, V](
     tableName: String,
     settings: TableReaderSettings[K, V]
   ): ZPipeline[PravegaTable, Throwable, K, Option[TableEntry[V]]] = ZPipeline
     .serviceWithPipeline[PravegaTable](_.readerFlow(tableName, settings))
 
+  /**
+   * Create a reader source, which reads from a KVP Pravega table.
+   *
+   * Read entries are emitted in chunks.
+   */
   def source[K, V](
     tableName: String,
     settings: TableReaderSettings[K, V]
@@ -215,10 +252,18 @@ object PravegaTable {
 
   private def service(scope: String, clientConfig: ClientConfig): ZIO[Scope, Throwable, PravegaTable] = for {
     clientFactory <- ZIO.attemptBlocking(KeyValueTableFactory.withScope(scope, clientConfig)).withFinalizerAuto
-  } yield new PravegaTableImpl(clientFactory)
+  } yield new PravegaTableLive(clientFactory)
 
+  /**
+   * Create a PravegaTable layer from a scope name and a client config found in
+   * the environment.
+   */
   def fromScope(scope: String): ZLayer[Scope & ClientConfig, Throwable, PravegaTable] =
     ZLayer.fromZIO(ZIO.serviceWithZIO[ClientConfig](service(scope, _)))
+
+  /**
+   * Create a PravegaTable layer from a scope name and a client config.
+   */
   def fromScope(scope: String, clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaTable] =
     ZLayer.fromZIO(service(scope, clientConfig))
 }

@@ -52,6 +52,14 @@ trait PravegaStream {
     settings: WriterSettings[A]
   ): Sink[Throwable, A, Nothing, Unit]
 
+  /**
+   * Sink that writes to a transactional stream, transaction stays open after
+   * the sink is closed.
+   *
+   * The transaction id is provided by the caller.
+   *
+   * The transaction may be committed by the writer.
+   */
   def sharedTransactionalSink[A](
     streamName: String,
     txUUID: UUID,
@@ -234,6 +242,9 @@ object PravegaStream {
 
   /**
    * Sink that writes to a transactional stream.
+   *
+   *   - The transaction id is provided by the caller.
+   *   - The transaction may be committed by the writer.
    */
   def sharedTransactionalSink[A](
     streamName: String,
