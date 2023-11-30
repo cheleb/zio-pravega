@@ -1,0 +1,33 @@
+index: index.html
+subsection:
+  - title: ZIO Pravega
+    index: zio-pravega.md
+    subsection:
+      - title: ZIO
+        page: zio.md
+      - title: Pravega
+        page: pravega.md
+  - title: Getting Started
+    page: getting-started.md
+  - title: Usage
+    index: usage.md
+    subsection:
+      - title: Settings
+        page: usage/settings.md
+      - title: Admin
+        page: usage/admin.md
+      - title: Streaming
+        page: usage/streaming.md
+      - title: KVP Table
+        page: usage/kvp-table.md
+  - title: Use cases
+    index: use-cases.md
+    subsection:
+      # - title: Event Sourcing
+      #   page: use-cases/event-sourcing.md
+      # - title: Stream Processing
+      #   page: use-cases/stream-processing.md
+      - title: Stateful Streaming
+        page: use-cases/stateful-streaming.md
+      - title: Distributed transactions
+        page: use-cases/distributed-transaction.md

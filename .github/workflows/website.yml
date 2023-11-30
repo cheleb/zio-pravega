@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - "master"
+      - "website"
     paths-ignore:
       - '.github/**' 
   pull_request:
@@ -25,4 +26,4 @@ jobs:
           cache: sbt
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
-      - run: sbt clean docs/docusaurusCreateSite
+      - run: sbt website

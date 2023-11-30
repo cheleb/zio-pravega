@@ -1,3 +1,4 @@
+name := "ZIO Pravega"
 val scala213  = "2.13.12"
 val scala33   = "3.3.1"
 val mainScala = scala33
@@ -114,12 +115,6 @@ lazy val docs = project // new documentation project
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(pravega),
     ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
-    docusaurusCreateSite := docusaurusCreateSite
-      .dependsOn(Compile / unidoc)
-      .value,
-    docusaurusPublishGhpages := docusaurusPublishGhpages
-      .dependsOn(Compile / unidoc)
-      .value,
     mdocVariables := Map(
       "VERSION" -> version.value,
       "ORG"     -> organization.value
@@ -128,9 +123,10 @@ lazy val docs = project // new documentation project
   .disablePlugins(WartRemover)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin, PlantUMLPlugin)
   .settings(
-    plantUMLSource           := (pravega / baseDirectory).value / "docs",
-    Compile / plantUMLTarget := "mdoc"
+    plantUMLSource           := (pravega / baseDirectory).value / "docs" / "_docs",
+    Compile / plantUMLTarget := "mdoc/_assets/images"
   )
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.14")
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test / scalafmt")
 addCommandAlias(

@@ -1,0 +1,1 @@
+![Distributed transaction](/images/use-cases/distributed-tx.png)

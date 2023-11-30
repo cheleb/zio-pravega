@@ -1,1 +1,0 @@
-![Drag Racing](stateful-streaming.png)

@@ -60,16 +60,14 @@ jobs:
           cache: sbt
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
-      - run: sbt clean docs/docusaurusCreateSite
-      - uses: webfactory/ssh-agent@v0.8.0
+      - run: sbt website
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY }}
+          # Upload dist repository
+          path: "target/site"
       - name: Deploy to GitHub Pages
-        env:
-          USE_SSH: true
-        run: |
-          cd website
-          git config --global user.email "olivier.nouguier@gmail.com"
-          git config --global user.name "gh-actions"
-          yarn install --frozen-lockfile
-          yarn deploy
+        id: deployment
+        uses: actions/deploy-pages@v2
