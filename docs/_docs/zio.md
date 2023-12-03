@@ -1,6 +1,6 @@
 # ZIO
 
-ZIO is an effect system for Scala that makes it easy and fun to write concurrent programs that never leak resources or deadlock. ZIO's data types and principled, composable concurrency primitives make it possible to build large, scalable, highly performant systems that are easily testable and debuggable.
+[ZIO](https://zio.dev) is an effect system for Scala that makes it easy and fun to write concurrent programs that never leak resources or deadlock. ZIO's data types and principled, composable concurrency primitives make it possible to build large, scalable, highly performant systems that are easily testable and debuggable.
 
 ZIO is powered by [Fiber](https://zio.dev/docs/datatypes/datatypes_fiber) data type, which is an implementation of [Fiber, a lightweight thread of execution](https://en.wikipedia.org/wiki/Fiber_(computer_science)).
 

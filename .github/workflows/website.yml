@@ -9,7 +9,20 @@ on:
   pull_request:
     branches: [ master ]
     paths-ignore:
-      - '.github/**' 
+      - '.github/**'
+
+# Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+
 jobs:
   deploy:
     environment:
