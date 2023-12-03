@@ -15,7 +15,10 @@ subsection:
       - title: Settings
         page: usage/settings.md
       - title: Admin
-        page: usage/admin.md
+        index: usage/admin.md
+        subsection:
+          - title: Stream
+            page: usage/admin/stream.md
       - title: Streaming
         page: usage/streaming.md
       - title: KVP Table
