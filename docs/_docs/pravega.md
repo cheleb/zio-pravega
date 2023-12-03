@@ -27,8 +27,6 @@ Out of the box, Pravega provides:
 * stream metadata management.
 
 
-
-
 ## Run Pravega cluster
 
 ### For local developpement 
@@ -43,6 +41,7 @@ Just download the [Pravega distribution](https://github.com/pravega/pravega/rele
 ZIO Pravega provides a docker-compose file to run a local Pravega cluster.
 
 ```bash
+export HOST_IP=`ipconfig getifaddr en0`
 docker-compose -f docker-compose.yml up
 ```
 
