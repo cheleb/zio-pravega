@@ -16,6 +16,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     createScopes,
     listScopes,
     createStreams,
+    listStreams,
     createGroups,
     createTables,
     dropGroups,
@@ -48,6 +49,14 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
       PravegaStreamManager.createStream(aScope, "stream", staticStreamConfig(2)).map(twice => assert(twice)(isFalse))
     )
   ) @@ sequential
+
+  private def listStreams =
+    test("List streams")(
+      PravegaStreamManager
+        .listStreams(aScope)
+        .run(ZSink.collectAll)
+        .map(streams => assert(streams.map(_.getStreamName))(contains("stream")))
+    )
 
   private def dropStreams = suite("Drop streams")(
     test("Stream dropped once")(
