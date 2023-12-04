@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - "master"
-      - "website"
+#      - "website"
     paths-ignore:
       - '.github/**' 
   pull_request:
@@ -24,7 +24,7 @@ concurrency:
 
 
 jobs:
-  deploy:
+  website:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
