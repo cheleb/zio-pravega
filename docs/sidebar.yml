@@ -17,8 +17,12 @@ subsection:
       - title: Admin
         index: usage/admin.md
         subsection:
+          - title: Scope
+            page: usage/admin/scope.md
           - title: Stream
             page: usage/admin/stream.md
+          - title: KVP Table
+            page: usage/admin/kvp-table.md
       - title: Streaming
         page: usage/streaming.md
       - title: KVP Table
