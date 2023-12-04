@@ -8,11 +8,13 @@ import zio.test.TestAspect._
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.stream.ReaderGroupConfig
 import zio.pravega.admin._
+import zio.stream.ZSink
 
 object AdminSpec extends SharedPravegaContainerSpec("admin") {
 
   override def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("Admin")(
     createScopes,
+    listScopes,
     createStreams,
     createGroups,
     createTables,
@@ -32,6 +34,11 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     test("Scope created once")(PravegaStreamManager.createScope(aScope).map(once => assert(once)(isTrue))),
     test("Scope skip twice")(PravegaStreamManager.createScope(aScope).map(twice => assert(twice)(isFalse)))
   ) @@ sequential
+
+  private def listScopes =
+    test("List scopes")(
+      PravegaStreamManager.listScopes.run(ZSink.collectAll).map(scopes => assert(scopes)(contains(aScope)))
+    )
 
   private def createStreams = suite("Streams")(
     test("Stream created once")(
