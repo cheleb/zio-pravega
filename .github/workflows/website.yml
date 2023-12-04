@@ -1,3 +1,11 @@
+#
+# This woorflow publishes the website to GitHub Pages.
+# It is triggered on pushes to the master branch and the website branch.
+# The project version is determined by the latest tag.
+#
+# This workflow allows to deploy the website documentation to GitHub Pages, skipping
+# the CI build. 
+#
 name: Website
 on:
   push:
@@ -25,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Fetch tags
+        run: git fetch --prune --unshallow --tags
       - uses: actions/setup-node@v4
         with:
           node-version: 16.x
@@ -36,7 +46,7 @@ jobs:
           cache: sbt
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
-      - run: sbt website
+      - run: VERSION=`git describe --tags --abbrev=0 | sed "s/v//"` sbt website
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
