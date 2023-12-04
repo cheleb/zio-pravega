@@ -18,18 +18,22 @@ addMappingsToSiteDir(
 git.remoteRepo  := "git@github.com:cheleb/zio-pravega.git"
 ghpagesNoJekyll := true
 
-Compile / doc / scalacOptions ++= Seq(
-  "-siteroot",
-  "zio-pravega-docs/target/mdoc",
-  "-groups",
-  "-project-version",
-  version.value,
-  "-revision",
-  version.value,
-  "-project-footer",
-  s"Copyright (c) 2022-$currentYear, Olivier NOUGUIER",
-  "-social-links:github::https://github.com/cheleb,twitter::https://twitter.com/oNouguier",
-  "-Ygenerate-inkuire",
-  "-skip-by-regex:zio\\.pravega\\.docs\\..*",
-  "-skip-by-regex:html\\..*"
-)
+Compile / doc / scalacOptions ++= (scalaVersion.value match {
+  case "3.3.1" =>
+    Seq(
+      "-siteroot",
+      "zio-pravega-docs/target/mdoc",
+      "-groups",
+      "-project-version",
+      version.value,
+      "-revision",
+      version.value,
+      "-project-footer",
+      s"Copyright (c) 2022-$currentYear, Olivier NOUGUIER",
+      "-social-links:github::https://github.com/cheleb,twitter::https://twitter.com/oNouguier",
+      "-Ygenerate-inkuire",
+      "-skip-by-regex:zio\\.pravega\\.docs\\..*",
+      "-skip-by-regex:html\\..*"
+    )
+  case _ => Seq.empty
+})
