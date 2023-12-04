@@ -116,7 +116,7 @@ lazy val docs = project // new documentation project
     ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
     mdocVariables := Map(
-      "VERSION" -> version.value,
+      "VERSION" -> sys.env.getOrElse("VERSION", version.value),
       "ORG"     -> organization.value
     )
   )
