@@ -19,6 +19,7 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     listStreams,
     createGroups,
     createTables,
+    listTables,
     dropGroups,
     dropTables,
     dropStreams,
@@ -103,6 +104,15 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
       )
     ) @@ sequential
   }
+
+  private def listTables =
+    test("List tables")(
+      PravegaTableManager
+        .listTables(aScope)
+        .run(ZSink.collectAll)
+        .map(tables => assert(tables.map(_.getKeyValueTableName))(contains("table")))
+    )
+
   private def dropTables =
     test("Drop table")(PravegaTableManager.deleteTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
   private def dropScope =
