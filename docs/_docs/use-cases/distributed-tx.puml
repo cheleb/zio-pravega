@@ -1,4 +1,4 @@
-@startuml "Distruted tx"
+@startuml "distributed-tx"
 skinparam sequenceMessageAlign center
 
 participant "Service A" as A
