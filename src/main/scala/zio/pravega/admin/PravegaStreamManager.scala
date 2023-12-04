@@ -3,8 +3,10 @@ package zio.pravega.admin
 import zio._
 import io.pravega.client.ClientConfig
 import io.pravega.client.admin.StreamManager
+import io.pravega.client.stream.{Stream => PravegaJavaStream}
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.StreamCut
+import zio.stream.ZStream
 
 /**
  * PravegaStreamManager is a wrapper around the StreamManager Java API.
@@ -22,6 +24,11 @@ trait PravegaStreamManager {
   def createScope(scope: String): Task[Boolean]
 
   /**
+   * List all the scopes in the Pravega cluster. This method may block.
+   */
+  def listScopes: ZStream[Scope, Throwable, String]
+
+  /**
    * Drop a scope with the given name. This method may block.
    *
    * Will return false if the scope does not exist, hence true if it was
@@ -37,6 +44,8 @@ trait PravegaStreamManager {
    * effectively created.
    */
   def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean]
+
+  def listStreams(scope: String): ZStream[Any, Throwable, PravegaJavaStream]
 
   /**
    * Seal a stream with the given name. This method may block.
@@ -97,6 +106,12 @@ object PravegaStreamManager {
     ZIO.serviceWithZIO[PravegaStreamManager](_.createScope(scope))
 
   /**
+   * List all the scopes in the Pravega cluster.
+   */
+  def listScopes: ZStream[Scope & PravegaStreamManager, Throwable, String] =
+    ZStream.serviceWithStream[PravegaStreamManager](_.listScopes)
+
+  /**
    * Drop a scope with the given name.
    *
    * Returns true if the scope was dropped, false if it does not exist.
@@ -111,6 +126,12 @@ object PravegaStreamManager {
    */
   def createStream(scope: String, streamName: String, config: StreamConfiguration): RIO[PravegaStreamManager, Boolean] =
     ZIO.serviceWithZIO[PravegaStreamManager](_.createStream(scope, streamName, config))
+
+  /**
+   * List all the streams in the Pravega cluster given scope.
+   */
+  def listStreams(scope: String): ZStream[PravegaStreamManager, Throwable, PravegaJavaStream] =
+    ZStream.serviceWithStream[PravegaStreamManager](_.listStreams(scope))
 
   /**
    * Seal a stream with the given name.
@@ -154,6 +175,11 @@ final private case class PravegaStreamManagerLive(streamManager: StreamManager) 
   def createScope(scope: String): Task[Boolean] = ZIO.attemptBlocking(streamManager.createScope(scope))
 
   /**
+   * List all the scopes in the Pravega cluster.
+   */
+  def listScopes: ZStream[Scope, Throwable, String] = ZStream.fromJavaIterator(streamManager.listScopes())
+
+  /**
    * Create a stream with the given name and config.
    *
    * Returns true if the stream was created, false if it already exists.
@@ -167,6 +193,13 @@ final private case class PravegaStreamManagerLive(streamManager: StreamManager) 
                    ZIO.attemptBlocking(streamManager.createStream(scope, streamName, config))
                }
   ) yield created
+
+  /**
+   * List all the streams in the Pravega cluster given scope.
+   */
+
+  def listStreams(scope: String): ZStream[Any, Throwable, PravegaJavaStream] =
+    ZStream.fromJavaIterator(streamManager.listStreams(scope))
 
   /**
    * Seal a stream with the given name.

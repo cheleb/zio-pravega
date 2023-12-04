@@ -7,13 +7,15 @@ import io.pravega.client.stream.StreamConfiguration
 import zio.*
 import zio.pravega.*
 import zio.pravega.admin.*
+import scala.jdk.CollectionConverters.*
+
 ```
 
 Central Pravega abstraction, [Stream](https://cncf.pravega.io/docs/nightly/pravega-concepts/#streams) must be explictly created, in a [Scope](https://cncf.pravega.io/docs/nightly/pravega-concepts/#scopes).
 
 In the example below we will create a "sales" scope and a stream "events" in this scope.
 
-# Create a stream.
+## Create a stream.
 
 Streams are created in a scope, and must be explicitly created. 
 
@@ -45,6 +47,36 @@ The `aStream` is a `RIO[PravegaStreamManager,Boolean]` that:
 
 As before, we need to provide the capability, which is the role of `ZLayer`.
 
+
+## Reader groups
+
+A [Reader Group](https://cncf.pravega.io/docs/nightly/pravega-concepts/#writers-readers-reader-groups) is a named collection of Readers, which together perform parallel reads from a given Stream.
+
+It must created expliciyly.
+
+```scala mdoc:silent
+  val readerGroup: RIO[PravegaReaderGroupManager, Boolean] =
+    PravegaReaderGroupManager.createReaderGroup(
+      "stats-application",
+      "sales", "cancellation"
+    )
+```
+
+The `readerGroup` is a `RIO[PravegaReaderGroupManager,Boolean]` that:
+* will produce `true` if the reader group was created or `false` if it already existed.
+* depends on the `PravegaReaderGroupManager` capability.
+
+As before, we need to provide the capability, which is the role of `ZLayer`:
+
+```scala mdoc:silent
+val readerGroupManager: RLayer[Scope & ClientConfig, PravegaReaderGroupManager] =
+    PravegaReaderGroupManager.live("sales")
+```
+
+Note that the `PravegaReaderGroupManager` capability depends on the `Scope` and `ClientConfig` capability, which are provided by another layer.
+Also that `PravegaReaderGroupManager` is parameterized by the scope name, which is "sales" in this case.
+
+
 Stream manager allows to create, delete, list, seal, truncate streams.
 
 ## Sealing a stream
@@ -57,4 +89,19 @@ Before deleting, truncatig a stream, it must be sealed.
 val sealStream: RIO[PravegaStreamManager, Boolean] =
     PravegaStreamManager
       .sealStream("sales", "events")
+```
+
+## Truncation
+
+A [Truncation](https://pravega.io/docs/snapshot/retention/#retention-service) is a mechanism to remove data from a Stream.
+
+```scala mdoc:silent
+  for {
+          readerGroup <- PravegaReaderGroupManager.openReaderGroup("g1")
+          streamCuts   = readerGroup.getStreamCuts()
+          _ <- ZIO.foreach(streamCuts.asScala.toList) { case (stream, streamCut) =>
+                 ZIO.logDebug(s"Stream: ${stream.getStreamName}, StreamCut: $streamCut") *>
+                   PravegaStreamManager.truncateStream("sales", stream.getStreamName(), streamCut)
+               }
+  } yield ()
 ```

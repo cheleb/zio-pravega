@@ -8,14 +8,18 @@ import zio.test.TestAspect._
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.stream.ReaderGroupConfig
 import zio.pravega.admin._
+import zio.stream.ZSink
 
 object AdminSpec extends SharedPravegaContainerSpec("admin") {
 
   override def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("Admin")(
     createScopes,
+    listScopes,
     createStreams,
+    listStreams,
     createGroups,
     createTables,
+    listTables,
     dropGroups,
     dropTables,
     dropStreams,
@@ -33,6 +37,11 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
     test("Scope skip twice")(PravegaStreamManager.createScope(aScope).map(twice => assert(twice)(isFalse)))
   ) @@ sequential
 
+  private def listScopes =
+    test("List scopes")(
+      PravegaStreamManager.listScopes.run(ZSink.collectAll).map(scopes => assert(scopes)(contains(aScope)))
+    )
+
   private def createStreams = suite("Streams")(
     test("Stream created once")(
       PravegaStreamManager.createStream(aScope, "stream", staticStreamConfig(2)).map(once => assert(once)(isTrue))
@@ -41,6 +50,14 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
       PravegaStreamManager.createStream(aScope, "stream", staticStreamConfig(2)).map(twice => assert(twice)(isFalse))
     )
   ) @@ sequential
+
+  private def listStreams =
+    test("List streams")(
+      PravegaStreamManager
+        .listStreams(aScope)
+        .run(ZSink.collectAll)
+        .map(streams => assert(streams.map(_.getStreamName))(contains("stream")))
+    )
 
   private def dropStreams = suite("Drop streams")(
     test("Stream dropped once")(
@@ -87,6 +104,15 @@ object AdminSpec extends SharedPravegaContainerSpec("admin") {
       )
     ) @@ sequential
   }
+
+  private def listTables =
+    test("List tables")(
+      PravegaTableManager
+        .listTables(aScope)
+        .run(ZSink.collectAll)
+        .map(tables => assert(tables.map(_.getKeyValueTableName))(contains("table")))
+    )
+
   private def dropTables =
     test("Drop table")(PravegaTableManager.deleteTable(aScope, "table").map(dropped => assert(dropped)(isTrue)))
   private def dropScope =

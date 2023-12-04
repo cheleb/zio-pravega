@@ -6,6 +6,8 @@ import io.pravega.client.ClientConfig
 
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.admin.KeyValueTableManager
+import zio.stream.ZStream
+import io.pravega.client.admin.KeyValueTableInfo
 
 /**
  * Pravega Admin API for KeyValueTable.
@@ -19,6 +21,11 @@ trait PravegaTableManager {
    * effectively created.
    */
   def createTable(scope: String, tableName: String, config: KeyValueTableConfiguration): RIO[Scope, Boolean]
+
+  /**
+   * List all the KeyValueTables in the Pravega cluster. This method may block.
+   */
+  def listTables(scope: String): ZStream[Any, Throwable, KeyValueTableInfo]
 
   /**
    * Delete a KeyValueTable with the given name, may block.
@@ -46,6 +53,12 @@ final private case class PravegaTableManagerLive(keyValueTableManager: KeyValueT
     for {
       created <- ZIO.attemptBlocking(keyValueTableManager.createKeyValueTable(scope, tableName, config))
     } yield created
+
+  /**
+   * List all the KeyValueTables in the Pravega cluster. This method may block.
+   */
+  override def listTables(scope: String): ZStream[Any, Throwable, KeyValueTableInfo] =
+    ZStream.fromJavaIterator(keyValueTableManager.listKeyValueTables(scope))
 
   /**
    * Delete a KeyValueTable with the given name, may block.
@@ -76,6 +89,12 @@ object PravegaTableManager {
     config: KeyValueTableConfiguration
   ): RIO[PravegaTableManager & Scope, Boolean] =
     ZIO.serviceWithZIO[PravegaTableManager](_.createTable(scope, tableName, config))
+
+  /**
+   * List all the KeyValueTables in the Pravega cluster. This method may block.
+   */
+  def listTables(scope: String): ZStream[PravegaTableManager, Throwable, KeyValueTableInfo] =
+    ZStream.serviceWithStream[PravegaTableManager](_.listTables(scope))
 
   /**
    * Delete a KeyValueTable with the given name, may block.
