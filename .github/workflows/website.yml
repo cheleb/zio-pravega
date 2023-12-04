@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - "master"
-      - "website"
+#      - "website"
     paths-ignore:
       - '.github/**' 
   pull_request:
@@ -24,7 +24,7 @@ concurrency:
 
 
 jobs:
-  deploy:
+  website:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -43,13 +43,13 @@ jobs:
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v1
       - run: sbt website
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
-        with:
-          # Upload dist repository
-          path: "target/site"
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+      # - name: Setup Pages
+      #   uses: actions/configure-pages@v3
+      # - name: Upload artifact
+      #   uses: actions/upload-pages-artifact@v2
+      #   with:
+      #     # Upload dist repository
+      #     path: "target/site"
+      # - name: Deploy to GitHub Pages
+      #   id: deployment
+      #   uses: actions/deploy-pages@v2
