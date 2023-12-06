@@ -55,10 +55,18 @@ inThisBuild(
   )
 )
 
+lazy val root = project
+  .in(file("."))
+  .aggregate(pravega)
+  .settings(
+    publish / skip := true
+  )
+
 lazy val pravega =
   project
-    .in(file("."))
+    .in(file("modules/zio-pravega"))
     .enablePlugins(BuildInfoPlugin)
+    .disablePlugins(PlantUMLPlugin)
     .settings(
       name              := "zio-pravega",
       scalafmtOnCompile := true,
@@ -123,7 +131,7 @@ lazy val docs = project // new documentation project
   .disablePlugins(WartRemover)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin, PlantUMLPlugin)
   .settings(
-    plantUMLSource           := (pravega / baseDirectory).value / "docs" / "_docs",
+    plantUMLSource           := (root / baseDirectory).value / "docs" / "_docs",
     Compile / plantUMLTarget := "mdoc/_assets/images"
   )
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.14")
