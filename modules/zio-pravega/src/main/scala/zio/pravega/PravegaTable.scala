@@ -22,6 +22,22 @@ import io.pravega.client.stream.Serializer
 trait PravegaTable {
 
   /**
+   * Insert a value in a Pravega table, may overwrite existing values.
+   */
+  def put[K, V](tableName: String, key: K, value: V, settings: TableWriterSettings[K, V]): Task[Unit]
+
+  /**
+   * Upsert a value in a Pravega table, may overwrite existing values.
+   */
+  def merge[K, V](
+    tableName: String,
+    key: K,
+    value: V,
+    combine: (V, V) => V,
+    settings: TableWriterSettings[K, V]
+  ): Task[Unit]
+
+  /**
    * Create a sink to write to a KVP Pravega table.
    *
    * A @combine function is used to merge old and new entries.
@@ -67,6 +83,37 @@ trait PravegaTable {
  * Pravega Table API.
  */
 private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFactory) extends PravegaTable {
+
+  /**
+   * Upsert a value in a Pravega table, may overwrite existing values.
+   *
+   * In case of a conflict, the ZIO will fail and will be retried.
+   */
+  override def merge[K, V](
+    tableName: String,
+    key: K,
+    value: V,
+    combine: (V, V) => V,
+    settings: TableWriterSettings[K, V]
+  ): Task[Unit] =
+    ZIO.scoped {
+      connectTable(tableName, settings).flatMap { table =>
+        table
+          .updateTask(key, value, combine)
+          .flatMap(table.pushUpdate)
+          .retry(Schedule.forever)
+      }.unit
+    }
+
+  /**
+   * Insert a value in a Pravega table, may overwrite existing values.
+   */
+  override def put[K, V](tableName: String, key: K, value: V, settings: TableWriterSettings[K, V]): Task[Unit] =
+    ZIO.scoped {
+      connectTable(tableName, settings).flatMap { table =>
+        table.overrideTask(key, value).flatMap(table.pushUpdate)
+      }.unit
+    }
 
   /**
    * Connect to a Pravega table.
