@@ -57,6 +57,7 @@ inThisBuild(
 
 lazy val root = project
   .in(file("."))
+  .disablePlugins(PlantUMLPlugin)
   .aggregate(pravega)
   .settings(
     publish / skip := true
@@ -114,6 +115,16 @@ lazy val pravega =
       )
     )
 
+lazy val saga = project
+  .in(file("modules/zio-pravega-saga"))
+  .dependsOn(pravega)
+  .settings(
+    name := "zio-pravega-saga"
+  )
+  .settings(
+    publish / skip := true
+  )
+
 lazy val docs = project // new documentation project
   .in(file("zio-pravega-docs")) // important: it must not be docs/
   .dependsOn(pravega)
@@ -129,7 +140,7 @@ lazy val docs = project // new documentation project
     )
   )
   .disablePlugins(WartRemover)
-  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin, PlantUMLPlugin)
+  .enablePlugins(MdocPlugin, ScalaUnidocPlugin, PlantUMLPlugin)
   .settings(
     plantUMLSource           := (root / baseDirectory).value / "docs" / "_docs",
     Compile / plantUMLTarget := "mdoc/_assets/images"

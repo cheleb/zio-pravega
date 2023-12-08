@@ -7,16 +7,28 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.pravega.admin._
 import scala.jdk.CollectionConverters._
+import model.Person
+import zio.stream.ZStream
 
 object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
 
   import CommonTestSettings._
+
+  val writtenPersons = Seq(
+    Person("1234", "John", 42),
+    Person("1234", "Bill", 42),
+    Person("1234", "Mary", 42)
+  )
 
   override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(
     suite("Stream spec")(
       test("Stream support timeouts") {
         for {
           _ <- PravegaStreamManager.createStream(aScope, "s1", staticStreamConfig(2))
+
+          _ <- PravegaStream.write("s1", personStreamWriterSettings, Seq.empty[Person]: _*)
+          _ <- PravegaStream.write("s1", personStreamWriterSettings, writtenPersons.head)
+          _ <- PravegaStream.write("s1", personStreamWriterSettings, writtenPersons.tail: _*)
 
           _        <- PravegaReaderGroupManager.createReaderGroup("g1", "s1")
           sink1     = sink("s1")
@@ -27,7 +39,7 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
 
           _    <- testStream(0, 50).run(sink1).fork
           fib1 <- stream1.take(75).runCount.fork
-          fib2 <- stream2.take(75).runCount.fork
+          fib2 <- stream2.take(75 + writtenPersons.size).runCount.fork
           _ <-
             (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> testStream(50, 100).run(
               sink2
@@ -38,7 +50,7 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
           _      <- fib3.join
           count   = count1 + count2
           _      <- ZIO.logDebug(f"count $count1%d + $count2%d = $count%d")
-        } yield assert(count)(equalTo(150L))
+        } yield assert(count)(equalTo(150L + writtenPersons.size))
       } @@ withLiveClock,
       test("Truncating stream") {
         for {

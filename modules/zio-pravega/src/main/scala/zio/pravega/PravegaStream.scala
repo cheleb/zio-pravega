@@ -24,6 +24,11 @@ import zio.stream._
 trait PravegaStream {
 
   /**
+   * Writes atomicaly events to a stream.
+   */
+  def write[A](streamName: String, settings: WriterSettings[A], a: List[A]): ZIO[Any, Throwable, Unit]
+
+  /**
    * Sink that writes to a stream.
    */
   def sink[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
@@ -67,21 +72,47 @@ trait PravegaStream {
     commitOnExit: Boolean
   ): Sink[Throwable, A, Nothing, Unit]
 
+  /**
+   * Creates a ZPipeline that writes to a stream.
+   */
   def writeFlow[A](streamName: String, settings: WriterSettings[A]): ZPipeline[Any, Throwable, A, A]
 
+  /**
+   * Stream (source) of elements.
+   */
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A]
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  /**
+   * Stream (source) of events of elements.
+   */
   def eventStream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, EventRead[A]]
 }
 
+/**
+ * Implementation of the Pravega Stream API.
+ *
+ * @param eventStreamClientFactory
+ */
 private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFactory) extends PravegaStream {
 
+  /**
+   * Creates a Pravega EventWriter.
+   *
+   * This method is blocking and acquire a resource, and release it when the ZIO
+   * is done.
+   */
   private def createEventWriter[A](streamName: String, settings: WriterSettings[A]) = ZIO
     .attemptBlocking(
       eventStreamClientFactory.createEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
     )
     .withFinalizerAuto
+
+  /**
+   * Creates a Pravega EventStreamReader.
+   *
+   * This method is blocking and acquire a resource, and release it when the ZIO
+   * is done.
+   */
   private def createEventStreamReader[A](readerGroupName: String, settings: ReaderSettings[A]) = ZIO
     .attemptBlocking(
       eventStreamClientFactory.createReader(
@@ -92,23 +123,71 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       )
     )
     .withFinalizerAuto
+
+  /**
+   * Writes atomicaly events to a stream.
+   */
+  def write[A](streamName: String, settings: WriterSettings[A], as: List[A]): ZIO[Any, Throwable, Unit] =
+    as match {
+      case Nil => ZIO.unit
+      case a :: Nil =>
+        ZStream(a)
+          .run(sink(streamName, settings))
+      case _ =>
+        ZStream(as: _*)
+          .run(transactionalSink(streamName, settings))
+    }
+
+  /**
+   * Sink that writes to a stream.
+   *
+   * This sink is not transactional, and does not guarantee that the events are
+   * written atomically.
+   *
+   * If you need to write atomically, use [[transactionalSink]] or
+   * [[sharedTransactionalSink]].
+   */
   def sink[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit] = ZSink.unwrapScoped(
-    for (writer <- createEventWriter(streamName, settings); eventWriter = EventWriter.writeEventTask(writer, settings))
-      yield ZSink.foreach(eventWriter)
+    for {
+      writer     <- createEventWriter(streamName, settings)
+      eventWriter = EventWriter.writeEventTask(writer, settings)
+    } yield ZSink.foreach(eventWriter)
   )
+
+  /**
+   * Creates a ZPipeline that writes to a stream.
+   *
+   * This pipeline is not transactional, and does not guarantee that the events
+   * are written atomically.
+   */
   def writeFlow[A](streamName: String, settings: WriterSettings[A]): ZPipeline[Any, Throwable, A, A] =
     ZPipeline.unwrapScoped {
       for (
         writer <- createEventWriter(streamName, settings); eventWriter = EventWriter.writeEventTask(writer, settings)
       ) yield ZPipeline.tap(eventWriter)
     }
-  private def createTxEventWriter[A](streamName: String, settings: WriterSettings[A]) = ZIO
+    /**
+     * Creates a Pravega TransactionalEventStreamWriter.
+     *
+     * This method is blocking and acquire a resource, and release it when the
+     * ZIO is done. ZIO
+     */
+  private def createTxEventWriter[A](
+    streamName: String,
+    settings: WriterSettings[A]
+  ): ZIO[Scope, Throwable, TransactionalEventStreamWriter[A]] = ZIO
     .attemptBlocking(
       eventStreamClientFactory
         .createTransactionalEventWriter(streamName, settings.serializer, settings.eventWriterConfig)
     )
     .withFinalizerAuto
 
+  /**
+   * Creates a Pravega TransactionalEventStreamWriter.
+   *
+   * This method is blocking and acquire a resource, but release it **only**
+   * when the ZIO exits with a failure.
+   */
   private def beginScopedUnclosingTransaction[A](
     writer: TransactionalEventStreamWriter[A]
   ): RIO[Scope, Transaction[A]] =
@@ -119,6 +198,12 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         ZIO.logDebug(s"Wrote to tx [${tx.getTxnId}]")
     }
 
+  /**
+   * Creates a Pravega TransactionalEventStreamWriter.
+   *
+   * This method is blocking and acquire a resource, and release it when the ZIO
+   * is done.
+   */
   private def beginScopedTransaction[A](writer: TransactionalEventStreamWriter[A]): RIO[Scope, Transaction[A]] =
     ZIO.acquireReleaseExit(ZIO.attemptBlocking(writer.beginTxn)) {
       case (tx, Failure(e)) =>
@@ -127,6 +212,12 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         ZIO.attemptBlocking(tx.commit()).orDie
     }
 
+  /**
+   * Sink that writes to a transactional stream.
+   *
+   * Transaction is created by the writer, and committed or aborted regarding of
+   * the exit status of the stream scope.
+   */
   def transactionalSink[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit] =
     ZSink.unwrapScoped(
       for {
@@ -136,6 +227,13 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       } yield ZSink.foreach(writeEventTask)
     )
 
+  /**
+   * Sink that writes to a transactional stream.
+   *
+   *   - The transaction id is generated by the writer, once the transaction is
+   *     created.
+   *   - The transaction is not committed **but aborted** in case of failure.
+   */
   def sharedTransactionalSink[A](
     streamName: String,
     txUUID: Promise[Nothing, UUID],
@@ -151,6 +249,14 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       } yield ZSink.foreach(writeEventTask)
     )
 
+  /**
+   * Sink that writes to an already existing transactional stream.
+   *
+   *   - The transaction id is provided by the caller.
+   *   - The transaction may be committed by the writer, depending on the
+   *     commitOnExit parameter.
+   *   - The transaction is aborted in case of failure.
+   */
   override def sharedTransactionalSink[A](
     streamName: String,
     txUUID: UUID,
@@ -177,7 +283,11 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     } yield ZSink.foreach(writeEventTask)
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  /**
+   * Reads the next event from the reader.
+   *
+   * This method is blocking.
+   */
   private def readNextEvent[A](
     reader: EventStreamReader[A],
     timeout: Long
@@ -188,13 +298,20 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       val event = eventRead.getEvent()
       if (event == null) Chunk.empty else Chunk.single(event)
   })
+
+  /**
+   * Stream (source) of elements.
+   */
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A] = ZStream.unwrapScoped(
     for {
       reader  <- createEventStreamReader(readerGroupName, settings)
       readTask = readNextEvent(reader, settings.timeout)
     } yield ZStream.repeatZIOChunk(readTask)
   )
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+
+  /**
+   * Stream (source) of events of elements.
+   */
   def eventStream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, EventRead[A]] =
     ZStream.unwrapScoped(
       createEventStreamReader(readerGroupName, settings).map(reader =>
@@ -210,7 +327,18 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     )
 }
 
+/**
+ * Pravega Stream API.
+ *
+ * This API is a wrapper around the Pravega Java API.
+ */
 object PravegaStream {
+
+  /**
+   * Writes atomicaly to a stream. See [[zio.pravega.PravegaStream.write]].
+   */
+  def write[A](streamName: String, settings: WriterSettings[A], a: A*): ZIO[PravegaStream, Throwable, Unit] =
+    ZIO.serviceWithZIO[PravegaStream](_.write(streamName, settings, a.toList))
 
   /**
    * Sink that writes to a stream. See [[zio.pravega.PravegaStream.sink]].
@@ -231,7 +359,8 @@ object PravegaStream {
    * Sink that writes to a transactional stream.
    *   - The transaction id is generated by the writer, once the transaction is
    *     created.
-   *   - The transaction is not committed or aborted by the writer.
+   *   - The transaction is not committed
+   *   - The transaction is aborted by the writer in case of failure.
    */
   def sharedTransactionalSink[A](
     streamName: String,
@@ -245,6 +374,7 @@ object PravegaStream {
    *
    *   - The transaction id is provided by the caller.
    *   - The transaction may be committed by the writer.
+   *   - The transaction is aborted by the writer in case of failure.
    */
   def sharedTransactionalSink[A](
     streamName: String,
