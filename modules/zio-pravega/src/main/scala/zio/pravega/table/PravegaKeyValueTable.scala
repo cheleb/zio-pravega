@@ -50,7 +50,7 @@ final case class PravegaKeyValueTable[K, V](val table: KeyValueTable, settings: 
     .fromCompletableFuture(table.get(tableKey(k)))
     .map {
       case null     => insert(k, v)
-      case previous => put(k, v, previous)
+      case previous => put(k, v)
     }
 
   /**
@@ -101,7 +101,7 @@ final case class PravegaKeyValueTable[K, V](val table: KeyValueTable, settings: 
    * UpdateAndNewValue, along with the new value, that is the result of the
    * combine function on the old and new values.
    */
-  private def put(key: K, newValue: V, previous: TableEntry): UpdateAndNewValue[V] =
+  private def put(key: K, newValue: V): UpdateAndNewValue[V] =
     UpdateAndNewValue(
       new Put(
         settings.tableKey(key),

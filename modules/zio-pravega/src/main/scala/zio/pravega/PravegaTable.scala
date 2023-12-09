@@ -35,7 +35,7 @@ trait PravegaTable {
     value: V,
     combine: (V, V) => V,
     settings: TableWriterSettings[K, V]
-  ): Task[Unit]
+  ): Task[V]
 
   /**
    * Create a sink to write to a KVP Pravega table.
@@ -95,14 +95,15 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
     value: V,
     combine: (V, V) => V,
     settings: TableWriterSettings[K, V]
-  ): Task[Unit] =
+  ): Task[V] =
     ZIO.scoped {
       connectTable(tableName, settings).flatMap { table =>
         table
           .updateTask(key, value, combine)
           .flatMap(table.pushUpdate)
           .retry(Schedule.forever)
-      }.unit
+          .map(_._2)
+      }
     }
 
   /**
@@ -251,9 +252,32 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
 }
 
 /**
- * Pravega Table API.
+ * Pravega Table API companion object with accessible methods.
  */
 object PravegaTable {
+
+  /**
+   * Insert a value in a Pravega table, may overwrite existing values.
+   *
+   * In case of a conflict, the ZIO will fail and will be retried.
+   */
+  def put[K, V](
+    tableName: String,
+    key: K,
+    value: V,
+    settings: TableWriterSettings[K, V]
+  ): ZIO[PravegaTable, Throwable, Unit] =
+    ZIO.serviceWithZIO[PravegaTable](_.put(tableName, key, value, settings))
+
+  def merge[K, V](
+    tableName: String,
+    key: K,
+    value: V,
+    combine: (V, V) => V,
+    settings: TableWriterSettings[K, V]
+  ): ZIO[PravegaTable, Throwable, V] =
+    ZIO.serviceWithZIO[PravegaTable](_.merge(tableName, key, value, combine, settings))
+
   def sink[K, V](
     tableName: String,
     settings: TableWriterSettings[K, V],
