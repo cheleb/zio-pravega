@@ -55,11 +55,31 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
       _ <- PravegaTable.put(pravegaTableName, "9999", 2, tableWriterSettings)
     } yield ()
 
+    def getFromTable: ZIO[PravegaTable, Throwable, Option[Int]] = for {
+      _   <- ZIO.logDebug("Get from table")
+      res <- PravegaTable.get(pravegaTableName, "9999", tableReaderSettings)
+
+    } yield res
+
     def mergeinTable: ZIO[PravegaTable, Throwable, Int] = for {
       _ <- ZIO.logDebug("Put to table")
       // Type inference fails here in Scala 2.x so we need to specify the type of the combine function
       res <- PravegaTable.merge(pravegaTableName, "9999", 1, (a: Int, b: Int) => a - b, tableWriterSettings)
     } yield res
+
+    /**
+     * This test open a connection to the table and try to get a value from it.
+     *
+     * @return
+     */
+    def openTableTable: ZIO[PravegaTable, Throwable, Option[Int]] =
+      ZIO.scoped {
+        for {
+          _     <- ZIO.logDebug("Open table")
+          table <- PravegaTable.openTable(pravegaTableName, tableReaderSettings)
+          none  <- table.get("6666")
+        } yield none
+      }
 
     suite("Tables")(
       test(s"Write to table $pravegaTableName")(writeToTable.map(_ => assertCompletes)),
@@ -67,7 +87,9 @@ object TableSpecs extends SharedPravegaContainerSpec("table") {
       test(s"Read from table $pravegaTableName")(readFromTable.map(res => assert(res)(equalTo(2000L)))),
       test("Read through flow")(flowFromTable.map(res => assert(res)(equalTo(2000L)))),
       test("Put to table")(putToTable.map(_ => assertCompletes)),
-      test("Merge in table")(mergeinTable.map(res => assert(res)(equalTo(1))))
+      test("Get from table")(getFromTable.map(res => assert(res)(equalTo(Some(2))))),
+      test("Merge in table")(mergeinTable.map(res => assert(res)(equalTo(1)))),
+      test("Open table")(openTableTable.map(res => assert(res)(equalTo(None))))
     ) @@ sequential
   }
 }
