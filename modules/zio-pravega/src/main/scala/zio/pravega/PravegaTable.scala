@@ -38,6 +38,25 @@ trait PravegaTable {
   ): Task[V]
 
   /**
+   * Get a value from a Pravega table.
+   */
+  def get[K, V](
+    tableName: String,
+    key: K,
+    settings: TableReaderSettings[K, V]
+  ): Task[Option[V]]
+
+  /**
+   * Connect to a Pravega table.
+   *
+   * The table is closed when the scope is closed.
+   */
+  def openTable[K, V](
+    tableName: String,
+    tableSetting: TableSettings[K, V]
+  ): ZIO[Scope, Throwable, PravegaKeyValueTable[K, V]]
+
+  /**
    * Create a sink to write to a KVP Pravega table.
    *
    * A @combine function is used to merge old and new entries.
@@ -97,7 +116,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
     settings: TableWriterSettings[K, V]
   ): Task[V] =
     ZIO.scoped {
-      connectTable(tableName, settings).flatMap { table =>
+      openTable(tableName, settings).flatMap { table =>
         table
           .updateTask(key, value, combine)
           .flatMap(table.pushUpdate)
@@ -111,15 +130,25 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
    */
   override def put[K, V](tableName: String, key: K, value: V, settings: TableWriterSettings[K, V]): Task[Unit] =
     ZIO.scoped {
-      connectTable(tableName, settings).flatMap { table =>
+      openTable(tableName, settings).flatMap { table =>
         table.overrideTask(key, value).flatMap(table.pushUpdate)
       }.unit
     }
 
   /**
+   * Get a value from a Pravega table.
+   */
+  override def get[K, V](tableName: String, key: K, settings: TableReaderSettings[K, V]): Task[Option[V]] =
+    ZIO.scoped {
+      openTable(tableName, settings).flatMap { table =>
+        table.get(key)
+      }
+    }
+
+  /**
    * Connect to a Pravega table.
    */
-  private def connectTable[K, V](
+  def openTable[K, V](
     tableName: String,
     tableSetting: TableSettings[K, V]
   ): ZIO[Scope, Throwable, PravegaKeyValueTable[K, V]] = ZIO
@@ -150,7 +179,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
     combine: (V, V) => V
   ): ZSink[Any, Throwable, (K, V), Nothing, Unit] = ZSink
     .unwrapScoped(
-      connectTable(tableName, settings)
+      openTable(tableName, settings)
         .map(table => ZSink.foreach { case (k, v) => upsert(k, v, table, combine) })
     )
 
@@ -187,7 +216,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
     settings: TableReaderSettings[K, V]
   ): ZStream[Any, Throwable, TableEntry[V]] = ZStream.unwrapScoped(
     for {
-      table <- connectTable(tableName, settings)
+      table <- openTable(tableName, settings)
       executor <-
         ZIO.succeed(Executors.newSingleThreadExecutor()).withFinalizer(e => ZIO.attemptBlocking(e.shutdown()).ignore)
       it          = iterator(table.table, settings.maxEntriesAtOnce).asSequential(executor)
@@ -207,7 +236,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
     combine: (V, V) => V
   ): ZPipeline[Any, Throwable, (K, V), (K, V)] = ZPipeline
     .unwrapScoped(
-      connectTable(tableName, settings)
+      openTable(tableName, settings)
         .map(table =>
           ZPipeline.mapZIO { case (k, v) =>
             upsert(k, v, table, combine).map { case (_, newValue) => (k, newValue) }
@@ -245,7 +274,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
     ZPipeline
       .unwrapScoped(
         for {
-          table      <- connectTable(tableName, settings)
+          table      <- openTable(tableName, settings)
           entryIoForK = readEntryIO(table.table, settings)
         } yield ZPipeline.mapZIO(entryIoForK)
       )
@@ -277,6 +306,22 @@ object PravegaTable {
     settings: TableWriterSettings[K, V]
   ): ZIO[PravegaTable, Throwable, V] =
     ZIO.serviceWithZIO[PravegaTable](_.merge(tableName, key, value, combine, settings))
+
+  /**
+   * Get a value from a Pravega table.
+   */
+  def get[K, V](
+    tableName: String,
+    key: K,
+    settings: TableReaderSettings[K, V]
+  ): ZIO[PravegaTable, Throwable, Option[V]] =
+    ZIO.serviceWithZIO[PravegaTable](_.get(tableName, key, settings))
+
+  def openTable[K, V](
+    tableName: String,
+    tableSetting: TableSettings[K, V]
+  ): ZIO[Scope & PravegaTable, Throwable, PravegaKeyValueTable[K, V]] =
+    ZIO.serviceWithZIO[PravegaTable](_.openTable(tableName, tableSetting))
 
   def sink[K, V](
     tableName: String,

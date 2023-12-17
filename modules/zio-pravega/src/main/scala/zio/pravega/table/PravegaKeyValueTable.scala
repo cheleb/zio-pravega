@@ -109,4 +109,14 @@ final case class PravegaKeyValueTable[K, V](val table: KeyValueTable, settings: 
       ),
       newValue
     )
+
+  def getEntry(key: K): Task[Option[TableEntry]] =
+    ZIO
+      .fromCompletableFuture(table.get(tableKey(key)))
+      .map {
+        case null => None
+        case e    => Some(e)
+      }
+  def get(key: K): Task[Option[V]] =
+    getEntry(key).map(_.map(e => settings.valueSerializer.deserialize(e.getValue)))
 }
