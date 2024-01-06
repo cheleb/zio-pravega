@@ -8,11 +8,8 @@ import io.pravega.client.stream.impl.UTF8StringSerializer
 import scala.language.postfixOps
 import io.pravega.client.tables.TableKey
 import java.nio.ByteBuffer
-import org.scalatest.Assertions
 
 class PravegaSettingsSpec extends AnyWordSpec with Matchers {
-
-  private val clientConfig = PravegaClientConfig.builder.enableTlsToController(true).build()
 
   "Pravega stream settings builders" must {
 

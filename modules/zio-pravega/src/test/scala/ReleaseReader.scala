@@ -1,5 +1,4 @@
 import zio._
-import zio.Console._
 
 import io.pravega.client.ClientConfig
 
