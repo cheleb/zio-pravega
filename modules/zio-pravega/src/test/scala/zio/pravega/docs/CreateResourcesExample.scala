@@ -31,11 +31,13 @@ object CreateResourcesExample extends ZIOAppDefault {
     streamCreated <- PravegaStreamManager.createStream(scopeName, streamName, streamConfiguration)
     _             <- printLine(f"Stream created: $streamCreated%b")
     _             <- PravegaReaderGroupManager.createReaderGroup(createReaderGroupName, streamName)
+
     tableCreated <- PravegaTableManager.createTable(
                       scopeName,
                       tableName,
                       tableConfig
                     )
+    _ <- printLine(f"Table created: $tableCreated%b")
   } yield ()
 
   override def run: ZIO[Scope, Throwable, Unit] = program

@@ -8,7 +8,6 @@ import zio.test.TestAspect._
 import zio.pravega.admin._
 import scala.jdk.CollectionConverters._
 import model.Person
-import zio.stream.ZStream
 
 object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
 

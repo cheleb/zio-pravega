@@ -14,9 +14,14 @@ inThisBuild(
     licenses := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
-    useCoursier              := false,
-    scalaVersion             := mainScala,
-    crossScalaVersions       := allScala,
+    useCoursier        := false,
+    scalaVersion       := mainScala,
+    crossScalaVersions := allScala,
+    scalacOptions ++= Seq(
+//      "-deprecation",
+      "-Wunused:all",
+      "-Xfatal-warnings"
+    ),
     Test / parallelExecution := false,
     Test / fork              := true,
     run / fork               := true,
