@@ -52,6 +52,23 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
           _      <- ZIO.logDebug(f"count $count1%d + $count2%d = $count%d")
         } yield assert(count)(equalTo(150L + writtenPersons.size))
       } @@ withLiveClock,
+      test("Kill switch") {
+        for {
+          _      <- PravegaReaderGroupManager.createReaderGroup("g2", "s1")
+          killed <- Ref.make(false)
+          stream1 = PravegaStream.streamWithKillSwitch("g2", personReaderSettings, killed)
+
+          f <- stream1.runCount.fork
+
+          _ <- ZIO.debug("Waiting for the stream to start")
+
+          _ <- ZIO.sleep(2.seconds) *> killed.set(true)
+
+          count <- f.join
+
+        } yield assert(count)(equalTo(150L + writtenPersons.size))
+
+      } @@ withLiveClock,
       test("Truncating stream") {
         for {
           readerGroup <- PravegaReaderGroupManager.openReaderGroup("g1")

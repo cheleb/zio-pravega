@@ -12,7 +12,7 @@ import java.util.UUID
 import zio._
 import zio.Exit.Failure
 import zio.Exit.Success
-import zio.pravega.stream.EventWriter
+import zio.pravega.stream._
 import zio.stream._
 
 /**
@@ -81,6 +81,15 @@ trait PravegaStream {
    * Stream (source) of elements.
    */
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A]
+
+  /**
+   * Stream (source) of elements.
+   */
+  def streamWithKillSwitch[A](
+    readerGroupName: String,
+    settings: ReaderSettings[A],
+    killed: Ref[Boolean]
+  ): Stream[Throwable, A]
 
   /**
    * Stream (source) of events of elements.
@@ -305,9 +314,29 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A] = ZStream.unwrapScoped(
     for {
       reader  <- createEventStreamReader(readerGroupName, settings)
-      readTask = readNextEvent(reader, settings.timeout)
-    } yield ZStream.repeatZIOChunk(readTask)
+      readTask = readNextEvent(reader, settings.timeout).mapError(th => Option(th))
+    } yield ZStream.repeatZIOChunkOption(readTask)
   )
+
+  /**
+   * Stream (source) of elements.
+   */
+  def streamWithKillSwitch[A](
+    readerGroupName: String,
+    settings: ReaderSettings[A],
+    killed: Ref[Boolean]
+  ): Stream[Throwable, A] =
+    ZStream.unwrapScoped(
+      for {
+        reader  <- createEventStreamReader(readerGroupName, settings)
+        readTask = readNextEvent(reader, settings.timeout).mapError(th => Option(th))
+      } yield ZStream.repeatZIOChunkOption {
+        killed.get.flatMap {
+          case true  => ZIO.fail(None)
+          case false => readTask
+        }
+      }
+    )
 
   /**
    * Stream (source) of events of elements.
@@ -383,8 +412,16 @@ object PravegaStream {
     commitOnExit: Boolean
   ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
     ZSink.serviceWithSink[PravegaStream](_.sharedTransactionalSink(streamName, txUUID, settings, commitOnExit))
+
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): ZStream[PravegaStream, Throwable, A] =
     ZStream.serviceWithStream[PravegaStream](_.stream(readerGroupName, settings))
+
+  def streamWithKillSwitch[A](
+    readerGroupName: String,
+    settings: ReaderSettings[A],
+    killed: Ref[Boolean]
+  ): ZStream[PravegaStream, Throwable, A] =
+    ZStream.serviceWithStream[PravegaStream](_.streamWithKillSwitch(readerGroupName, settings, killed))
 
   /**
    * Stream of events. See [[zio.pravega.PravegaStream.eventStream]].
