@@ -36,7 +36,7 @@ jobs:
         # Scala 3 is not fully supported for coverage yet
         run: sbt "++ 2.13.12; coverage; test; coverageReport"
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v3"
+        uses: "codecov/codecov-action@v4"
         with:
           token: ${{ secrets.TOKEN }}
           fail_ci_if_error: true
