@@ -45,7 +45,7 @@ jobs:
           distribution: 'zulu'
           cache: sbt
       - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@v1
+        uses: ts-graphviz/setup-graphviz@v2
       - run: VERSION=`git describe --tags --abbrev=0 | sed "s/v//"` sbt website
       - name: Setup Pages
         uses: actions/configure-pages@v4
