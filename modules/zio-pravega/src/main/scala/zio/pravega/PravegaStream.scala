@@ -418,10 +418,12 @@ object PravegaStream {
 
   def streamWithKillSwitch[A](
     readerGroupName: String,
-    settings: ReaderSettings[A],
-    killed: Ref[Boolean]
-  ): ZStream[PravegaStream, Throwable, A] =
-    ZStream.serviceWithStream[PravegaStream](_.streamWithKillSwitch(readerGroupName, settings, killed))
+    settings: ReaderSettings[A]
+  ): Task[InteruptibleStream[A]] =
+    for {
+      killed <- Ref.make(false)
+      stream  = ZStream.serviceWithStream[PravegaStream](_.streamWithKillSwitch(readerGroupName, settings, killed))
+    } yield InteruptibleStream(stream, killed.set(true))
 
   /**
    * Stream of events. See [[zio.pravega.PravegaStream.eventStream]].

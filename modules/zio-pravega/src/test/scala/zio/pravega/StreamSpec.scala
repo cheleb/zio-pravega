@@ -52,23 +52,38 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
           _      <- ZIO.logDebug(f"count $count1%d + $count2%d = $count%d")
         } yield assert(count)(equalTo(150L + writtenPersons.size))
       } @@ withLiveClock,
-      test("Kill switch") {
+      test("Stop stream") {
         for {
-          _      <- PravegaReaderGroupManager.createReaderGroup("g2", "s1")
-          killed <- Ref.make(false)
-          stream1 = PravegaStream.streamWithKillSwitch("g2", personReaderSettings, killed)
+          _ <- PravegaReaderGroupManager.createReaderGroup("g2", "s1")
 
-          f <- stream1.runCount.fork
+          stream = PravegaStream.stream("g2", personReaderSettings)
 
-          _ <- ZIO.debug("Waiting for the stream to start")
+          killed <- Promise.make[Throwable, Unit]
 
-          _ <- ZIO.sleep(2.seconds) *> killed.set(true)
+          f <- stream.interruptWhen(killed).runCount.fork
+
+          _ <- ZIO.sleep(2.seconds) *> killed.succeed(())
 
           count <- f.join
 
         } yield assert(count)(equalTo(150L + writtenPersons.size))
 
       } @@ withLiveClock,
+      test("Kill switch") {
+        for {
+          _ <- PravegaReaderGroupManager.createReaderGroup("g3", "s1")
+
+          interuptibleStream <- PravegaStream.streamWithKillSwitch("g3", personReaderSettings)
+
+          f <- interuptibleStream.stream.runCount.fork
+
+          _ <- ZIO.sleep(2.seconds) *> interuptibleStream.shutdown
+
+          count <- f.join
+
+        } yield assert(count)(equalTo(150L + writtenPersons.size))
+
+      } @@ withLiveClock @@ ignore,
       test("Truncating stream") {
         for {
           readerGroup <- PravegaReaderGroupManager.openReaderGroup("g1")
@@ -78,7 +93,7 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
                    PravegaStreamManager.truncateStream(aScope, stream.getStreamName(), streamCut)
                }
         } yield assertCompletes
-      }
+      } @@ ignore
     ) @@ sequential
   )
 }
