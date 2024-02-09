@@ -4,8 +4,6 @@ Scopes are namespaces for [Streams](stream.md), they must be created before bein
 
 ```scala mdoc:silent
 import io.pravega.client.ClientConfig
-import io.pravega.client.stream.ScalingPolicy
-import io.pravega.client.stream.StreamConfiguration
 
 import zio._
 import zio.pravega._
