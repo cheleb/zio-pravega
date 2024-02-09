@@ -8,7 +8,6 @@ The state is concurently updated in an optimistic way relying on the `version` f
 
 ```scala mdoc:silent
 import zio.*
-import zio.Console.*
 import zio.pravega.*
 import io.pravega.client.tables.KeyValueTableConfiguration
 

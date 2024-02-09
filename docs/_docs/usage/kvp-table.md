@@ -8,7 +8,7 @@ ZIO Pravega provides a way to read and write KVP tables:
 * from / to simple Scala collections.
 
 
-Alternatively, you can use the [zio.pravega.PravegaTable](/zio/pravega/PravegaTable.html#openTable-60c) to open a KVP table and read / write to it.
+Alternatively, you can use the zio.pravega.PravegaTable to open a KVP table and read / write to it.
 
 
 
