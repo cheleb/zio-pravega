@@ -12,7 +12,7 @@ import zio.pravega.admin.PravegaReaderGroupManager
 
 object ReaderOfflineSpec extends SharedPravegaContainerSpec("reader-offline") {
 
-  override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(test("Set reader offline")(for {
+  override def spec: Spec[Environment & TestEnvironment, Any] = scopedSuite(test("Set reader offline")(for {
     _ <- createStream("stream", 2)
     _ <- createGroup("unclosed", "stream")
     _ <- ZIO.debug("""

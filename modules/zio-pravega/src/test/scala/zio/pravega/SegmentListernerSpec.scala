@@ -20,7 +20,7 @@ object SegmentListernerSpec extends SharedPravegaContainerSpec("segment-listener
 
   import CommonTestSettings._
 
-  override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(test("Stream rebalance") {
+  override def spec: Spec[Environment & TestEnvironment, Any] = scopedSuite(test("Stream rebalance") {
     for {
       _ <- PravegaStreamManager.createStream(aScope, "s1", dynamicStreamConfig(10, 2, 1))
 

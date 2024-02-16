@@ -13,7 +13,7 @@ object ReleaseReader extends ZIOAppDefault {
     _ <- ZIO.debug(f"Offined $n%d reader(s).")
   } yield ()
 
-  override def run = program
+  override def run: ZIO[Environment & (ZIOAppArgs & Scope), Any, Any] = program
     .provide(Scope.default, ZLayer.succeed(clientConfig), PravegaReaderGroupManager.live("a-scope"))
 
 }

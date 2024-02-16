@@ -19,15 +19,15 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
     Person("1234", "Mary", 42)
   )
 
-  override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(
+  override def spec: Spec[Environment & TestEnvironment, Any] = scopedSuite(
     suite("Stream spec")(
       test("Stream support timeouts") {
         for {
           _ <- PravegaStreamManager.createStream(aScope, "s1", staticStreamConfig(2))
 
-          _ <- PravegaStream.write("s1", personStreamWriterSettings, Seq.empty[Person]: _*)
+          _ <- PravegaStream.write("s1", personStreamWriterSettings, Seq.empty[Person]*)
           _ <- PravegaStream.write("s1", personStreamWriterSettings, writtenPersons.head)
-          _ <- PravegaStream.write("s1", personStreamWriterSettings, writtenPersons.tail: _*)
+          _ <- PravegaStream.write("s1", personStreamWriterSettings, writtenPersons.tail*)
 
           _        <- PravegaReaderGroupManager.createReaderGroup("g1", "s1")
           sink1     = sink("s1")

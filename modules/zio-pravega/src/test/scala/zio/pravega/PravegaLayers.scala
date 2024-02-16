@@ -22,7 +22,7 @@ object PravegaLayers extends SharedPravegaContainerSpec("PravegaLayers") {
     .fromIterable(a until b)
     .map(i => (f"$i%04d", i))
 
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("PravegaLayers")(
+  override def spec: Spec[Environment & TestEnvironment & Scope, Any] = suite("PravegaLayers")(
     createScopes,
     createStreams,
     createGroups,

@@ -9,7 +9,7 @@ object StreamAndTableSpec extends SharedPravegaContainerSpec("stream-and-table")
 
   import CommonTestSettings._
 
-  override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(
+  override def spec: Spec[Environment & TestEnvironment, Any] = scopedSuite(
     suite("Table concurency writes")(
       test("Write concurently from stream to table")(
         stream2table.map(_ => assertCompletes)

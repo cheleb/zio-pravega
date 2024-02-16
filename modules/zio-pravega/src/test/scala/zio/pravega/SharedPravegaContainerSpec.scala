@@ -41,12 +41,7 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
    */
   def scopedSuite(
     aSuite: Spec[
-      PravegaStreamManager
-        with PravegaReaderGroupManager
-        with PravegaTableManager
-        with PravegaStream
-        with PravegaTable
-        with Scope,
+      PravegaStreamManager & PravegaReaderGroupManager & PravegaTableManager & PravegaStream & PravegaTable & Scope,
       Throwable
     ]
   ): Spec[Any, Throwable] =

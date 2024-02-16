@@ -101,7 +101,7 @@ object PravegaReaderGroupManager {
     readerGroupName: String,
     streamNames: String*
   ): ZIO[PravegaReaderGroupManager, Throwable, Boolean] = ZIO.serviceWithZIO[PravegaReaderGroupManager](
-    _.createReaderGroup(readerGroupName, ReaderGroupConfig.builder(), streamNames: _*)
+    _.createReaderGroup(readerGroupName, ReaderGroupConfig.builder(), streamNames*)
   )
   def readerOffline(groupName: String): RIO[PravegaReaderGroupManager, Int] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.readerOffline(groupName))
@@ -110,8 +110,8 @@ object PravegaReaderGroupManager {
     builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
     streamNames: String*
   ): RIO[PravegaReaderGroupManager, Boolean] =
-    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.createReaderGroup(readerGroupName, builder, streamNames: _*))
-  def openReaderGroup(readerGroupName: String): RIO[PravegaReaderGroupManager with Scope, ReaderGroup] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.createReaderGroup(readerGroupName, builder, streamNames*))
+  def openReaderGroup(readerGroupName: String): RIO[PravegaReaderGroupManager & Scope, ReaderGroup] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.openReaderGroup(readerGroupName))
   def dropReaderGroup(scope: String, readerGroupName: String): RIO[PravegaReaderGroupManager, Boolean] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.dropReaderGroup(scope, readerGroupName))

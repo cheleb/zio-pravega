@@ -13,7 +13,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
   import CommonTestSettings._
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  override def spec: Spec[Environment with TestEnvironment, Any] = scopedSuite(
+  override def spec: Spec[Environment & TestEnvironment, Any] = scopedSuite(
     suite("Tx Stream support")(
       test("Stream support timeouts") {
         for {
