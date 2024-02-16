@@ -8,7 +8,7 @@ import zio.test._
 
 object TableSpecs extends SharedPravegaContainerSpec("table") {
 
-  override def spec: Spec[Environment with TestEnvironment, Any] =
+  override def spec: Spec[Environment & TestEnvironment, Any] =
     scopedSuite(suite("Tables")(test("Create table")(table("ages").map(_ => assertCompletes)), tableSuite("ages")))
 
   import CommonTestSettings._

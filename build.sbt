@@ -1,11 +1,17 @@
 name := "ZIO Pravega"
 val scala213  = "2.13.12"
-val scala33   = "3.3.1"
+val scala33   = "3.4.0"
 val mainScala = scala33
 val allScala  = Seq(scala33, scala213)
 
 val zioVersion     = "2.0.21"
 val pravegaVersion = "0.13.0"
+
+def scalacOptionsFor(scalaVersion: String): Seq[String] =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((3, _)) => Seq("-Wunused:all")
+    case _            => Seq("-Xsource:3")
+  }
 
 inThisBuild(
   List(
@@ -19,7 +25,6 @@ inThisBuild(
     crossScalaVersions := allScala,
     scalacOptions ++= Seq(
 //      "-deprecation",
-      "-Wunused:all",
       "-Xfatal-warnings"
     ),
     Test / parallelExecution := false,
@@ -76,7 +81,8 @@ lazy val pravega =
     .settings(
       name              := "zio-pravega",
       scalafmtOnCompile := true,
-      fork              := true
+      fork              := true,
+      scalacOptions ++= scalacOptionsFor(scalaVersion.value)
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](
@@ -116,7 +122,7 @@ lazy val pravega =
         "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11"                  % "0.6.13-0" % Test
       ),
       Test / PB.targets := Seq(
-        scalapb.gen() -> (Test / sourceManaged).value / "scalapb"
+        scalapb.gen(scala3Sources = true) -> (Test / sourceManaged).value / "scalapb"
       )
     )
 

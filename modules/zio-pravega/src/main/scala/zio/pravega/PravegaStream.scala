@@ -134,7 +134,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         ZStream(a)
           .run(sink(streamName, settings))
       case _ =>
-        ZStream(as: _*)
+        ZStream(as*)
           .run(transactionalSink(streamName, settings))
     }
 

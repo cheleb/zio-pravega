@@ -12,7 +12,7 @@ import zio.stream.ZSink
 
 object AdminSpec extends SharedPravegaContainerSpec("admin") {
 
-  override def spec: Spec[Environment with TestEnvironment with Scope, Any] = suite("Admin")(
+  override def spec: Spec[Environment & TestEnvironment & Scope, Any] = suite("Admin")(
     createScopes,
     listScopes,
     createStreams,
