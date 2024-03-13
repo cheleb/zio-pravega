@@ -19,7 +19,7 @@ git.remoteRepo  := "git@github.com:cheleb/zio-pravega.git"
 ghpagesNoJekyll := true
 
 Compile / doc / scalacOptions ++= (scalaVersion.value match {
-  case "3.3.1" =>
+  case thisScalaVersion if thisScalaVersion.startsWith("3.") =>
     Seq(
       "-siteroot",
       "zio-pravega-docs/target/mdoc",
