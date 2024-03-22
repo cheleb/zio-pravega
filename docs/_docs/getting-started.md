@@ -12,7 +12,7 @@ libraryDependencies += "dev.cheleb" %% "zio-pravega" % "@VERSION@"
 ZIO Pravega provides very simple giter8 template to create a ZIO Pravega project.
 
 ```shell
-sbt new cheleb/zio-pravega-stater.g8
+sbt new cheleb/zio-pravega-starter.g8
 ```
 
 cd into the project directory and run the following command to start the application.
