@@ -20,7 +20,7 @@ jobs:
     if: github.event.base_ref=='refs/heads/master'  # check the branch, if it's not master, skip the job.
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Graphviz
       uses: ts-graphviz/setup-graphviz@v2
     - name: Set up JDK 21
@@ -37,7 +37,7 @@ jobs:
     timeout-minutes: 30
     needs: [build]
     steps:
-      - uses: actions/checkout@v3.6.0
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
       - name: Setup Graphviz
@@ -60,7 +60,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 16.x
