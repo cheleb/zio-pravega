@@ -1,10 +1,10 @@
 name := "ZIO Pravega"
 val scala213  = "2.13.12"
-val scala33   = "3.4.0"
+val scala33   = "3.4.1"
 val mainScala = scala33
 val allScala  = Seq(scala33, scala213)
 
-val zioVersion     = "2.0.21"
+val zioVersion     = "2.0.22"
 val pravegaVersion = "0.13.0"
 
 def scalacOptionsFor(scalaVersion: String): Seq[String] =
@@ -106,7 +106,7 @@ lazy val pravega =
         "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.2.2"                                % Test,
         "org.scalatest"                    %% "scalatest"                % "3.2.18"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
-        "org.testcontainers"                % "testcontainers"           % "1.19.6"                                % Test,
+        "org.testcontainers"                % "testcontainers"           % "1.19.7"                                % Test,
         "org.scala-lang.modules"           %% "scala-collection-compat"  % "2.11.0",
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub"            % "0.6.13"                                % Test,
@@ -156,7 +156,7 @@ lazy val docs = project // new documentation project
     plantUMLSource           := (root / baseDirectory).value / "docs" / "_docs",
     Compile / plantUMLTarget := "mdoc/_assets/images"
   )
-  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.1")
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.4")
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test / scalafmt")
 addCommandAlias(
