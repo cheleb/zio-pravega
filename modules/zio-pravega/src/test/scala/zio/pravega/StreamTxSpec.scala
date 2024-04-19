@@ -82,9 +82,9 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
             txUUID        <- txUUIDPromise.await
 //          _             <- fib1.join
             txSink2 = PravegaStream.sharedTransactionalSink("s3.1", txUUID, personStreamWriterSettings, false)
-            _      <- testStream(0, 50).run(txSink2).fork
+            _      <- testStream(0, 50).run(txSink2)
             txSink3 = PravegaStream.sharedTransactionalSink("s3.1", txUUID, personStreamWriterSettings, true)
-            _      <- testStream(0, 50).run(txSink3).fork
+            _      <- testStream(0, 50).run(txSink3)
             // Read from the stream
             _     <- createGroup("g3.1", "s3.1")
             stream = PravegaStream.stream("g3.1", personReaderSettings)
