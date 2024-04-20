@@ -53,9 +53,8 @@ trait PravegaStream {
    */
   def sharedTransactionalSink[A](
     streamName: String,
-    txUUID: Promise[Nothing, UUID],
     settings: WriterSettings[A]
-  ): Sink[Throwable, A, Nothing, Unit]
+  ): Sink[Throwable, A, Nothing, UUID]
 
   /**
    * Sink that writes to a transactional stream, transaction stays open after
@@ -236,17 +235,15 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
    */
   def sharedTransactionalSink[A](
     streamName: String,
-    txUUID: Promise[Nothing, UUID],
     settings: WriterSettings[A]
-  ): Sink[Throwable, A, Nothing, Unit] =
+  ): Sink[Throwable, A, Nothing, UUID] =
     ZSink.unwrapScoped(
       for {
-        writer <- createTxEventWriter(streamName, settings)
-        tx     <- beginScopedUnclosingTransaction(writer)
-
-        _             <- txUUID.complete(ZIO.succeed(tx.getTxnId))
+        writer        <- createTxEventWriter(streamName, settings)
+        tx            <- beginScopedUnclosingTransaction(writer)
+        txUUID         = tx.getTxnId
         writeEventTask = EventWriter.writeEventTask(tx, settings)
-      } yield ZSink.foreach(writeEventTask)
+      } yield ZSink.foldLeftZIO(txUUID)((tx, e) => writeEventTask(e) *> ZIO.succeed(txUUID))
     )
 
   /**
@@ -364,10 +361,9 @@ object PravegaStream {
    */
   def sharedTransactionalSink[A](
     streamName: String,
-    txUUID: Promise[Nothing, UUID],
     settings: WriterSettings[A]
-  ): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
-    ZSink.serviceWithSink[PravegaStream](_.sharedTransactionalSink(streamName, txUUID, settings))
+  ): ZSink[PravegaStream, Throwable, A, Nothing, UUID] =
+    ZSink.serviceWithSink[PravegaStream](_.sharedTransactionalSink(streamName, settings))
 
   /**
    * Sink that writes to a transactional stream.

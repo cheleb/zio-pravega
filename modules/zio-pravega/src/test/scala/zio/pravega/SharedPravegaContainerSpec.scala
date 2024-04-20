@@ -78,11 +78,10 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
       .transactionalSink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
 
   def sinkUnclosingTx(
-    streamName: String,
-    txUUID: Promise[Nothing, UUID]
-  ): ZSink[PravegaStream, Throwable, Person, Nothing, Unit] =
+    streamName: String
+  ): ZSink[PravegaStream, Throwable, Person, Nothing, UUID] =
     PravegaStream
-      .sharedTransactionalSink(streamName, txUUID, personStreamWriterSettingsWithKey)
+      .sharedTransactionalSink(streamName, personStreamWriterSettingsWithKey)
 
   protected def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
     .fromIterable(a until b)
