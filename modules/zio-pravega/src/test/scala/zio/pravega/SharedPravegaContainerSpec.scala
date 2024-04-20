@@ -18,7 +18,6 @@ import zio.pravega.admin._
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.ClientConfig
 import zio.stream.ZSink
-import java.util.UUID
 
 abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[PravegaContainer] {
 
@@ -76,12 +75,6 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
   def sinkTx(streamName: String, routingKey: Boolean = false): ZSink[PravegaStream, Throwable, Person, Nothing, Unit] =
     PravegaStream
       .transactionalSink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
-
-  def sinkUnclosingTx(
-    streamName: String
-  ): ZSink[PravegaStream, Throwable, Person, Nothing, UUID] =
-    PravegaStream
-      .sharedTransactionalSink(streamName, personStreamWriterSettingsWithKey)
 
   protected def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
     .fromIterable(a until b)
