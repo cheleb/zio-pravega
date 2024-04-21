@@ -120,6 +120,23 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
       suite("Distributed tx fail if one of them fails")(
         test("First tx fail") {
           for {
+            _ <- PravegaStreamManager.createStream(aScope, "tx-first-fail", staticStreamConfig(1))
+
+            txSink = PravegaStream.newSharedTransactionalSink("tx-first-fail", personStreamWriterSettings)
+            _ <- testStream(0, 50)
+                   .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
+                   .run(txSink)
+                   .sandbox
+                   .ignore
+
+            _     <- createGroup("tx-first-fail", "tx-first-fail")
+            stream = PravegaStream.stream("tx-first-fail", personReaderSettings)
+            count <- stream.take(1).runCount.timeout(1.seconds)
+
+          } yield assert(count)(equalTo(None))
+        },
+        test("Second tx fail") {
+          for {
             _ <- PravegaStreamManager.createStream(aScope, "s4", staticStreamConfig(1))
 
             txUUID <- PravegaStream.writeTx("s4", personStreamWriterSettings)
