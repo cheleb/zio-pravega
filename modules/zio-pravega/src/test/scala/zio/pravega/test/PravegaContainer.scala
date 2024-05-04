@@ -10,7 +10,6 @@ import zio._
 import zio.pravega.PravegaClientConfig
 import io.pravega.client.ClientConfig
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class PravegaContainer(dockerImageName: DockerImageName) extends GenericContainer[PravegaContainer](dockerImageName) {
   withStartupTimeout(Duration.ofMinutes(2))
   addFixedExposedPort(9090, 9090)
