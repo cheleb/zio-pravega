@@ -22,6 +22,12 @@ object PravegaClientConfig {
 
   def builder: ClientConfigBuilder = ConfigHelper.builder(ConfigFactory.load().getConfig(configPath))
 
+  val `maximum-inflight-messages` = "maximum-inflight-messages"
+  val `backoff-multiple`          = "backoff-multiple"
+  val `initial-backoff-millis`    = "initial-backoff-millis"
+  val `max-backoff-millis`        = "max-backoff-millis"
+  val `retry-attempts`            = "retry-attempts"
+
 }
 
 class ReaderSettingsBuilder(
@@ -153,7 +159,13 @@ object WriterSettingsBuilder {
    * configuration `zio.pravega`.
    */
   def apply[Message](config: Config): WriterSettingsBuilder[Message] =
-    new WriterSettingsBuilder(config, eventWriterConfig(config), None, config.getInt("maximum-inflight-messages"), None)
+    new WriterSettingsBuilder(
+      config,
+      eventWriterConfig(config),
+      None,
+      config.getInt(PravegaClientConfig.`maximum-inflight-messages`),
+      None
+    )
 
   private def eventWriterConfig(readerConfig: Config): EventWriterConfigBuilder = {
     val builder = EventWriterConfig.builder()
@@ -161,10 +173,10 @@ object WriterSettingsBuilder {
     implicit val config: Config = readerConfig.getConfig("config")
 
     extractBoolean("automatically-note-time")(builder.automaticallyNoteTime)
-    extractInt("backoff-multiple")(builder.backoffMultiple)
+    extractInt(PravegaClientConfig.`backoff-multiple`)(builder.backoffMultiple)
     extractBoolean("enable-connection-pooling")(builder.enableConnectionPooling)
-    extractInt("initial-backoff-millis")(builder.initialBackoffMillis)
-    extractInt("retry-attempts")(builder.retryAttempts)
+    extractInt(PravegaClientConfig.`initial-backoff-millis`)(builder.initialBackoffMillis)
+    extractInt(PravegaClientConfig.`retry-attempts`)(builder.retryAttempts)
     extractLong("transaction-timeout-time")(builder.transactionTimeoutTime)
 
     builder
@@ -255,7 +267,7 @@ object TableReaderSettingsBuilder {
     None,
     tableClientConfiguration(config),
     None,
-    config.getInt("maximum-inflight-messages"),
+    config.getInt(PravegaClientConfig.`maximum-inflight-messages`),
     config.getInt("max-entries-at-once")
   )
 
@@ -265,10 +277,10 @@ object TableReaderSettingsBuilder {
 
     val builder = KeyValueTableClientConfiguration.builder()
 
-    extractInt("backoff-multiple")(builder.backoffMultiple)
-    extractInt("initial-backoff-millis")(builder.initialBackoffMillis)
-    extractInt("max-backoff-millis")(builder.maxBackoffMillis)
-    extractInt("retry-attempts")(builder.retryAttempts)
+    extractInt(PravegaClientConfig.`backoff-multiple`)(builder.backoffMultiple)
+    extractInt(PravegaClientConfig.`initial-backoff-millis`)(builder.initialBackoffMillis)
+    extractInt(PravegaClientConfig.`max-backoff-millis`)(builder.maxBackoffMillis)
+    extractInt(PravegaClientConfig.`retry-attempts`)(builder.retryAttempts)
 
     builder
   }
@@ -351,7 +363,7 @@ object TableWriterSettingsBuilder {
     None,
     tableClientConfiguration(config),
     None,
-    config.getInt("maximum-inflight-messages")
+    config.getInt(PravegaClientConfig.`maximum-inflight-messages`)
   )
 
   private def tableClientConfiguration(implicit config: Config) = {
@@ -360,10 +372,10 @@ object TableWriterSettingsBuilder {
 
     val builder = KeyValueTableClientConfiguration.builder()
 
-    extractInt("backoff-multiple")(builder.backoffMultiple)
-    extractInt("initial-backoff-millis")(builder.initialBackoffMillis)
-    extractInt("max-backoff-millis")(builder.maxBackoffMillis)
-    extractInt("retry-attempts")(builder.retryAttempts)
+    extractInt(PravegaClientConfig.`backoff-multiple`)(builder.backoffMultiple)
+    extractInt(PravegaClientConfig.`initial-backoff-millis`)(builder.initialBackoffMillis)
+    extractInt(PravegaClientConfig.`max-backoff-millis`)(builder.maxBackoffMillis)
+    extractInt(PravegaClientConfig.`retry-attempts`)(builder.retryAttempts)
 
     builder
   }
