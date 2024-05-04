@@ -35,9 +35,14 @@ jobs:
         run: sbt ++ test
       - name: Run coverage test
         # Scala 3 is not fully supported for coverage yet
-        run: sbt "++ 2.13.13; coverage; test; coverageReport"
+        run: sbt "++ 2.13.13; coverage; test; coverageReport; coverageAggregate"
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v4"
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
