@@ -2,6 +2,8 @@
 
 ![scala](https://github.com/cheleb/zio-pravega/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/cheleb/zio-pravega/branch/master/graph/badge.svg?token=9IW44171RJ)](https://codecov.io/gh/cheleb/zio-pravega)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cheleb_zio-pravega&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=cheleb_zio-pravega)
+
 
 This project is [ZIO](https://www.zio.dev) connector to [Pravega](https://www.pravega.io)
 
