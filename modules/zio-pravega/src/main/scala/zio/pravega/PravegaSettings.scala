@@ -458,16 +458,12 @@ private[pravega] object ConfigHelper {
     extractBoolean("validate-host-name")(builder.validateHostName)
     builder
   }
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractString(path: String)(f: String => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getString(path)): Unit
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractBoolean(path: String)(f: Boolean => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getBoolean(path)): Unit
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractInt(path: String)(f: Int => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getInt(path)): Unit
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def extractLong(path: String)(f: Long => Any)(implicit config: Config): Unit =
     if (config.hasPath(path)) f(config.getLong(path)): Unit
   def extractDuration(path: String)(f: Duration => Unit)(implicit config: Config): Unit =
