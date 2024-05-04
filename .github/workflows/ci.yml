@@ -41,8 +41,9 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
+      # https://github.com/marketplace/actions/sonarcloud-scoverage-fix
       - name: SonarCloud scan fixed
-        uses: pervasive-cats/sonarcloud-scoverage-fix@v1.0.0
+        uses: pervasive-cats/sonarcloud-scoverage-fix@v1.0.1
         with:
           scoverageReport: target/scala-2.13/scoverage-report/scoverage.xml
         
