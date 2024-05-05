@@ -41,12 +41,11 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-      # https://github.com/marketplace/actions/sonarcloud-scoverage-fix
-      - name: SonarCloud scan fixed
-        uses: pervasive-cats/sonarcloud-scoverage-fix@v1.0.1
-        with:
-          scoverageReport: target/scala-2.13/scoverage-report/scoverage.xml
-        
+      - name: Fix paths for SonarCloud
+        run: |
+          sed -i -e s,`pwd`,/github/workspace,g target/scala-2.13/scoverage-report/scoverage.xml
+      - name: SonarCloud scan 
+        uses: sonarsource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
