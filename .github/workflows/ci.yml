@@ -45,8 +45,8 @@ jobs:
       - name: Fix paths for SonarCloud
         run: |
           sed -i -e s,`pwd`,/github/workspace,g target/scala-2.13/scoverage-report/scoverage.xml
-#      - name: SonarCloud scan 
-#        uses: sonarsource/sonarcloud-github-action@master
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: SonarCloud scan 
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
