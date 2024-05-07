@@ -15,7 +15,8 @@ on:
     paths-ignore:
       - "docs/**"
       - "website/**"
-      - ".github/**"
+      - ".github/**"     
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
