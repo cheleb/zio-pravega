@@ -68,6 +68,9 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
   def createGroup(name: String, stream: String): ZIO[PravegaReaderGroupManager, Throwable, Boolean] =
     PravegaReaderGroupManager.createReaderGroup(name, stream)
 
+  def source(groupName: String): ZStream[PravegaStream, Throwable, Person] =
+    PravegaStream.stream(groupName, personReaderSettings)
+
   def sink(streamName: String, routingKey: Boolean = false): ZSink[PravegaStream, Throwable, Person, Nothing, Unit] =
     PravegaStream
       .sink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
@@ -76,8 +79,22 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     PravegaStream
       .transactionalSink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
 
-  protected def testStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
+  protected def personsStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
     .fromIterable(a until b)
     .map(i => Person(key = f"$i%04d", name = f"name $i%d", age = i % 111))
+
+  def assertStreamCount[A](aStreamName: String)(
+    zioA: (String, String) => RIO[PravegaStream, A]
+  )(assertion: Assertion[A]) =
+    test(aStreamName.capitalize.replaceAll("-", " ")) {
+      val aGroupName = s"$aStreamName-group"
+      for {
+        stream <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
+        _      <- createGroup(aGroupName, aStreamName)
+
+        count <- zioA(aStreamName, aGroupName)
+
+      } yield assert(count)(assertion)
+    }
 
 }

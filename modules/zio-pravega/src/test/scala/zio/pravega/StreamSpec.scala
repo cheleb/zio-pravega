@@ -36,14 +36,14 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
           stream1   = PravegaStream.stream("g1", personReaderSettings)
           stream2   = PravegaStream.stream("g1", personReaderSettings)
 
-          _    <- testStream(0, 50).run(sink1).fork
+          _    <- personsStream(0, 50).run(sink1).fork
           fib1 <- stream1.take(75).runCount.fork
           fib2 <- stream2.take(75 + writtenPersons.size).runCount.fork
           _ <-
-            (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> testStream(50, 100).run(
+            (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> personsStream(50, 100).run(
               sink2
             )).fork
-          fib3   <- testStream(100, 150).via(writeFlow).runDrain.fork
+          fib3   <- personsStream(100, 150).via(writeFlow).runDrain.fork
           count1 <- fib1.join
           count2 <- fib2.join
           _      <- fib3.join

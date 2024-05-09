@@ -15,179 +15,134 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   override def spec: Spec[Environment & TestEnvironment, Any] = scopedSuite(
     suite("Tx Stream support")(
-      test("Stream support timeouts") {
-        val aStreamName = "stream-timeout"
-        val aGroupName  = s"$aStreamName-group"
+      assertStreamCount("stream-support-timeout") { (aStreamName, aGroupName) =>
         for {
-          _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(2))
-
-          _ <- createGroup(aGroupName, aStreamName)
-
-          sink1   = sink(aStreamName, true)
-          sink2   = sinkTx(aStreamName, true)
-          _      <- testStream(0, 50).run(sink1).fork
-          stream1 = PravegaStream.stream(aGroupName, personReaderSettings)
-          fib1   <- stream1.take(50).runCount.fork
-          stream2 = PravegaStream.stream(aGroupName, personReaderSettings)
-          fib2   <- stream2.take(50).runCount.fork
+          _    <- personsStream(0, 50).run(sink(aStreamName, true)).fork
+          fib1 <- source(aGroupName).take(50).runCount.fork
+          fib2 <- source(aGroupName).take(50).runCount.fork
           _ <-
-            (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> testStream(50, 100).run(sink2)).fork
+            (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> personsStream(50, 100).run(
+              sinkTx(aStreamName, true)
+            )).fork
           count1 <- fib1.join
           count2 <- fib2.join
           count   = count1 + count2
           _      <- ZIO.logDebug(f"count $count1%d + $count2%d = $count%d")
-        } yield assert(count)(equalTo(100L))
-      } @@ withLiveClock,
-      test("Roll back sinks") {
-        val aStreamName = "stream-rollback"
-        val aGroupName  = s"$aStreamName-group"
+        } yield count
+
+      }(equalTo(100L))
+        @@ withLiveClock,
+      assertStreamCount("roll-back-sinks") { (aStreamName, aGroupName) =>
         for {
-          _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
-
-          sink0       = sink(aStreamName)
-          sinkAborted = sinkTx(aStreamName)
-
-          _ <- createGroup(aGroupName, aStreamName)
-          _ <- testStream(1, 100)
+          _ <- personsStream(1, 100)
                  .tap(p => ZIO.when(p.age.equals(50))(ZIO.die(FakeException("Boom"))))
-                 .run(sinkAborted)
+                 .run(sinkTx(aStreamName))
                  .sandbox
                  .ignore
-          _ <- testStream(50, 100).run(sink0)
+          _ <- personsStream(50, 100).run(sink(aStreamName))
 
           stream = PravegaStream.stream(aGroupName, personReaderSettings)
           count <- stream.take(50).filter(_.age < 50).runCount
 
-        } yield assert(count)(equalTo(0L))
-      },
+        } yield count
+      }(equalTo(0L)),
       suite("Distributed tx success")(
-        test("2 writers in a same transaction succeed") {
-          val aStreamName = "tx-2-writer-success"
-          val aGroupName  = s"$aStreamName-group"
+        assertStreamCount("tx-2-writers-success") { (aStreamName, aGroupName) =>
           for {
-            _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
-
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
 
             txSink = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
 
-            _ <- testStream(0, 50).run(txSink)
+            _ <- personsStream(0, 50).run(txSink)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- testStream(0, 50).run(txSink2).fork
-            _      <- createGroup(aGroupName, aStreamName)
-            stream  = PravegaStream.stream(aGroupName, personReaderSettings)
-            count  <- stream.take(100).runCount
+            _      <- personsStream(0, 50).run(txSink2).fork
+            count  <- source(aGroupName).take(100).runCount
 
-          } yield assert(count)(equalTo(100L))
-        },
-        test("3 writers in a same transaction succeed") {
-          val aStreamName = "tx-3-writer-success"
-          val aGroupName  = s"$aStreamName-group"
+          } yield count
+        }(equalTo(100L)),
+        assertStreamCount("tx-3-writers-success") { (aStreamName, aGroupName) =>
           for {
-            _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
 
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
 
             txSink1 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
 
-            _ <- testStream(0, 50).run(txSink1)
+            _ <- personsStream(0, 50).run(txSink1)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _      <- testStream(0, 50).run(txSink2)
+            _      <- personsStream(0, 50).run(txSink2)
             txSink3 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- testStream(0, 50).run(txSink3)
+            _      <- personsStream(0, 50).run(txSink3)
             // Read from the stream
-            _     <- createGroup(aGroupName, aStreamName)
-            stream = PravegaStream.stream(aGroupName, personReaderSettings)
-            count <- stream.take(150).runCount
 
-          } yield assert(count)(equalTo(150L))
-        },
-        test("3 writers in a same transaction succeed, already closed tx") {
-          val aStreamName = "tx-3-writer-success-closed"
-          val aGroupName  = s"$aStreamName-group"
+            count <- source(aGroupName).take(150).runCount
+
+          } yield count
+        }(equalTo(150L)),
+        assertStreamCount("tx-3-writers-success-closed") { (aStreamName, aGroupName) =>
           for {
-            _      <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
             txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _      <- testStream(0, 50).run(txSink)
+            _      <- personsStream(0, 50).run(txSink)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- testStream(0, 50).run(txSink2)
+            _      <- personsStream(0, 50).run(txSink2)
             txSink3 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- testStream(0, 50).run(txSink3).fork
+            _      <- personsStream(0, 50).run(txSink3).fork
             // Read from the stream
-            _     <- createGroup(aGroupName, aStreamName)
-            stream = PravegaStream.stream(aGroupName, personReaderSettings)
-            count <- stream.take(150).runCount.timeout(1.seconds)
+            count <- source(aGroupName).take(150).runCount.timeout(1.seconds)
 
-          } yield assert(count)(equalTo(None))
-        } @@ withLiveClock
+          } yield count
+        }(equalTo(None))
+          @@ withLiveClock
       ) @@ sequential,
       suite("Distributed tx fail if one of them fails")(
-        test("First tx fail") {
-          val aStreamName = "tx-first-fail"
-          val aGroupName  = s"$aStreamName-group"
+        assertStreamCount("tx-first-fail") { (aStreamName, aGroupName) =>
+          val txSink = PravegaStream.newSharedTransactionalSink(aStreamName, personStreamWriterSettings)
           for {
-            _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
 
-            txSink = PravegaStream.newSharedTransactionalSink(aStreamName, personStreamWriterSettings)
-            _ <- testStream(0, 50)
+            _ <- personsStream(0, 50)
                    .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
                    .run(txSink)
                    .sandbox
                    .ignore
 
-            _     <- createGroup(aGroupName, aStreamName)
-            stream = PravegaStream.stream(aGroupName, personReaderSettings)
-            count <- stream.take(1).runCount.timeout(1.seconds)
+            count <- source(aGroupName).take(1).runCount.timeout(1.seconds)
 
-          } yield assert(count)(equalTo(None))
-        },
-        test("Second tx fail") {
-          val aStreamName = "tx-second-fail"
-          val aGroupName  = s"$aStreamName-group"
+          } yield count
+        }(equalTo(None)),
+        assertStreamCount("tx-second-fail") { (aStreamName, aGroupName) =>
           for {
-            _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
-
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
             txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _ <- testStream(0, 50)
+            _ <- personsStream(0, 50)
                    .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
                    .run(txSink)
                    .sandbox
                    .ignore
 
-            _     <- createGroup(aGroupName, aStreamName)
-            stream = PravegaStream.stream(aGroupName, personReaderSettings)
-            count <- stream.take(1).runCount.timeout(1.seconds)
+            count <- source(aGroupName).take(1).runCount.timeout(1.seconds)
 
-          } yield assert(count)(equalTo(None))
-        },
-        test("2 writers second fail") {
-          val aStreamName = "tx-2writer-ssecond-fail"
-          val aGroupName  = s"$aStreamName-group"
+          } yield count
+        }(equalTo(None)),
+        assertStreamCount("tx-2writer-ssecond-fail") { (aStreamName, aGroupName) =>
           for {
-            _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
-
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
             txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _ <- testStream(0, 50)
+            _ <- personsStream(0, 50)
                    .run(txSink)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _ <- testStream(0, 50)
+            _ <- personsStream(0, 50)
                    .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
                    .run(txSink2)
                    .sandbox
                    .ignore
-            _     <- createGroup(aGroupName, aStreamName)
-            stream = PravegaStream.stream(aGroupName, personReaderSettings)
-            count <- stream.take(1).runCount.timeout(1.seconds)
+            count <- source(aGroupName).take(1).runCount.timeout(1.seconds)
 
-          } yield assert(count)(equalTo(None))
-        }
+          } yield count
+        }(equalTo(None))
       ) @@ withLiveClock
     )
   )
