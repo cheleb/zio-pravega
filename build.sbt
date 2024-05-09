@@ -1,10 +1,10 @@
 name := "ZIO Pravega"
-val scala213  = "2.13.12"
+val scala213  = "2.13.14"
 val scala33   = "3.4.1"
 val mainScala = scala33
 val allScala  = Seq(scala33, scala213)
 
-val zioVersion     = "2.1.0-RC5"
+val zioVersion     = "2.1.0"
 val pravegaVersion = "0.13.0"
 
 def scalacOptionsFor(scalaVersion: String): Seq[String] =
