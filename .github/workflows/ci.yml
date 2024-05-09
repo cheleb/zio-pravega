@@ -36,7 +36,7 @@ jobs:
         run: sbt ++ test
       - name: Run coverage test
         # Scala 3 is not fully supported for coverage yet
-        run: sbt "++ 2.13.13; coverage; test; coverageReport; coverageAggregate"
+        run: sbt "++ 2.13; coverage; test; coverageReport; coverageAggregate"
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v4"
         with:
