@@ -17,8 +17,8 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
     suite("Tx Stream support")(
       assertStreamCount("stream-support-timeout") { (aStreamName, aGroupName) =>
         for {
-          _    <- personsStream(0, 50).run(sink(aStreamName, true)).fork
-          fib1 <- source(aGroupName).take(50).runCount.fork
+          _    <- writesPersons(sink(aStreamName, true)).fork
+          fib1 <- readPersons(aGroupName, 50).fork
           fib2 <- source(aGroupName).take(50).runCount.fork
           _ <-
             (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> personsStream(50, 100).run(
@@ -39,7 +39,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
                  .run(sinkTx(aStreamName))
                  .sandbox
                  .ignore
-          _ <- personsStream(50, 100).run(sink(aStreamName))
+          _ <- writesPersonsRange(sink(aStreamName), 50, 100)
 
           stream = PravegaStream.stream(aGroupName, personReaderSettings)
           count <- stream.take(50).filter(_.age < 50).runCount
@@ -53,11 +53,11 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
             txSink = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
 
-            _ <- personsStream(0, 50).run(txSink)
+            _ <- writesPersons(txSink, 50)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- personsStream(0, 50).run(txSink2).fork
-            count  <- source(aGroupName).take(100).runCount
+            _      <- writesPersons(txSink2, 50).fork
+            count  <- readPersons(aGroupName, 100)
 
           } yield count
         }(equalTo(100L)),
@@ -68,15 +68,15 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
             txSink1 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
 
-            _ <- personsStream(0, 50).run(txSink1)
+            _ <- writesPersons(txSink1)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _      <- personsStream(0, 50).run(txSink2)
+            _      <- writesPersons(txSink2)
             txSink3 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- personsStream(0, 50).run(txSink3)
+            _      <- writesPersons(txSink3)
             // Read from the stream
 
-            count <- source(aGroupName).take(150).runCount
+            count <- readPersons(aGroupName, 150)
 
           } yield count
         }(equalTo(150L)),
@@ -84,14 +84,14 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           for {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
             txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _      <- personsStream(0, 50).run(txSink)
+            _      <- writesPersons(txSink)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- personsStream(0, 50).run(txSink2)
+            _      <- writesPersons(txSink2)
             txSink3 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- personsStream(0, 50).run(txSink3).fork
+            _      <- writesPersons(txSink3).fork
             // Read from the stream
-            count <- source(aGroupName).take(150).runCount.timeout(1.seconds)
+            count <- readPersons(aGroupName, 150).timeout(1.seconds)
 
           } yield count
         }(equalTo(None))
@@ -108,7 +108,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
                    .sandbox
                    .ignore
 
-            count <- source(aGroupName).take(1).runCount.timeout(1.seconds)
+            count <- readPersons(aGroupName, 1).timeout(1.seconds)
 
           } yield count
         }(equalTo(None)),
@@ -122,7 +122,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
                    .sandbox
                    .ignore
 
-            count <- source(aGroupName).take(1).runCount.timeout(1.seconds)
+            count <- readPersons(aGroupName, 1).timeout(1.seconds)
 
           } yield count
         }(equalTo(None)),
@@ -130,8 +130,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           for {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
             txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _ <- personsStream(0, 50)
-                   .run(txSink)
+            _      <- writesPersons(txSink)
 
             txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
             _ <- personsStream(0, 50)
@@ -139,7 +138,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
                    .run(txSink2)
                    .sandbox
                    .ignore
-            count <- source(aGroupName).take(1).runCount.timeout(1.seconds)
+            count <- readPersons(aGroupName, 1).timeout(1.seconds)
 
           } yield count
         }(equalTo(None))

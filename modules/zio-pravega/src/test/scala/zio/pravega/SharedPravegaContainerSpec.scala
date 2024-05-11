@@ -83,6 +83,39 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     .fromIterable(a until b)
     .map(i => Person(key = f"$i%04d", name = f"name $i%d", age = i % 111))
 
+  /**
+   * Write persons to a stream.
+   * @param sink
+   *   the sink to write to
+   * @param to
+   *   the number of persons to write default 50
+   */
+  protected def writesPersons(
+    sink: ZSink[PravegaStream, Throwable, Person, Nothing, Unit],
+    to: Int = 50
+  ): ZIO[PravegaStream, Throwable, Unit] =
+    writesPersonsRange(sink, 0, to)
+
+  /**
+   * Write persons to a stream.
+   * @param sink
+   *   the sink to write to
+   * @param to
+   *   the number of persons to write default 50
+   * @param from
+   *   the number of persons to start from default 0
+   */
+
+  protected def writesPersonsRange(
+    sink: ZSink[PravegaStream, Throwable, Person, Nothing, Unit],
+    from: Int,
+    to: Int
+  ): ZIO[PravegaStream, Throwable, Unit] =
+    personsStream(from, to).run(sink)
+
+  protected def readPersons(groupName: String, n: Int): ZIO[PravegaStream, Throwable, Long] =
+    source(groupName).take(n).runCount
+
   def assertStreamCount[A](aStreamName: String)(
     zioA: (String, String) => RIO[PravegaStream, A]
   )(assertion: Assertion[A]) =
