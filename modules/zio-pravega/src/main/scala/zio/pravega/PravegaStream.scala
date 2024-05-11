@@ -40,7 +40,7 @@ trait PravegaStream {
    * @return
    *   transaction id
    */
-  def writeTx[A](
+  def writeUncommited[A](
     streamName: String,
     settings: WriterSettings[A],
     as: List[A]
@@ -72,7 +72,7 @@ trait PravegaStream {
    * @return
    *   The transaction id.
    */
-  def newSharedTransactionalSink[A](
+  def transactionalSinkUncommited[A](
     streamName: String,
     settings: WriterSettings[A]
   ): Sink[Throwable, A, Nothing, UUID]
@@ -144,9 +144,6 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
     )
     .withFinalizerAuto
 
-  /**
-   * Writes atomicaly events to a stream.
-   */
   def write[A](streamName: String, settings: WriterSettings[A], as: List[A]): ZIO[Any, Throwable, Unit] =
     as match {
       case Nil => ZIO.unit
@@ -154,18 +151,19 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         ZStream(a)
           .run(sink(streamName, settings))
       case _ =>
-        ZStream(as*)
+        ZStream
+          .fromIterable(as)
           .run(transactionalSink(streamName, settings))
     }
 
-  def writeTx[A](
+  def writeUncommited[A](
     streamName: String,
     settings: WriterSettings[A],
     as: List[A]
   ): ZIO[Any, Throwable, UUID] =
     ZStream
       .fromIterable(as)
-      .run(newSharedTransactionalSink(streamName, settings))
+      .run(transactionalSinkUncommited(streamName, settings))
 
   /**
    * Sink that writes to a stream.
@@ -263,7 +261,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
    *     created.
    *   - The transaction is not committed **but aborted** in case of failure.
    */
-  override def newSharedTransactionalSink[A](
+  def transactionalSinkUncommited[A](
     streamName: String,
     settings: WriterSettings[A]
   ): Sink[Throwable, A, Nothing, UUID] =
@@ -370,8 +368,15 @@ object PravegaStream {
   /**
    * Writes to a stream tx stream. See [[zio.pravega.PravegaStream.writeTx]].
    */
-  def writeTx[A](streamName: String, settings: WriterSettings[A], a: A*): ZIO[PravegaStream, Throwable, UUID] =
-    ZIO.serviceWithZIO[PravegaStream](_.writeTx(streamName, settings, a.toList))
+  def openTransaction[A](streamName: String, settings: WriterSettings[A]): ZIO[PravegaStream, Throwable, UUID] =
+    ZIO.serviceWithZIO[PravegaStream](_.writeUncommited(streamName, settings, Nil))
+
+  /**
+   * Writes to a stream tx stream. See [[zio.pravega.PravegaStream.writeTx]].
+   */
+
+  def writeUncommited[A](streamName: String, settings: WriterSettings[A], a: A*): ZIO[PravegaStream, Throwable, UUID] =
+    ZIO.serviceWithZIO[PravegaStream](_.writeUncommited(streamName, settings, a.toList))
 
   /**
    * Sink that writes to a stream. See [[zio.pravega.PravegaStream.sink]].
@@ -395,11 +400,11 @@ object PravegaStream {
    *   - The transaction is not committed
    *   - The transaction is aborted by the writer in case of failure.
    */
-  def newSharedTransactionalSink[A](
+  def transactionalSinkUncommited[A](
     streamName: String,
     settings: WriterSettings[A]
   ): ZSink[PravegaStream, Throwable, A, Nothing, UUID] =
-    ZSink.serviceWithSink[PravegaStream](_.newSharedTransactionalSink(streamName, settings))
+    ZSink.serviceWithSink[PravegaStream](_.transactionalSinkUncommited(streamName, settings))
 
   /**
    * Sink that writes to a transactional stream.

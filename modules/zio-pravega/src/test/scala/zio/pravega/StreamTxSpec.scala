@@ -7,13 +7,21 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.pravega.admin._
 
+import model.Person
+
 object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
   import CommonTestSettings._
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   override def spec: Spec[Environment & TestEnvironment, Any] = scopedSuite(
     suite("Tx Stream support")(
+      assertStreamCount("write-uncommited") { (aStreamName, aGroupName) =>
+        for {
+          txUUID <- PravegaStream.writeUncommited(aStreamName, personStreamWriterSettings, Person("0001", "John", 20))
+          _      <- writesPersons(sharedTxSink(aStreamName, txUUID, true), 1)
+          count  <- readPersons(aGroupName, 2)
+        } yield count
+      }(equalTo(2L)),
       assertStreamCount("stream-support-timeout") { (aStreamName, aGroupName) =>
         for {
           _    <- writesPersons(sink(aStreamName, true)).fork
@@ -43,7 +51,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
       suite("Distributed tx success")(
         assertStreamCount("tx-2-writers-success") { (aStreamName, aGroupName) =>
           for {
-            txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
+            txUUID <- PravegaStream.openTransaction(aStreamName, personStreamWriterSettings)
             _      <- writesPersons(sharedTxSink(aStreamName, txUUID))
             _      <- writesPersons(sharedTxSink(aStreamName, txUUID, true)).fork
             count  <- readPersons(aGroupName, 100)
@@ -53,7 +61,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         assertStreamCount("tx-3-writers-success") { (aStreamName, aGroupName) =>
           for {
 
-            txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
+            txUUID <- PravegaStream.openTransaction(aStreamName, personStreamWriterSettings)
 
             _ <- writesPersons(sharedTxSink(aStreamName, txUUID))
             _ <- writesPersons(sharedTxSink(aStreamName, txUUID))
@@ -66,7 +74,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         }(equalTo(150L)),
         assertStreamCount("tx-3-writers-success-closed") { (aStreamName, aGroupName) =>
           for {
-            txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
+            txUUID <- PravegaStream.openTransaction(aStreamName, personStreamWriterSettings)
             _      <- writesPersons(sharedTxSink(aStreamName, txUUID))
             _      <- writesPersons(sharedTxSink(aStreamName, txUUID, true))
             _      <- writesPersons(sharedTxSink(aStreamName, txUUID, true)).fork
@@ -79,7 +87,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
       ) @@ sequential,
       suite("Distributed tx fail if one of them fails")(
         assertStreamCount("tx-first-fail") { (aStreamName, aGroupName) =>
-          val txSink = PravegaStream.newSharedTransactionalSink(aStreamName, personStreamWriterSettings)
+          val txSink = PravegaStream.transactionalSinkUncommited(aStreamName, personStreamWriterSettings)
           for {
 
             _ <- failingTxWritesPersons(txSink, 0, 50, 25)
@@ -90,7 +98,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         }(equalTo(None)),
         assertStreamCount("tx-second-fail") { (aStreamName, aGroupName) =>
           for {
-            txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
+            txUUID <- PravegaStream.openTransaction(aStreamName, personStreamWriterSettings)
             _      <- failingTxWritesPersons(sharedTxSink(aStreamName, txUUID), 0, 50, 25)
 
             count <- readPersons(aGroupName, 1).timeout(1.seconds)
@@ -99,7 +107,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         }(equalTo(None)),
         assertStreamCount("tx-2writer-ssecond-fail") { (aStreamName, aGroupName) =>
           for {
-            txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
+            txUUID <- PravegaStream.openTransaction(aStreamName, personStreamWriterSettings)
             _      <- writesPersons(sharedTxSink(aStreamName, txUUID))
 
             _     <- failingTxWritesPersons(sharedTxSink(aStreamName, txUUID, true), 0, 50, 25)
