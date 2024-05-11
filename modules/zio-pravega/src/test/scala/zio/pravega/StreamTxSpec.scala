@@ -33,11 +33,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         @@ withLiveClock,
       assertStreamCount("roll-back-sinks") { (aStreamName, aGroupName) =>
         for {
-          _ <- personsStream(1, 100)
-                 .tap(p => ZIO.when(p.age.equals(50))(ZIO.die(FakeException("Boom"))))
-                 .run(sinkTx(aStreamName))
-                 .sandbox
-                 .ignore
+          _ <- failingTxWritesPersons(sinkTx(aStreamName), 1, 100, 50)
           _ <- writesPersonsRange(sink(aStreamName), 50, 100)
 
           count <- source(aGroupName).take(50).filter(_.age < 50).runCount
@@ -86,11 +82,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           val txSink = PravegaStream.newSharedTransactionalSink(aStreamName, personStreamWriterSettings)
           for {
 
-            _ <- personsStream(0, 50)
-                   .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
-                   .run(txSink)
-                   .sandbox
-                   .ignore
+            _ <- failingTxWritesPersons(txSink, 0, 50, 25)
 
             count <- readPersons(aGroupName, 1).timeout(1.seconds)
 
@@ -99,11 +91,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         assertStreamCount("tx-second-fail") { (aStreamName, aGroupName) =>
           for {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
-            _ <- personsStream(0, 50)
-                   .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
-                   .run(sharedTxSink(aStreamName, txUUID))
-                   .sandbox
-                   .ignore
+            _      <- failingTxWritesPersons(sharedTxSink(aStreamName, txUUID), 0, 50, 25)
 
             count <- readPersons(aGroupName, 1).timeout(1.seconds)
 
@@ -114,11 +102,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
             _      <- writesPersons(sharedTxSink(aStreamName, txUUID))
 
-            _ <- personsStream(0, 50)
-                   .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
-                   .run(sharedTxSink(aStreamName, txUUID, true))
-                   .sandbox
-                   .ignore
+            _     <- failingTxWritesPersons(sharedTxSink(aStreamName, txUUID, true), 0, 50, 25)
             count <- readPersons(aGroupName, 1).timeout(1.seconds)
 
           } yield count

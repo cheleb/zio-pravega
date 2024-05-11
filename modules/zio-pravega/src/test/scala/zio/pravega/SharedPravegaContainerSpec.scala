@@ -118,7 +118,7 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     personsStream(from, to).run(sink)
 
   protected def failingTxWritesPersons(
-    sink: ZSink[PravegaStream, Throwable, Person, Nothing, Unit],
+    sink: ZSink[PravegaStream, Throwable, Person, Nothing, Any],
     from: Int,
     to: Int,
     failAge: Int
