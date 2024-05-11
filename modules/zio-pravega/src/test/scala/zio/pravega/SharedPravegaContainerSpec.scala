@@ -18,6 +18,7 @@ import zio.pravega.admin._
 import io.pravega.client.tables.KeyValueTableConfiguration
 import io.pravega.client.ClientConfig
 import zio.stream.ZSink
+import java.util.UUID
 
 abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[PravegaContainer] {
 
@@ -79,6 +80,9 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     PravegaStream
       .transactionalSink(streamName, if (routingKey) personStreamWriterSettings else personStreamWriterSettingsWithKey)
 
+  def sharedTxSink(streamName: String, txUUID: UUID, commitOnExit: Boolean = false) =
+    PravegaStream.sharedTransactionalSink(streamName, txUUID, personStreamWriterSettings, commitOnExit)
+
   protected def personsStream(a: Int, b: Int): ZStream[Any, Nothing, Person] = ZStream
     .fromIterable(a until b)
     .map(i => Person(key = f"$i%04d", name = f"name $i%d", age = i % 111))
@@ -112,6 +116,18 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     to: Int
   ): ZIO[PravegaStream, Throwable, Unit] =
     personsStream(from, to).run(sink)
+
+  protected def failingTxWritesPersons(
+    sink: ZSink[PravegaStream, Throwable, Person, Nothing, Unit],
+    from: Int,
+    to: Int,
+    failAge: Int
+  ): ZIO[PravegaStream, Throwable, Unit] =
+    personsStream(from, to)
+      .tap(p => ZIO.when(p.age.equals(failAge))(ZIO.die(FakeException("Boom"))))
+      .run(sink)
+      .sandbox
+      .ignore
 
   protected def readPersons(groupName: String, n: Int): ZIO[PravegaStream, Throwable, Long] =
     source(groupName).take(n).runCount

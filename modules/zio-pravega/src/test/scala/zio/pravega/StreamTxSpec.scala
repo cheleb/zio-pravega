@@ -6,7 +6,6 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.pravega.admin._
-import java.util.UUID
 
 object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
@@ -41,8 +40,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
                  .ignore
           _ <- writesPersonsRange(sink(aStreamName), 50, 100)
 
-          stream = PravegaStream.stream(aGroupName, personReaderSettings)
-          count <- stream.take(50).filter(_.age < 50).runCount
+          count <- source(aGroupName).take(50).filter(_.age < 50).runCount
 
         } yield count
       }(equalTo(0L)),
@@ -50,13 +48,8 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         assertStreamCount("tx-2-writers-success") { (aStreamName, aGroupName) =>
           for {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
-
-            txSink = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-
-            _ <- writesPersons(txSink, 50)
-
-            txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- writesPersons(txSink2, 50).fork
+            _      <- writesPersons(sharedTxSink(aStreamName, txUUID))
+            _      <- writesPersons(sharedTxSink(aStreamName, txUUID, true)).fork
             count  <- readPersons(aGroupName, 100)
 
           } yield count
@@ -66,14 +59,9 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
 
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
 
-            txSink1 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-
-            _ <- writesPersons(txSink1)
-
-            txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _      <- writesPersons(txSink2)
-            txSink3 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- writesPersons(txSink3)
+            _ <- writesPersons(sharedTxSink(aStreamName, txUUID))
+            _ <- writesPersons(sharedTxSink(aStreamName, txUUID))
+            _ <- writesPersons(sharedTxSink(aStreamName, txUUID, true))
             // Read from the stream
 
             count <- readPersons(aGroupName, 150)
@@ -83,13 +71,9 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         assertStreamCount("tx-3-writers-success-closed") { (aStreamName, aGroupName) =>
           for {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
-            txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _      <- writesPersons(txSink)
-
-            txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- writesPersons(txSink2)
-            txSink3 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
-            _      <- writesPersons(txSink3).fork
+            _      <- writesPersons(sharedTxSink(aStreamName, txUUID))
+            _      <- writesPersons(sharedTxSink(aStreamName, txUUID, true))
+            _      <- writesPersons(sharedTxSink(aStreamName, txUUID, true)).fork
             // Read from the stream
             count <- readPersons(aGroupName, 150).timeout(1.seconds)
 
@@ -115,10 +99,9 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         assertStreamCount("tx-second-fail") { (aStreamName, aGroupName) =>
           for {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
-            txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
             _ <- personsStream(0, 50)
                    .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
-                   .run(txSink)
+                   .run(sharedTxSink(aStreamName, txUUID))
                    .sandbox
                    .ignore
 
@@ -129,13 +112,11 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
         assertStreamCount("tx-2writer-ssecond-fail") { (aStreamName, aGroupName) =>
           for {
             txUUID <- PravegaStream.writeTx(aStreamName, personStreamWriterSettings)
-            txSink  = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, false)
-            _      <- writesPersons(txSink)
+            _      <- writesPersons(sharedTxSink(aStreamName, txUUID))
 
-            txSink2 = PravegaStream.sharedTransactionalSink(aStreamName, txUUID, personStreamWriterSettings, true)
             _ <- personsStream(0, 50)
                    .tap(p => ZIO.when(p.age.equals(25))(ZIO.die(FakeException("Boom"))))
-                   .run(txSink2)
+                   .run(sharedTxSink(aStreamName, txUUID, true))
                    .sandbox
                    .ignore
             count <- readPersons(aGroupName, 1).timeout(1.seconds)
