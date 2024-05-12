@@ -34,7 +34,7 @@ val sink = PravegaStream.sink("my-stream", writerSettings)
 * With transaction, the transaction will commit at the end of the Stream, or rollback if an error is raised.
 
 ```scala mdoc:silent
-val sinkTx = PravegaStream.transactionalSink("my-stream", writerSettings)
+val sinkTx = PravegaStream.sinkAtomic("my-stream", writerSettings)
 ```
 
 ## Stream reader
