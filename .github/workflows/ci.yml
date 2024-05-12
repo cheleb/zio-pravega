@@ -27,8 +27,6 @@ jobs:
         with:
           # Disabling shallow clones is recommended for improving the relevancy of reporting
           fetch-depth: 0
-      - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@v2
       - name: Set up JDK 22
         uses: actions/setup-java@v4
         with:
@@ -53,3 +51,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  website:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Graphviz
+        uses: ts-graphviz/setup-graphviz@v2
+      - name: Set up JDK 22
+        uses: actions/setup-java@v4
+        with:
+          java-version: "22"
+          distribution: "zulu"
+          cache: sbt
+      - name: Website compile
+        run: sbt website
