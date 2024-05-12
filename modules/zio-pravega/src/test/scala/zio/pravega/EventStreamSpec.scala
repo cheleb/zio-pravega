@@ -22,10 +22,10 @@ object EventStreamSpec extends SharedPravegaContainerSpec("event-streaming") {
       sink1 = sink("s1")
       sink2 = sinkTx("s1")
 
-      _ <- testStream(0, 10).run(sink1)
+      _ <- personsStream(0, 10).run(sink1)
 
       _ <-
-        (ZIO.attemptBlocking(Thread.sleep(6000)) *> ZIO.logDebug("(( Re-start producing ))") *> testStream(10, 20)
+        (ZIO.attemptBlocking(Thread.sleep(6000)) *> ZIO.logDebug("(( Re-start producing ))") *> personsStream(10, 20)
           .run(sink2)).fork
 
       stream1 = PravegaStream.eventStream("g1", personReaderSettings)

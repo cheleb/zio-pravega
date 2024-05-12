@@ -42,7 +42,7 @@ object SegmentListernerSpec extends SharedPravegaContainerSpec("segment-listener
       fib1   <- stream1.take(1000000).runCount.fork
       sink1   = sink("s1")
 
-      _ <- (ZIO.sleep(2000.millis) *> testStream(0, 1000).run(sink1) *> ZIO.logInfo("1000")).repeatN(1000).fork
+      _ <- (ZIO.sleep(2000.millis) *> personsStream(0, 1000).run(sink1) *> ZIO.logInfo("1000")).repeatN(1000).fork
 
       count <- fib1.join
 

@@ -35,7 +35,7 @@ object StreamAndTableSpec extends SharedPravegaContainerSpec("stream-and-table")
 
     tableSink = PravegaTable.sink("ages", tableWriterSettings, (a: Int, b: Int) => a + b)
 
-    _ <- testStream(0, 40).run(sink0).fork
+    _ <- personsStream(0, 40).run(sink0).fork
 
     count <- stream
                .take(40)

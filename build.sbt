@@ -82,7 +82,7 @@ lazy val pravega =
       name              := "zio-pravega",
       scalafmtOnCompile := true,
       fork              := true,
-      scalacOptions ++= scalacOptionsFor(scalaVersion.value)
+      Global / scalacOptions ++= scalacOptionsFor(scalaVersion.value)
     )
     .settings(
       buildInfoKeys := Seq[BuildInfoKey](

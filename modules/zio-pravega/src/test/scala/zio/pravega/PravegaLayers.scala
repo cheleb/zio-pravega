@@ -83,7 +83,7 @@ object PravegaLayers extends SharedPravegaContainerSpec("PravegaLayers") {
   private def runTests = suite("Run tests")(
     test("Run tests")(
       for {
-        _ <- testStream(1, 2) >>> sink("stream")
+        _ <- personsStream(1, 2) >>> sink("stream")
         _ <- keyValueTestStream(1, 2) >>> PravegaTable.sink("table", tableWriterSettings, (a: Int, b: Int) => a + b)
       } yield (assertCompletes)
     )

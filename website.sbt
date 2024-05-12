@@ -24,7 +24,6 @@ Compile / doc / scalacOptions ++= (scalaVersion.value match {
       "-siteroot",
       "zio-pravega-docs/target/mdoc",
       "-groups",
-      "-external-urls scala=https://cheleb.github.io/zio-pravega/",
       "-project-version",
       version.value,
       "-revision",
