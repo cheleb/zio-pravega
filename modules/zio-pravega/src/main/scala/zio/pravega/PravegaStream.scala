@@ -23,9 +23,11 @@ import zio.stream._
  * @groupname Read Read
  * @groupdesc Read
  *   Reading from a stream.
+ * @groupprio Read 1
  * @groupname Write Write
  * @groupdesc Write
  *   Writing to a stream.
+ * @groupprio Write 2
  */
 @Accessible
 trait PravegaStream {
@@ -375,12 +377,15 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
  * @groupname Read Read
  * @groupdesc Read
  *   Reading from a stream.
+ * @groupprio Read 1
  * @groupname Write Write
  * @groupdesc Write
  *   Writing to a stream.
+ * @groupprio Write 2
  * @groupname ZLayer ZLayer
  * @groupdesc ZLayer
  *   ZLayer creation.
+ * @groupprio ZLayer 3
  */
 object PravegaStream {
 
