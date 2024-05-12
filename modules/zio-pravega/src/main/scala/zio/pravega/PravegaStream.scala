@@ -19,12 +19,20 @@ import zio.stream._
  * Pravega Stream API.
  *
  * This API is a wrapper around the Pravega Java API.
+ *
+ * @groupname Read Read
+ * @groupdesc Read
+ *   Reading from a stream.
+ * @groupname Write Write
+ * @groupdesc Write
+ *   Writing to a stream.
  */
 @Accessible
 trait PravegaStream {
 
   /**
    * Writes atomicaly events to a stream.
+   * @group Write
    */
   def write[A](streamName: String, settings: WriterSettings[A], a: List[A]): ZIO[Any, Throwable, Unit]
 
@@ -39,6 +47,7 @@ trait PravegaStream {
    *
    * @return
    *   transaction id
+   * @group Write
    */
   def writeUncommited[A](
     streamName: String,
@@ -48,6 +57,7 @@ trait PravegaStream {
 
   /**
    * Sink that writes to a stream.
+   * @group Write
    */
   def sink[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
 
@@ -56,6 +66,7 @@ trait PravegaStream {
    *
    * Transaction is created by the writer, and committed or aborted by the
    * writer regarding of the status of the stream scope.
+   * @group Write
    */
   def sinkAtomic[A](streamName: String, settings: WriterSettings[A]): Sink[Throwable, A, Nothing, Unit]
 
@@ -71,6 +82,7 @@ trait PravegaStream {
    *
    * @return
    *   The transaction id.
+   * @group Write
    */
   def sinkUncommited[A](
     streamName: String,
@@ -84,6 +96,7 @@ trait PravegaStream {
    * The transaction id is provided by the caller.
    *
    * The transaction may be committed by the writer.
+   * @group Write
    */
   def joinTransaction[A](
     streamName: String,
@@ -94,16 +107,19 @@ trait PravegaStream {
 
   /**
    * Creates a ZPipeline that writes to a stream.
+   * @group Write
    */
   def writeFlow[A](streamName: String, settings: WriterSettings[A]): ZPipeline[Any, Throwable, A, A]
 
   /**
    * Stream (source) of elements.
+   * @group Read
    */
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, A]
 
   /**
    * Stream (source) of events of elements.
+   * @group Read
    */
   def eventStream[A](readerGroupName: String, settings: ReaderSettings[A]): Stream[Throwable, EventRead[A]]
 }
@@ -356,11 +372,21 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
  * Pravega Stream API.
  *
  * This API is a wrapper around the Pravega Java API.
+ * @groupname Read Read
+ * @groupdesc Read
+ *   Reading from a stream.
+ * @groupname Write Write
+ * @groupdesc Write
+ *   Writing to a stream.
+ * @groupname ZLayer ZLayer
+ * @groupdesc ZLayer
+ *   ZLayer creation.
  */
 object PravegaStream {
 
   /**
    * Writes atomicaly to a stream. See [[zio.pravega.PravegaStream.write]].
+   * @group Write
    */
   def write[A](streamName: String, settings: WriterSettings[A], a: A*): ZIO[PravegaStream, Throwable, Unit] =
     ZIO.serviceWithZIO[PravegaStream](_.write(streamName, settings, a.toList))
@@ -368,6 +394,7 @@ object PravegaStream {
   /**
    * Open a transaction, and return its UUID. See
    * [[zio.pravega.PravegaStream.writeUncommited]].
+   * @group Write
    */
   def openTransaction[A](streamName: String, settings: WriterSettings[A]): ZIO[PravegaStream, Throwable, UUID] =
     ZIO.serviceWithZIO[PravegaStream](_.writeUncommited(streamName, settings, Nil))
@@ -382,6 +409,7 @@ object PravegaStream {
    *
    * It is the responsibility of the caller to commit the transaction see
    * [[zio.pravega.PravegaStream.writeUncommited]].
+   * @group Write
    */
   def writeUncommited[A](streamName: String, settings: WriterSettings[A], a: A*): ZIO[PravegaStream, Throwable, UUID] =
     ZIO.serviceWithZIO[PravegaStream](_.writeUncommited(streamName, settings, a.toList))
@@ -391,6 +419,7 @@ object PravegaStream {
    *
    * This sink is not transactional, and does not guarantee that the events are
    * written atomically.
+   * @group Write
    */
   def sink[A](streamName: String, settings: WriterSettings[A]): ZSink[PravegaStream, Throwable, A, Nothing, Unit] =
     ZSink.serviceWithSink[PravegaStream](_.sink(streamName, settings))
@@ -400,6 +429,7 @@ object PravegaStream {
    *
    * This sink is transactional, and guarantee that the events are written
    * atomically, when the sink is closed.
+   * @group Write
    */
   def sinkAtomic[A](
     streamName: String,
@@ -415,9 +445,10 @@ object PravegaStream {
    *   - The transaction is aborted by the writer in case of failure.
    *
    * It is the responsibility of the caller to commit the transaction see
-   * [[zio.pravega.PravegaStream.sharedTransactionalSink]].
+   * [[zio.pravega.PravegaStream.joinTransaction]].
+   * @group Write
    */
-  def transactionalSinkUncommited[A](
+  def sinkUncommited[A](
     streamName: String,
     settings: WriterSettings[A]
   ): ZSink[PravegaStream, Throwable, A, Nothing, UUID] =
@@ -431,6 +462,7 @@ object PravegaStream {
    *   - The transaction is aborted by the writer in case of failure.
    *
    * May commit the transaction on closing.
+   * @group Write
    */
   def joinTransaction[A](
     streamName: String,
@@ -442,12 +474,14 @@ object PravegaStream {
 
   /**
    * Stream of elements. See [[zio.pravega.PravegaStream.stream]].
+   * @group Read
    */
   def stream[A](readerGroupName: String, settings: ReaderSettings[A]): ZStream[PravegaStream, Throwable, A] =
     ZStream.serviceWithStream[PravegaStream](_.stream(readerGroupName, settings))
 
   /**
    * Stream of events. See [[zio.pravega.PravegaStream.eventStream]].
+   * @group Read
    */
   def eventStream[A](
     readerGroupName: String,
@@ -457,12 +491,14 @@ object PravegaStream {
 
   /**
    * Creates a ZPipeline that writes to a stream.
+   * @group Write
    */
   def writeFlow[A](streamName: String, settings: WriterSettings[A]): ZPipeline[PravegaStream, Throwable, A, A] =
     ZPipeline.serviceWithPipeline[PravegaStream](_.writeFlow(streamName, settings))
 
   /**
    * Creates a Pravega stream Service from a scope.
+   * @group Read
    */
   private def streamService(scope: String, clientConfig: ClientConfig): ZIO[Scope, Throwable, PravegaStream] = ZIO
     .attemptBlocking(EventStreamClientFactory.withScope(scope, clientConfig))
@@ -473,9 +509,15 @@ object PravegaStream {
    * Creates a Pravega stream Service from a scope.
    *
    * Requires a ClientConfig to be provided in the environment.
+   * @group ZLayer
    */
   def fromScope(scope: String): ZLayer[Scope & ClientConfig, Throwable, PravegaStream] =
     ZLayer.fromZIO(ZIO.serviceWithZIO[ClientConfig](streamService(scope, _)))
+
+  /**
+   * Creates a Pravega stream Service from a scope.
+   * @group ZLayer
+   */
   def fromScope(scope: String, clientConfig: ClientConfig): ZLayer[Scope, Throwable, PravegaStream] = ZLayer(
     streamService(scope, clientConfig)
   )

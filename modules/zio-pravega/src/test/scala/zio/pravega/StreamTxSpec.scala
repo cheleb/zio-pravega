@@ -87,7 +87,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
       ) @@ sequential,
       suite("Distributed tx fail if one of them fails")(
         assertStreamCount("tx-first-fail") { (aStreamName, aGroupName) =>
-          val txSink = PravegaStream.transactionalSinkUncommited(aStreamName, personStreamWriterSettings)
+          val txSink = PravegaStream.sinkUncommited(aStreamName, personStreamWriterSettings)
           for {
 
             _ <- failingTxWritesPersons(txSink, 0, 50, 25)
