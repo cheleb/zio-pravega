@@ -18,15 +18,15 @@ import zio.stream._
 /**
  * Pravega Stream API.
  *
- * This API is a wrapper around the Pravega Java API.
- *
+ * This API is a wrapper around the Pravega Java API. *
  * @groupname Read Read
  * @groupdesc Read
- *   Reading from a stream.
+ *   These methods are used to read from a stream.
  * @groupprio Read 1
  * @groupname Write Write
  * @groupdesc Write
- *   Writing to a stream.
+ *   These methods are used to write to a stream, in atomic (transactional) or
+ *   best effort mode.
  * @groupprio Write 2
  */
 @Accessible
@@ -376,11 +376,12 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
  * This API is a wrapper around the Pravega Java API.
  * @groupname Read Read
  * @groupdesc Read
- *   Reading from a stream.
+ *   These methods are used to read from a stream.
  * @groupprio Read 1
  * @groupname Write Write
  * @groupdesc Write
- *   Writing to a stream.
+ *   These methods are used to write to a stream, in atomic (transactional) or
+ *   best effort mode.
  * @groupprio Write 2
  * @groupname ZLayer ZLayer
  * @groupdesc ZLayer
