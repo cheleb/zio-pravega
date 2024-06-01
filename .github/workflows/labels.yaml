@@ -1,4 +1,4 @@
-name: Labels
+name: Labels code quality checks
 
 on:
   pull_request:
@@ -14,5 +14,5 @@ jobs:
             - name: add label
               uses: actions-ecosystem/action-add-labels@v1
               with:
-                labels: sonar-required
+                labels: needs-code-quality-checks
                 
