@@ -49,10 +49,10 @@ inThisBuild(
         url("https://github.com/cheleb")
       )
     ),
-    semanticdbEnabled          := true,
-    semanticdbVersion          := scalafixSemanticdb.revision, // only required for Scala 2.x
-    scalafixScalaBinaryVersion := "2.13",
-//    scalafixOnCompile          := true,
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
+    //  scalafixScalaBinaryVersion := "3.4",
+    //  scalafixOnCompile          := true,
     ThisBuild / scalafixDependencies +=
       "dev.cheleb" %% "zio-module-pattern" % "0.0.5",
     Compile / wartremoverErrors ++= Warts.allBut(
