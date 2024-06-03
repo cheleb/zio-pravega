@@ -1,0 +1,16 @@
+name: Merge Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, edited, ready_for_review]
+  workflow_call: 
+jobs:
+    merge-guard:
+        runs-on: ubuntu-latest
+        if: ! contains( github.event.pull_request.labels.*.name, 'needs-code-quality-checks')
+        steps:
+          - name: Check labels
+            uses: actions/github-script@v3
+            with:
+             script: |
+                core.info('<3 Code quality checks are passed.'

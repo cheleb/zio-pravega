@@ -1,0 +1,18 @@
+name: Labels code quality checks
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '**/*.scala'
+      - '**/*.sbt'
+      - 'modules/**'
+jobs:
+    label:
+        runs-on: ubuntu-latest
+        steps:
+            - name: add label
+              uses: actions-ecosystem/action-add-labels@v1
+              with:
+                labels: needs-code-quality-checks
+                
