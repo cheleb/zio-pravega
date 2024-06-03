@@ -3,6 +3,9 @@ name: Merge Guard
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled, edited, ready_for_review]
+  workflow_run:
+      workflows: [reports]
+      types: [completed]
 jobs:
     merge-guard:
         runs-on: ubuntu-latest
