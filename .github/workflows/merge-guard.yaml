@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled, edited, ready_for_review]
   workflow_run:
-      workflows: [reports]
+      workflows: [QA Reports]
       types: [completed]
 jobs:
     merge-guard:
