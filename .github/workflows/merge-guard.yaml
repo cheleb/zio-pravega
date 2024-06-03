@@ -1,6 +1,7 @@
 name: Merge Guard
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled, edited, ready_for_review]
   workflow_call: 
