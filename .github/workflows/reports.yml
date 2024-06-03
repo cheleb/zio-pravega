@@ -44,3 +44,7 @@ jobs:
           labels: |
             needs-code-quality-checks
             sonar
+
+  call-workflow-2-in-local-repo:
+         needs: reports
+         uses: ./.github/workflows/merge-guard.yaml
