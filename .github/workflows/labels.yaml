@@ -1,6 +1,7 @@
 name: Labels code quality checks
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [master]
     paths:
@@ -15,4 +16,6 @@ jobs:
               uses: actions-ecosystem/action-add-labels@v1
               with:
                 labels: needs-code-quality-checks
-                
+    call-workflow-2-in-local-repo:
+      needs: label
+      uses: ./.github/workflows/merge-guard.yaml            
