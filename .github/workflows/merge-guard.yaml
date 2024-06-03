@@ -7,10 +7,10 @@ on:
 jobs:
     merge-guard:
         runs-on: ubuntu-latest
-        if: ! contains( github.event.pull_request.labels.*.name, 'needs-code-quality-checks')
+        if: ${{ ! contains( github.event.pull_request.labels.*.name, 'needs-code-quality-checks') }}
         steps:
           - name: Check labels
-            uses: actions/github-script@v3
+            uses: actions/github-script@v7
             with:
              script: |
-                core.info('<3 Code quality checks are passed.'
+                core.info('<3 Code quality checks are passed.')
