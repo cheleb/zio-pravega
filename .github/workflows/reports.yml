@@ -9,7 +9,7 @@ on:
       - 'modules/**'
 jobs:
   reports:
-    if: github.event.pull_request.draft == false
+    if: ! ( startsWith(github.ref, 'renovate/') || github.event.pull_request.draft)
     environment: Codecov
     runs-on: ubuntu-latest   
     steps:
