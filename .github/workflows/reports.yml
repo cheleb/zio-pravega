@@ -2,12 +2,15 @@ name: QA Reports
 
 on:
   pull_request:
-    types: [labeled]
-  workflow_dispatch:
+    types: [ready_for_review]
+    branches: [master]
+    paths:
+      - '**/*.sbt'
+      - 'modules/**'
 jobs:
   reports:
+    if: github.event.pull_request.draft == false
     environment: Codecov
-    if: contains( github.event.label.name, 'sonar')
     runs-on: ubuntu-latest   
     steps:
       # - name: Checkout
@@ -42,6 +45,6 @@ jobs:
           labels: |
             needs-code-quality-checks
             sonar
-  call-merge-guard:
-    needs: reports
-    uses: ./.github/workflows/merge-guard.yaml
+  # call-merge-guard:
+  #   needs: reports
+  #   uses: ./.github/workflows/merge-guard.yaml

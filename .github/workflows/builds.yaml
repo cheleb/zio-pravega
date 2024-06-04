@@ -19,20 +19,8 @@ on:
   workflow_dispatch:
 jobs:
   build:
+    name: build, test, and website
     runs-on: ubuntu-latest   
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up JDK 22
-        uses: actions/setup-java@v4
-        with:
-          java-version: "22"
-          distribution: "zulu"
-          cache: sbt
-      - name: Run tests crosscompile
-        run: sbt ++ test      
-  website-build:
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,5 +32,9 @@ jobs:
           java-version: "22"
           distribution: "zulu"
           cache: sbt
-      - name: Website compile
-        run: sbt website
+      - name: Run tests crosscompile
+        run: | 
+          sbt ++ test      
+          sbt website
+
+          
