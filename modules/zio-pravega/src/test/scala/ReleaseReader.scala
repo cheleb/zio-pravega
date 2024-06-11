@@ -4,6 +4,9 @@ import io.pravega.client.ClientConfig
 
 import zio.pravega.admin.PravegaReaderGroupManager
 
+/**
+ * This program releases all readers in the reader group "a-reader-group".
+ */
 object ReleaseReader extends ZIOAppDefault {
 
   private val clientConfig = ClientConfig.builder().build()

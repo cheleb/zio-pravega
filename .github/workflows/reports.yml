@@ -1,15 +1,18 @@
 name: QA Reports
 
+permissions: 
+  pull-requests: read
+
 on:
   pull_request:
-    types: [ready_for_review]
+    types: [ready_for_review, synchronize]
     branches: [master]
     paths:
       - '**/*.sbt'
       - 'modules/**'
 jobs:
   reports:
-    if: ! ( startsWith(github.ref, 'renovate/') || github.event.pull_request.draft)
+    if: github.ref_name == 'master' || ! ( github.event.sender.login == 'renovate' || github.event.pull_request.draft)
     environment: Codecov
     runs-on: ubuntu-latest   
     steps:
