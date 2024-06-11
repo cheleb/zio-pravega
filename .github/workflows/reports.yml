@@ -11,17 +11,6 @@ on:
       - '**/*.sbt'
       - 'modules/**'
 jobs:
-  echoes:
-    runs-on: ubuntu-latest  
-    steps:
-      - name: echoes debugs
-        uses: actions/script@v4
-        with:
-         script: |
-          core.info("github.ref_name: ${{ github.head_ref }}")
-          core.info( startsWith( ${{ github.head_ref}}, 'renovate/') )
-
-
   reports:
     if: github.ref_name == 'master' || ! ( github.event.sender.login == 'renovate' || github.event.pull_request.draft)
     environment: Codecov
