@@ -5,7 +5,7 @@ permissions:
 
 on:
   pull_request:
-    types: [ready_for_review, converted_to_draft]
+    types: [ready_for_review, synchronize]
     branches: [master]
     paths:
       - '**/*.sbt'
