@@ -1,15 +1,14 @@
 package zio.pravega.admin
 
 import io.pravega.client.admin.ReaderGroupManager
-import zio.ZLayer
+
 import io.pravega.client.stream.Stream
 import io.pravega.client.ClientConfig
 import scala.jdk.CollectionConverters._
 
-import zio._
+import zio.*
 
 import io.pravega.client.stream.ReaderGroupConfig
-
 import io.pravega.client.stream.ReaderGroup
 
 /**
