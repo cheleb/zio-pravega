@@ -4,7 +4,7 @@ val scala33   = "3.5.0-RC2"
 val mainScala = scala33
 val allScala  = Seq(scala33, scala213)
 
-val zioVersion     = "2.1.2"
+val zioVersion     = "2.1.5"
 val pravegaVersion = "0.13.0"
 
 def scalacOptionsFor(scalaVersion: String): Seq[String] =
@@ -104,7 +104,7 @@ lazy val pravega =
         "dev.zio"                          %% "zio-test"                 % zioVersion                              % Test,
         "dev.zio"                          %% "zio-test-sbt"             % zioVersion                              % Test,
         "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.3.0"                                 % Test,
-        "org.scalatest"                    %% "scalatest"                % "3.2.18"                                % Test,
+        "org.scalatest"                    %% "scalatest"                % "3.2.19"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
         "org.testcontainers"                % "testcontainers"           % "1.19.8"                                % Test,
         "org.scala-lang.modules"           %% "scala-collection-compat"  % "2.12.0",
