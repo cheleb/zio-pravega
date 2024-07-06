@@ -53,7 +53,7 @@ inThisBuild(
     semanticdbVersion := scalafixSemanticdb.revision, // only required for Scala 2.x
     //  scalafixScalaBinaryVersion := "3.4",
     //  scalafixOnCompile          := true,
-    ThisBuild / scalafixDependencies +=
+    scalafixDependencies +=
       "dev.cheleb" %% "zio-module-pattern" % "0.0.5",
     Compile / wartremoverErrors ++= Warts.allBut(
       Wart.Any,
@@ -61,7 +61,9 @@ inThisBuild(
       Wart.DefaultArguments,
       Wart.ImplicitParameter,
       Wart.Overloading
-    )
+    ),
+    develocityConfiguration :=
+      DevelocityConfiguration(buildScan = BuildScan(publishing = Publishing.onlyIf(_ => true)))
   )
 )
 
