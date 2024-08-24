@@ -4,7 +4,7 @@ val scala33   = "3.4.2"
 val mainScala = scala33
 val allScala  = Seq(scala33, scala213)
 
-val zioVersion     = "2.1.7"
+val zioVersion     = "2.1.8"
 val pravegaVersion = "0.13.0"
 
 def scalacOptionsFor(scalaVersion: String): Seq[String] =
