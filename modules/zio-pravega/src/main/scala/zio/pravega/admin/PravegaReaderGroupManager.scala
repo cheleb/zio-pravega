@@ -1,7 +1,6 @@
 package zio.pravega.admin
 
 import io.pravega.client.admin.ReaderGroupManager
-
 import io.pravega.client.stream.Stream
 import io.pravega.client.ClientConfig
 import scala.jdk.CollectionConverters._
