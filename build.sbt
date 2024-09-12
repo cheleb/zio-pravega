@@ -67,7 +67,6 @@ inThisBuild(
 
 lazy val root = project
   .in(file("."))
-  .disablePlugins(PlantUMLPlugin)
   .aggregate(pravega)
   .settings(
     publish / skip := true
@@ -77,7 +76,6 @@ lazy val pravega =
   project
     .in(file("modules/zio-pravega"))
     .enablePlugins(BuildInfoPlugin)
-    .disablePlugins(PlantUMLPlugin)
     .settings(
       name              := "zio-pravega",
       scalafmtOnCompile := true,
