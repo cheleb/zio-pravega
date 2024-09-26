@@ -33,7 +33,7 @@ jobs:
       run: sbt ++ test
   publish:
     if: github.event.base_ref=='refs/heads/master' && github.event_name != 'pull_request'  # check the branch, if it's not master, skip the job.
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     needs: [build]
     steps:
