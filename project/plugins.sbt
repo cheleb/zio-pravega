@@ -14,5 +14,5 @@ addSbtPlugin("org.wartremover"                 % "sbt-wartremover"  % "3.2.1")
 addSbtPlugin("com.github.sbt"                  % "sbt-unidoc"       % "0.5.0")
 addSbtPlugin("com.github.sbt"                  % "sbt-ghpages"      % "0.8.0")
 addSbtPlugin("com.github.sbt"                  % "sbt-site-paradox" % "1.7.0")
-addSbtPlugin("com.github.sbt"                  % "sbt-git"          % "2.0.1")
+addSbtPlugin("com.github.sbt"                  % "sbt-git"          % "2.1.0")
 libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin"   % "0.11.17"
