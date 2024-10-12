@@ -48,6 +48,8 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
           cache: sbt
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
       - run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
@@ -71,6 +73,8 @@ jobs:
           java-version: '22'
           distribution: 'zulu'
           cache: sbt
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@v2
       - run: sbt website

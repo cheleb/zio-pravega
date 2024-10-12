@@ -32,6 +32,8 @@ jobs:
           java-version: "22"
           distribution: "zulu"
           cache: sbt
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1
       - name: Run tests crosscompile
         run:  sbt ++ test      
       - name: Build website

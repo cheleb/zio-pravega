@@ -26,6 +26,8 @@ jobs:
           java-version: "22"
           distribution: "zulu"
           cache: sbt
+      - name: Install sbt
+        uses: sbt/setup-sbt@v1    
       - name: Run coverage test
       # Scala 3 is not fully supported for coverage yet
         run: sbt "++ 2.13; coverage; test; coverageReport; coverageAggregate"
