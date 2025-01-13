@@ -95,22 +95,73 @@ object PravegaReaderGroupManager {
       .withFinalizerAuto
       .map(rgm => PravegaReaderGroupManagerLive(scope, rgm))
   )
+
+  /**
+   * Create a reader group with the given name and stream names.
+   *
+   * Note: This method is idempotent assuming called with the same name and
+   * config, but it will fail if the reader group already exists and the config
+   * is different.
+   *
+   * This method may block.
+   *
+   * @param readerGroupName
+   * @param streamNames
+   * @return
+   */
   def createReaderGroup[A](
     readerGroupName: String,
     streamNames: String*
   ): ZIO[PravegaReaderGroupManager, Throwable, Boolean] = ZIO.serviceWithZIO[PravegaReaderGroupManager](
     _.createReaderGroup(readerGroupName, ReaderGroupConfig.builder(), streamNames*)
   )
-  def readerOffline(groupName: String): RIO[PravegaReaderGroupManager, Int] =
-    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.readerOffline(groupName))
+
+  /**
+   * Create a reader group with the given name and stream names.
+   *
+   * Note: This method is idempotent assuming called with the same name and
+   * config, but it will fail if the reader group already exists and the config
+   * is different.
+   *
+   * This method may block.
+   *
+   * @param readerGroupName
+   * @param builder
+   *   A ReaderGroupConfigBuilder to configure the reader group
+   * @param streamNames
+   * @return
+   */
   def createReaderGroup(
     readerGroupName: String,
     builder: ReaderGroupConfig.ReaderGroupConfigBuilder,
     streamNames: String*
   ): RIO[PravegaReaderGroupManager, Boolean] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.createReaderGroup(readerGroupName, builder, streamNames*))
+
+  /**
+   * Open a reader group with the given name.
+   */
   def openReaderGroup(readerGroupName: String): RIO[PravegaReaderGroupManager & Scope, ReaderGroup] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.openReaderGroup(readerGroupName))
+
+  /**
+   * Drop a reader group with the given name.
+   */
   def dropReaderGroup(scope: String, readerGroupName: String): RIO[PravegaReaderGroupManager, Boolean] =
     ZIO.serviceWithZIO[PravegaReaderGroupManager](_.dropReaderGroup(scope, readerGroupName))
+
+  /**
+   * Remove a reader group with the given name.
+   *
+   * If some reason a Reader exited without releasing resource, calling this
+   * method can help.
+   *
+   * This method may block.
+   *
+   * @param groupName
+   * @return
+   */
+  def readerOffline(groupName: String): RIO[PravegaReaderGroupManager, Int] =
+    ZIO.serviceWithZIO[PravegaReaderGroupManager](_.readerOffline(groupName))
+
 }
