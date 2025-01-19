@@ -2,7 +2,7 @@
 
 addSbtPlugin("dev.cheleb"                      % "sbt-plantuml"     % "0.1.1")
 addSbtPlugin("com.dwijnand"                    % "sbt-dynver"       % "4.1.1")
-addSbtPlugin("org.scalameta"                   % "sbt-scalafmt"     % "2.5.3")
+addSbtPlugin("org.scalameta"                   % "sbt-scalafmt"     % "2.5.4")
 addSbtPlugin("ch.epfl.scala"                   % "sbt-scalafix"     % "0.14.0")
 addSbtPlugin("com.eed3si9n"                    % "sbt-buildinfo"    % "0.13.1")
 addSbtPlugin("com.github.sbt"                  % "sbt-ci-release"   % "1.8.0")
