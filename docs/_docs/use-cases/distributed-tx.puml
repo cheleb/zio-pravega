@@ -1,16 +1,35 @@
 @startuml "distributed-tx"
+
+autonumber
+
+skinparam sequence{
+  ParticipantBorderColor DarkBlue
+  QueueBorderColor DarkBlue
+}
+
+
 skinparam sequenceMessageAlign center
 
+participant "RestAPI" as Rest
+
+box "Shop" #LightBlue
 participant "Service A" as A
-queue "Queue A" as QueueA
-participant "Service B" as B
-queue "Queue B" as QueueB
-participant "Service C" as C
-queue "Queue C" as QueueC
+queue "Shop Queue" as QueueA
+end box
+Box "Stock" #LightYellow
+participant "Stock Service" as B
+queue "Stock Queue" as QueueB
+end box
+Box "Payment" #PaleGoldenRod
+participant "Payment Service" as C
+queue "Payment Queue" as QueueC
+end box
 queue "Event Store" as EventStore
 
 Entity "Aggregate" as Aggregate
 
+
+Rest -> A : command
 activate A #BBBBBB
 A -> EventStore  : Open Tx
 activate EventStore
