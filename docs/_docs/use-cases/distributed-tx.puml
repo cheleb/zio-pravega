@@ -13,16 +13,16 @@ skinparam sequenceMessageAlign center
 participant "RestAPI" as Rest
 
 box "Shop" #LightBlue
-participant "Service A" as A
-queue "Shop Queue" as QueueA
+participant "Service" as A
+queue "Queue" as QueueA
 end box
 Box "Stock" #LightYellow
-participant "Stock Service" as B
-queue "Stock Queue" as QueueB
+participant "Service" as B
+queue "Queue" as QueueB
 end box
 Box "Payment" #PaleGoldenRod
-participant "Payment Service" as C
-queue "Payment Queue" as QueueC
+participant "Service" as C
+queue "Queue" as QueueC
 end box
 queue "Event Store" as EventStore
 
