@@ -14,48 +14,49 @@ participant "RestAPI" as Rest
 
 box "Shop" #LightBlue
 participant "Service" as A
-queue "Queue" as QueueA
+queue "Stream" as QueueA
 end box
 Box "Stock" #LightYellow
 participant "Service" as B
-queue "Queue" as QueueB
+queue "Stream" as QueueB
 end box
 Box "Payment" #PaleGoldenRod
 participant "Service" as C
-queue "Queue" as QueueC
+queue "Stream" as QueueC
 end box
 queue "Event Store" as EventStore
 
 Entity "Aggregate" as Aggregate
 
 
-Rest -> A : command
+Rest -> QueueA : BookRequest
+QueueA -> A
 activate A #BBBBBB
 A -> EventStore  : Open Tx
 activate EventStore
-A -[#0000FF]-> EventStore  : Write Events
+A -[#0000FF]-> EventStore  : BookCommand(id, isbn, quantity)
 activate EventStore #0000FF
 deactivate EventStore
-A -> QueueB  : command(txUUID)
+A -> QueueB  : StockRequest(tx, id, isbn, quantity)
 deactivate A
 
-B <- QueueB  : trigger
+B <- QueueB
 activate B #BBBBBB
-B -[#0000FF]-> EventStore : Write Events
+B -[#0000FF]-> EventStore : BookStockReservation(tx, id, isbn, quantity)
 activate EventStore #0000FF
 deactivate EventStore
 
-B -> QueueC  : command(txUUID)
+B -> QueueC  : PaymentRequest(tx, id, amount)
 deactivate B
-C <- QueueC  : trigger
+C <- QueueC
 activate C #BBBBBB
-C -[#0000FF]-> EventStore : Write Events
+C -[#0000FF]-> EventStore : PaymentConfirmation(tx, id, amount)
 
 activate EventStore #0000FF
 deactivate EventStore
-C -> QueueA  : command(txUUID)
+C -> QueueA  : PaymentConfirm(txUUID)
 deactivate C
-A <- QueueA  : trigger
+A <- QueueA
 activate A #BBBBBB
 A -> EventStore : Commit Tx
 
