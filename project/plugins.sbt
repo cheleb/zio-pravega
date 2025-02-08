@@ -1,6 +1,6 @@
 // scalafmt: { maxColumn = 120, style = defaultWithAlign }
 
-addSbtPlugin("dev.cheleb"                      % "sbt-plantuml"     % "0.1.1")
+addSbtPlugin("dev.cheleb"                      % "sbt-plantuml"     % "0.1.2")
 addSbtPlugin("com.dwijnand"                    % "sbt-dynver"       % "4.1.1")
 addSbtPlugin("org.scalameta"                   % "sbt-scalafmt"     % "2.5.4")
 addSbtPlugin("ch.epfl.scala"                   % "sbt-scalafix"     % "0.14.0")
