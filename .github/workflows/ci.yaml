@@ -35,7 +35,7 @@ jobs:
       - name: Install sbt
         uses: sbt/setup-sbt@v1
       - name: Run tests crosscompile
-        run:  sbt + test      
+        run:  sbt + pravega/test      
       - name: Build website
         run:  sbt website
 
