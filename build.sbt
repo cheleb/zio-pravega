@@ -1,6 +1,6 @@
 name := "ZIO Pravega"
-val scala213  = "2.13.15"
-val scala33   = "3.5.2"
+val scala213  = "2.13.16"
+val scala33   = "3.6.3"
 val mainScala = scala33
 val allScala  = Seq(scala33, scala213)
 
