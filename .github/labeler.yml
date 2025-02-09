@@ -13,3 +13,7 @@ build:
     - any-glob-to-any-file:
       - build.sbt
       - project/**
+ci:
+  - changed-files:
+    - any-glob-to-any-file:
+      - .github/**
