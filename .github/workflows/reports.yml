@@ -36,9 +36,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
-      - name: Fix paths for SonarCloud
-        run: |
-            sed -i -e s,`pwd`,/github/workspace,g target/scala-2.13/scoverage-report/scoverage.xml
       - name: SonarCloud scan 
         uses: sonarsource/sonarcloud-github-action@master
         env:
