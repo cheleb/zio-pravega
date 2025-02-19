@@ -104,7 +104,7 @@ lazy val pravega =
         "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.4.0"                                 % Test,
         "org.scalatest"                    %% "scalatest"                % "3.2.19"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
-        "org.testcontainers"                % "testcontainers"           % "1.20.4"                                % Test,
+        "org.testcontainers"                % "testcontainers"           % "1.20.5"                                % Test,
         "org.scala-lang.modules"           %% "scala-collection-compat"  % "2.13.0",
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub"            % "0.6.13"                                % Test,
