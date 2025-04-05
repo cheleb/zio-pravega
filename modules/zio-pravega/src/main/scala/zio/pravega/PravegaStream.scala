@@ -211,6 +211,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         writer <- createEventWriter(streamName, settings); eventWriter = EventWriter.writeEventTask(writer, settings)
       ) yield ZPipeline.tap(eventWriter)
     }
+
     /**
      * Creates a Pravega TransactionalEventStreamWriter.
      *
