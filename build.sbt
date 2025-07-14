@@ -106,7 +106,7 @@ lazy val pravega =
         "dev.zio"                          %% "zio-streams"              % zioVersion,
         "dev.zio"                          %% "zio-test"                 % zioVersion                              % Test,
         "dev.zio"                          %% "zio-test-sbt"             % zioVersion                              % Test,
-        "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.5.0"                                 % Test,
+        "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.5.1"                                 % Test,
         "org.scalatest"                    %% "scalatest"                % "3.2.19"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
         "org.testcontainers"                % "testcontainers"           % "1.21.3"                                % Test,
