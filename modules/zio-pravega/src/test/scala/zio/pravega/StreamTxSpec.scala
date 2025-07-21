@@ -26,7 +26,7 @@ object StreamTxSpec extends SharedPravegaContainerSpec("streaming-tx") {
           _    <- writesPersons(sink(aStreamName, true)).fork
           fib1 <- readPersons(aGroupName, 50).fork
           fib2 <- source(aGroupName).take(50).runCount.fork
-          _ <-
+          _    <-
             (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> personsStream(50, 100).run(
               sinkTx(aStreamName, true)
             )).fork

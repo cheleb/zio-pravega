@@ -185,7 +185,7 @@ final private case class PravegaStreamManagerLive(streamManager: StreamManager) 
    * Returns true if the stream was created, false if it already exists.
    */
   def createStream(scope: String, streamName: String, config: StreamConfiguration): Task[Boolean] = for (
-    exists <- ZIO.attemptBlocking(streamManager.checkStreamExists(scope, streamName));
+    exists  <- ZIO.attemptBlocking(streamManager.checkStreamExists(scope, streamName));
     created <- exists match {
                  case true =>
                    ZIO.succeed(false)

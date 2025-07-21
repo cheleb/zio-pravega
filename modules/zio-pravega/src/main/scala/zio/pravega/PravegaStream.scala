@@ -164,7 +164,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
 
   def write[A](streamName: String, settings: WriterSettings[A], as: List[A]): ZIO[Any, Throwable, Unit] =
     as match {
-      case Nil => ZIO.unit
+      case Nil      => ZIO.unit
       case a :: Nil =>
         ZStream(a)
           .run(sink(streamName, settings))
@@ -311,7 +311,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
       writer <- createTxEventWriter(streamName, settings)
 
       txIO = ZIO.attemptBlocking(writer.getTxn(txUUID))
-      tx <- if (commitOnClose)
+      tx  <- if (commitOnClose)
               txIO.withFinalizerExit {
                 case (tx, Failure(e)) =>
                   ZIO.logCause(e) *> ZIO.attemptBlocking(tx.abort()).orDie

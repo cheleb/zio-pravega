@@ -26,11 +26,11 @@ object SegmentListernerSpec extends SharedPravegaContainerSpec("segment-listener
 
       _ <- PravegaReaderGroupManager.createReaderGroup("g1", "s1")
 
-      group <- PravegaReaderGroupManager.openReaderGroup("g1")
+      group    <- PravegaReaderGroupManager.openReaderGroup("g1")
       executor <-
         ZIO.succeed(Executors.newScheduledThreadPool(1)).withFinalizer(e => ZIO.attemptBlocking(e.shutdown()).ignore)
       not = group.getSegmentNotifier(executor)
-      _ <- ZIO.attemptBlocking {
+      _  <- ZIO.attemptBlocking {
              not.registerListener(new Listener[SegmentNotification] {
                def onNotification(
                  segmentNotification: io.pravega.client.stream.notifications.SegmentNotification

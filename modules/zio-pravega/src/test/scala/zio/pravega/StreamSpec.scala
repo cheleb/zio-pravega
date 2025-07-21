@@ -39,7 +39,7 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
           _    <- personsStream(0, 50).run(sink1).fork
           fib1 <- stream1.take(75).runCount.fork
           fib2 <- stream2.take(75 + writtenPersons.size).runCount.fork
-          _ <-
+          _    <-
             (ZIO.sleep(2000.millis) *> ZIO.logDebug("(( Re-start producing ))") *> personsStream(50, 100).run(
               sink2
             )).fork
@@ -55,7 +55,7 @@ object StreamSpec extends SharedPravegaContainerSpec("streaming-timeout") {
         for {
           readerGroup <- PravegaReaderGroupManager.openReaderGroup("g1")
           streamCuts   = readerGroup.getStreamCuts()
-          _ <- ZIO.foreach(streamCuts.asScala.toList) { case (stream, streamCut) =>
+          _           <- ZIO.foreach(streamCuts.asScala.toList) { case (stream, streamCut) =>
                  ZIO.logDebug(s"Stream: ${stream.getStreamName}, StreamCut: $streamCut") *>
                    PravegaStreamManager.truncateStream(aScope, stream.getStreamName(), streamCut)
                }

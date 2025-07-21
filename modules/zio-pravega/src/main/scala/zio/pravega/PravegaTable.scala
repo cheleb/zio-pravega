@@ -195,7 +195,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
   ): IO[Option[Throwable], Chunk[TableEntry[V]]] =
     ZIO.fromCompletableFuture(it.getNext()).asSomeError.flatMap {
       case null => ZIO.fail(None)
-      case el =>
+      case el   =>
         val res = el.getItems().asScala.map { tableEntry =>
           TableEntry(
             tableEntry.getKey(),
@@ -216,7 +216,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
     settings: TableReaderSettings[K, V]
   ): ZStream[Any, Throwable, TableEntry[V]] = ZStream.unwrapScoped(
     for {
-      table <- openTable(tableName, settings)
+      table    <- openTable(tableName, settings)
       executor <-
         ZIO.succeed(Executors.newSingleThreadExecutor()).withFinalizer(e => ZIO.attemptBlocking(e.shutdown()).ignore)
       it          = iterator(table.table, settings.maxEntriesAtOnce).asSequential(executor)
@@ -250,7 +250,7 @@ private final case class PravegaTableLive(keyValueTableFactory: KeyValueTableFac
   ): K => Task[Option[TableEntry[V]]] =
     (k: K) =>
       ZIO.fromCompletableFuture(table.get(settings.tableKey(k))).map {
-        case null => None
+        case null       => None
         case tableEntry =>
           Some(
             TableEntry(
