@@ -102,7 +102,7 @@ lazy val pravega =
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
 //      resolvers += "Pravega RC" at "https://oss.sonatype.org/content/repositories/iopravega-1206",
       libraryDependencies ++= Seq(
-        "com.typesafe"                      % "config"                   % "1.4.4",
+        "com.typesafe"                      % "config"                   % "1.4.5",
         "dev.zio"                          %% "zio-streams"              % zioVersion,
         "dev.zio"                          %% "zio-test"                 % zioVersion                              % Test,
         "dev.zio"                          %% "zio-test-sbt"             % zioVersion                              % Test,
