@@ -110,7 +110,7 @@ lazy val pravega =
         "org.scalatest"                    %% "scalatest"                % "3.2.19"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
         "org.testcontainers"                % "testcontainers"           % "1.21.3"                                % Test,
-        "org.scala-lang.modules"           %% "scala-collection-compat"  % "2.13.0",
+        "org.scala-lang.modules"           %% "scala-collection-compat"  % "2.14.0",
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub"            % "0.6.13"                                % Test,
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % "protobuf"
