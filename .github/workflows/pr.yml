@@ -41,3 +41,5 @@ jobs:
     steps:
       - name: Build Website
         uses: WorldOfScala/actions/website@master
+        with:
+          publish: true
