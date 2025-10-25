@@ -38,10 +38,14 @@ jobs:
 
   website:
     name: Build Website
+    permissions:
+      pages: write
+      id-token: write
     needs: compile
     uses: WorldOfScala/actions/.github/workflows/website.yml@master
     with:
       publish: true
+
     
     # runs-on: ubuntu-latest
     # steps:
