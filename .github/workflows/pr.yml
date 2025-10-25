@@ -1,0 +1,64 @@
+name: PR Workflow
+
+permissions:
+  pull-requests: write
+  contents: read
+  pages: write
+  id-token: write
+
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, opened, synchronize, reopened, ready_for_review, converted_to_draft]
+
+
+jobs:
+  
+  compile:
+    strategy:
+      matrix:
+        scala-version: [2.13, 3.3]
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compile Code
+        uses: WorldOfScala/actions/compile@master
+        with:
+          scala-version: ${{ matrix.scala-version }}
+          java-version: '23'
+
+  test:
+    strategy:
+      matrix:
+        scala-version: [2.13, 3.3]
+    
+    name: Run Tests
+    environment: Codecov
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Tests / draft PR
+        if: github.event.pull_request.draft || github.event.sender.login == 'renovate'
+        uses: WorldOfScala/actions/test@master
+      - name: Run Tests / ready PR
+        if: github.event.pull_request.draft == false && github.event.sender.login != 'renovate' && matrix.scala-version != '3'
+        uses: WorldOfScala/actions/test/coverage@master
+        with:
+          java-version: '23'
+          scala-version: ${{ matrix.scala-version }} # Scala 3 coverage not completely supported yet
+          github-token: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+#          fail_ci_if_error: true
+
+  website:
+    name: Build Website
+
+    runs-on: ubuntu-latest
+    needs: compile
+    steps:
+      - name: Build Website
+        uses: WorldOfScala/actions/website/@master
+        with:
+          java-version: '23'
+
