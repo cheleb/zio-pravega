@@ -11,16 +11,27 @@ on:
   pull_request:
     types: [labeled, unlabeled, opened, synchronize, reopened, ready_for_review, converted_to_draft]
 
+
 jobs:
+  
   compile:
+    strategy:
+      matrix:
+        scala-version: [2.13, 3.3]
+
     runs-on: ubuntu-latest
     steps:
       - name: Compile Code
         uses: WorldOfScala/actions/compile@master
         with:
+          scala-version: ${{ matrix.scala-version }}
           java-version: '23'
 
   test:
+    strategy:
+      matrix:
+        scala-version: [2.13, 3.3]
+    
     name: Run Tests
     environment: Codecov
     needs: compile
@@ -30,11 +41,11 @@ jobs:
         if: github.event.pull_request.draft || github.event.sender.login == 'renovate'
         uses: WorldOfScala/actions/test@master
       - name: Run Tests / ready PR
-        if: github.event.pull_request.draft == false && github.event.sender.login != 'renovate'
+        if: github.event.pull_request.draft == false && github.event.sender.login != 'renovate' && matrix.scala-version != '3'
         uses: WorldOfScala/actions/test/coverage@master
         with:
           java-version: '23'
-          scala-version: 2.13 # Scala 3 coverage not completely supported yet
+          scala-version: ${{ matrix.scala-version }} # Scala 3 coverage not completely supported yet
           github-token: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
