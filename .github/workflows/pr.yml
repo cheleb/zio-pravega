@@ -17,8 +17,9 @@ jobs:
     steps:
       - name: Compile Code
         uses: WorldOfScala/actions/compile@master
+        with:
+          java-version: '23'
 
- 
   test:
     name: Run Tests
     environment: Codecov
@@ -40,9 +41,7 @@ jobs:
 
   website:
     name: Build Website
-    # environment: 
-    #   name: github-pages
-     # url: ${{ steps.deployment.outputs.page_url }}
+
     runs-on: ubuntu-latest
     needs: compile
     steps:
