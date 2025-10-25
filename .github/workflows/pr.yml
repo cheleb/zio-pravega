@@ -28,6 +28,7 @@ jobs:
         if: github.event.pull_request.draft == false && github.event.sender.login != 'renovate'
         uses: WorldOfScala/actions/test/coverage@master
         with:
+          scala-version: 2.13 # Scala 3 coverage not completely supported yet
           github-token: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
