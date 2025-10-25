@@ -46,6 +46,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: compile
     steps:
-      - name: Build and Publish Website
+      - name: Build Website
         uses: WorldOfScala/actions/website/@master
 
