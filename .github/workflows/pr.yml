@@ -39,6 +39,7 @@ jobs:
   website:
     name: Build Website
     permissions:
+      contents: read
       pages: write
       id-token: write
     needs: compile
