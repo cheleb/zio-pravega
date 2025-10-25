@@ -33,3 +33,11 @@ jobs:
           sonar-token: ${{ secrets.SONAR_TOKEN }}
           codecov-token: ${{ secrets.CODECOV_TOKEN }}
 #          fail_ci_if_error: true
+
+  website:
+    name: Build Website
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Website
+        uses: WorldOfScala/actions/website@master
