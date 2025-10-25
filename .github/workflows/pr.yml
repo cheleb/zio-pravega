@@ -40,10 +40,10 @@ jobs:
     name: Build Website
     needs: compile
     uses: WorldOfScala/actions/.github/workflows/website.yml@master
+    with:
+      publish: true
     
     # runs-on: ubuntu-latest
     # steps:
     #   - name: Build Website
     #     uses: WorldOfScala/actions/website@master
-    #     with:
-    #       publish: true
