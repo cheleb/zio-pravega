@@ -47,5 +47,5 @@ jobs:
     needs: compile
     steps:
       - name: Build and Publish Website
-        uses: WorldOfScala/actions/website/publish@master
+        uses: WorldOfScala/actions/website/@master
 
