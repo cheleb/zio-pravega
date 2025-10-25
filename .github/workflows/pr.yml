@@ -1,0 +1,34 @@
+name: PR Workflow
+
+permissions:
+  pull-requests: write
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  workflow_dispatch:
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compile Code
+        uses: WorldOfScala/actions/compile@master
+
+ 
+  test:
+    name: Run Tests
+    environment: Codecov
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Tests / draft PR
+        if: github.event.pull_request.draft || github.event.sender.login == 'renovate'
+        uses: WorldOfScala/actions/test@master
+      - name: Run Tests / ready PR
+        if: github.event.pull_request.draft == false && github.event.sender.login != 'renovate'
+        uses: WorldOfScala/actions/test/coverage@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          sonar-token: ${{ secrets.SONAR_TOKEN }}
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
+#          fail_ci_if_error: true
