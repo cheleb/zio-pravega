@@ -9,7 +9,6 @@ import zio.pravega.test.PravegaContainer
 import zio._
 import io.pravega.client.stream.StreamConfiguration
 import io.pravega.client.stream.ScalingPolicy
-import zio.test.Spec
 
 import model.Person
 
