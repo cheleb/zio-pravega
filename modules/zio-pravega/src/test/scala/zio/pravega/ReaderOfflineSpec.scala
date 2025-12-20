@@ -3,7 +3,6 @@ package zio.pravega
 import zio._
 import zio.test._
 import zio.test.Assertion._
-import zio.test.TestEnvironment
 import io.pravega.client.EventStreamClientFactory
 import java.util.UUID
 import io.pravega.client.stream.impl.UTF8StringSerializer
