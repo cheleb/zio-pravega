@@ -12,6 +12,6 @@ addSbtPlugin("com.thesamet"                    % "sbt-protoc"       % "1.0.8")
 addSbtPlugin("dev.cheleb"                      % "sbt-plantuml"     % "0.2.0")
 addSbtPlugin("org.scalameta"                   % "sbt-scalafmt"     % "2.5.6")
 addSbtPlugin("org.scoverage"                   % "sbt-scoverage"    % "2.4.3")
-addSbtPlugin("org.scalameta"                   % "sbt-mdoc"         % "2.8.1")
+addSbtPlugin("org.scalameta"                   % "sbt-mdoc"         % "2.8.2")
 addSbtPlugin("org.wartremover"                 % "sbt-wartremover"  % "3.5.0")
 libraryDependencies += "com.thesamet.scalapb" %% "compilerplugin"   % "0.11.20"
