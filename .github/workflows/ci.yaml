@@ -6,16 +6,8 @@ on:
       - "v*"
     branches:
       - "master"
-    paths-ignore:
-      - "docs/**"
-      - "website/**"
-      - ".github/**"
   pull_request:
     branches: [master]
-    paths-ignore:
-      - "docs/**"
-      - "website/**"
-      - ".github/**"     
   workflow_dispatch:
 jobs:
   build:
