@@ -137,8 +137,8 @@ abstract class SharedPravegaContainerSpec(val aScope: String) extends ZIOSpec[Pr
     test(aStreamName.capitalize.replaceAll("-", " ")) {
       val aGroupName = s"$aStreamName-group"
       for {
-        stream <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
-        _      <- createGroup(aGroupName, aStreamName)
+        _ <- PravegaStreamManager.createStream(aScope, aStreamName, staticStreamConfig(1))
+        _ <- createGroup(aGroupName, aStreamName)
 
         count <- zioA(aStreamName, aGroupName)
 

@@ -1,8 +1,8 @@
 name := "ZIO Pravega"
-val scala213  = "2.13.16"
+
 val scala33   = "3.7.4"
 val mainScala = scala33
-val allScala  = Seq(scala33, scala213)
+val allScala  = Seq(scala33)
 
 val zioVersion     = "2.1.24"
 val pravegaVersion = "0.13.0"
@@ -25,7 +25,10 @@ inThisBuild(
     crossScalaVersions := allScala,
     scalacOptions ++= Seq(
 //      "-deprecation",
-      "-Xfatal-warnings"
+      "-Xfatal-warnings",
+      "-rewrite",
+      "-source",
+      "3.7-migration"
     ),
     Test / parallelExecution := false,
     Test / fork              := true,
