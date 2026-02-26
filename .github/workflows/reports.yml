@@ -1,7 +1,5 @@
 name: QA Reports
 
-permissions: 
-  pull-requests: read
 
 on:
   pull_request:
@@ -12,6 +10,9 @@ on:
       - 'modules/**'
 jobs:
   reports:
+    permissions: 
+      pull-requests: read
+
     if: github.ref_name == 'master' || ! ( github.event.sender.login == 'renovate' || github.event.pull_request.draft)
     environment: Codecov
     runs-on: ubuntu-latest   
