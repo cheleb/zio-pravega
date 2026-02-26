@@ -1,7 +1,5 @@
 name: QA Reports
 
-permissions: 
-  pull-requests: read
 
 on:
   pull_request:
@@ -12,6 +10,9 @@ on:
       - 'modules/**'
 jobs:
   reports:
+    permissions: 
+      pull-requests: read
+
     if: github.ref_name == 'master' || ! ( github.event.sender.login == 'renovate' || github.event.pull_request.draft)
     environment: Codecov
     runs-on: ubuntu-latest   
@@ -27,17 +28,17 @@ jobs:
           distribution: "zulu"
           cache: sbt
       - name: Install sbt
-        uses: sbt/setup-sbt@v1    
+        uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb
       - name: Run coverage test
       # Scala 3 is not fully supported for coverage yet
-        run: sbt "++ 2.13; coverage; test; coverageReport; coverageAggregate"
+        run: sbt "++ 3; coverage; test; coverageReport; coverageAggregate"
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v5"
+        uses: "codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de"
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
       - name: SonarCloud scan 
-        uses: sonarsource/sonarqube-scan-action@master
+        uses: sonarsource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

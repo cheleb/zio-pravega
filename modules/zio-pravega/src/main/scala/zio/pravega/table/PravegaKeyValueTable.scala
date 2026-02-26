@@ -49,8 +49,8 @@ final case class PravegaKeyValueTable[K, V](val table: KeyValueTable, settings: 
   def overrideTask(k: K, v: V): Task[UpdateAndNewValue[V]] = ZIO
     .fromCompletableFuture(table.get(tableKey(k)))
     .map {
-      case null     => insert(k, v)
-      case previous => put(k, v)
+      case null => insert(k, v)
+      case _    => put(k, v)
     }
 
   /**

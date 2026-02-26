@@ -290,7 +290,7 @@ private class PravegaStreamImpl(eventStreamClientFactory: EventStreamClientFacto
         tx            <- beginScopedUnclosingTransaction(writer)
         txUUID         = tx.getTxnId
         writeEventTask = EventWriter.writeEventTask(tx, settings)
-      } yield ZSink.foldLeftZIO(txUUID)((tx, e) => writeEventTask(e) *> ZIO.succeed(txUUID))
+      } yield ZSink.foldLeftZIO(txUUID)((_, e) => writeEventTask(e) *> ZIO.succeed(txUUID))
     )
 
   /**

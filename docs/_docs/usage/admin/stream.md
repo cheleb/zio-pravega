@@ -5,7 +5,6 @@ import io.pravega.client.ClientConfig
 import io.pravega.client.stream.ScalingPolicy
 import io.pravega.client.stream.StreamConfiguration
 import zio.*
-import zio.pravega.*
 import zio.pravega.admin.*
 import scala.jdk.CollectionConverters.*
 
@@ -15,9 +14,9 @@ Central Pravega abstraction, [Stream](https://cncf.pravega.io/docs/nightly/prave
 
 In the example below we will create a "sales" scope and a stream "events" in this scope.
 
-## Create a stream.
+## Create a stream
 
-Streams are created in a scope, and must be explicitly created. 
+Streams are created in a scope, and must be explicitly created.
 
 ```scala mdoc:silent
 
@@ -42,11 +41,11 @@ Simply said a `ScalingPolicy` can be:
 * by size: the number of segments is dynamically adjusted to the size of the stream.
 
 The `aStream` is a `RIO[PravegaStreamManager,Boolean]` that:
+
 * will produce `true` if the stream was created or `false` if it already existed.
 * depends on the `PravegaStreamManager` capability.
 
 As before, we need to provide the capability, which is the role of `ZLayer`.
-
 
 ## Reader groups
 
@@ -63,6 +62,7 @@ It must created expliciyly.
 ```
 
 The `readerGroup` is a `RIO[PravegaReaderGroupManager,Boolean]` that:
+
 * will produce `true` if the reader group was created or `false` if it already existed.
 * depends on the `PravegaReaderGroupManager` capability.
 
@@ -76,14 +76,11 @@ val readerGroupManager: RLayer[Scope & ClientConfig, PravegaReaderGroupManager] 
 Note that the `PravegaReaderGroupManager` capability depends on the `Scope` and `ClientConfig` capability, which are provided by another layer.
 Also that `PravegaReaderGroupManager` is parameterized by the scope name, which is "sales" in this case.
 
-
 Stream manager allows to create, delete, list, seal, truncate streams.
 
 ## Sealing a stream
 
 Before deleting, truncatig a stream, it must be sealed.
-
-
 
 ```scala mdoc:silent
 val sealStream: RIO[PravegaStreamManager, Boolean] =

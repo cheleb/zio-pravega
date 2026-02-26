@@ -1,8 +1,8 @@
 name := "ZIO Pravega"
-val scala213  = "2.13.16"
-val scala33   = "3.6.4"
+
+val scala33   = "3.7.4"
 val mainScala = scala33
-val allScala  = Seq(scala33, scala213)
+val allScala  = Seq(scala33)
 
 val zioVersion     = "2.1.24"
 val pravegaVersion = "0.13.0"
@@ -17,7 +17,7 @@ inThisBuild(
   List(
     organization := "dev.cheleb",
     homepage     := Some(url("https://github.com/cheleb/zio-pravega")),
-    licenses := List(
+    licenses     := List(
       "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
     ),
     useCoursier        := false,
@@ -25,12 +25,15 @@ inThisBuild(
     crossScalaVersions := allScala,
     scalacOptions ++= Seq(
 //      "-deprecation",
-      "-Xfatal-warnings"
+      "-Xfatal-warnings",
+      "-rewrite",
+      "-source",
+      "3.7-migration"
     ),
     Test / parallelExecution := false,
     Test / fork              := true,
     run / fork               := true,
-    publishTo := {
+    publishTo                := {
       val centralSnapshots =
         "https://central.sonatype.com/repository/maven-snapshots/"
       if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
@@ -40,7 +43,7 @@ inThisBuild(
     pgpPublicRing := file("/tmp/public.asc"),
     pgpSecretRing := file("/tmp/secret.asc"),
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    scmInfo := Some(
+    scmInfo       := Some(
       ScmInfo(
         url("https://github.com/cheleb/zio-pravega/"),
         "scm:git:git@github.com:cheleb/zio-pravega.git"
@@ -109,7 +112,7 @@ lazy val pravega =
         "dev.zio"                          %% "zio-logging-slf4j-bridge" % "2.5.3"                                 % Test,
         "org.scalatest"                    %% "scalatest"                % "3.2.19"                                % Test,
         "io.pravega"                        % "pravega-client"           % pravegaVersion,
-        "org.testcontainers"                % "testcontainers"           % "2.0.3"                                % Test,
+        "org.testcontainers"                % "testcontainers"           % "2.0.3"                                 % Test,
         "org.scala-lang.modules"           %% "scala-collection-compat"  % "2.14.0",
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub"            % "0.6.13"                                % Test,

@@ -13,11 +13,6 @@ on:
        - "master"
        - "website"
 
-# Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 
 # # Allow one concurrent deployment
 concurrency:
@@ -27,6 +22,12 @@ concurrency:
 
 jobs:
   website:
+    # Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -45,9 +46,9 @@ jobs:
           distribution: 'zulu'
           cache: sbt
       - name: Install sbt
-        uses: sbt/setup-sbt@v1
+        uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb
       - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@v2
+        uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c
       - run: VERSION=`git describe --tags --abbrev=0 | sed "s/v//"` sbt website
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -59,6 +60,7 @@ jobs:
 
     # Deploy job
   deploy:
+    
     # Add a dependency to the build job
     needs: website
 

@@ -83,7 +83,7 @@ object ReaderSettingsBuilder {
 
   val configPath = "zio.pravega.reader"
 
-  def apply(): ReaderSettingsBuilder = apply(ConfigFactory.load().getConfig(configPath))
+  def apply(): ReaderSettingsBuilder = apply(using ConfigFactory.load().getConfig(configPath))
 
   /**
    * Create settings from a configuration with the same layout as the default
@@ -265,7 +265,7 @@ object TableReaderSettingsBuilder {
     keySerializer,
     valueSerializer,
     None,
-    tableClientConfiguration(config),
+    tableClientConfiguration(using config),
     None,
     config.getInt(PravegaClientConfig.`maximum-inflight-messages`),
     config.getInt("max-entries-at-once")
@@ -361,7 +361,7 @@ object TableWriterSettingsBuilder {
     keySerializer,
     valueSerializer,
     None,
-    tableClientConfiguration(config),
+    tableClientConfiguration(using config),
     None,
     config.getInt(PravegaClientConfig.`maximum-inflight-messages`)
   )
