@@ -27,7 +27,7 @@ jobs:
           distribution: "zulu"
           cache: sbt
       - name: Install sbt
-        uses: sbt/setup-sbt@v1    
+        uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb
       - name: Run coverage test
       # Scala 3 is not fully supported for coverage yet
         run: sbt "++ 3; coverage; test; coverageReport; coverageAggregate"
