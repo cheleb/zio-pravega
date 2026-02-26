@@ -76,9 +76,9 @@ jobs:
           distribution: 'zulu'
           cache: sbt
       - name: Install sbt
-        uses: sbt/setup-sbt@v1
+        uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb
       - name: Setup Graphviz
-        uses: ts-graphviz/setup-graphviz@v2
+        uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c
       - run: sbt website
       - name: Setup Pages
         uses: actions/configure-pages@v5
