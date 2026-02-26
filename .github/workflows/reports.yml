@@ -32,12 +32,12 @@ jobs:
       # Scala 3 is not fully supported for coverage yet
         run: sbt "++ 3; coverage; test; coverageReport; coverageAggregate"
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v5"
+        uses: "codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de"
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
       - name: SonarCloud scan 
-        uses: sonarsource/sonarqube-scan-action@master
+        uses: sonarsource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
