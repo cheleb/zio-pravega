@@ -46,7 +46,7 @@ jobs:
           distribution: 'zulu'
           cache: sbt
       - name: Install sbt
-        uses: sbt/setup-sbt@1cad58d595b729a71ca2254cdf5b43dd6f42d4bb
+        uses: sbt/setup-sbt@6bec67c98f542b9e17369bfca0ec822ac1363194
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c
       - run: VERSION=`git describe --tags --abbrev=0 | sed "s/v//"` sbt website
