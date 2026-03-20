@@ -75,7 +75,7 @@ inThisBuild(
 
 lazy val root = project
   .in(file("."))
-  .aggregate(pravega)
+  .aggregate(pravega, saga)
   .settings(
     publish / skip := true
   )
@@ -136,7 +136,10 @@ lazy val saga = project
   .in(file("modules/zio-pravega-saga"))
   .dependsOn(pravega)
   .settings(
-    name := "zio-pravega-saga"
+    name := "zio-pravega-saga",
+    libraryDependencies ++= Seq(
+      "dev.zio" %% "zio-test" % zioVersion % Test
+    )
   )
   .settings(
     publish / skip := true
