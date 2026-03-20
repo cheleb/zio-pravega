@@ -69,7 +69,8 @@ inThisBuild(
       Wart.DefaultArguments,
       Wart.ImplicitParameter,
       Wart.Overloading
-    )
+    ),
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
 )
 
@@ -117,8 +118,8 @@ lazy val pravega =
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % Test,
         "io.envoyproxy.protoc-gen-validate" % "pgv-java-stub"            % "0.6.13"                                % Test,
         "com.thesamet.scalapb"             %% "scalapb-runtime"          % scalapb.compiler.Version.scalapbVersion % "protobuf"
-      ),
-      testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+      )
+      //  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
     )
     .settings(
       libraryDependencies ++= Seq(
@@ -138,7 +139,8 @@ lazy val saga = project
   .settings(
     name := "zio-pravega-saga",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-test" % zioVersion % Test
+      "dev.zio" %% "zio-test"     % zioVersion % Test,
+      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
     )
   )
   .settings(

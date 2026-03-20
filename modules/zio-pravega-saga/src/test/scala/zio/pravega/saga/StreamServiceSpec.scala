@@ -20,7 +20,7 @@ object StreamServiceSpec extends ZIOSpecDefault {
           _ <- service.test(42)
           _ <- ZIO.succeed(println("Hello World!"))
 
-        } yield assertTrue(true)
+        } yield assertCompletes
 
       }
     )
