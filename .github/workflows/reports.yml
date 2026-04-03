@@ -38,7 +38,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
       - name: SonarCloud scan 
-        uses: sonarsource/sonarqube-scan-action@d899ed299620f557b0175710b8dedbdd7c31213d
+        uses: sonarsource/sonarqube-scan-action@f099b441665cb71b0414100cfaf6d835492cee5f
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
