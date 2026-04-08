@@ -30,7 +30,7 @@ jobs:
         distribution: 'zulu'
         cache: sbt
     - name: Install sbt
-      uses: sbt/setup-sbt@ff8af928d7f51afc14b66efead741d18b0f9928a
+      uses: sbt/setup-sbt@f2ca9b687ae89461830c9bf71427dad18d879b9e
     - name: Run tests crosscompile
       run: sbt ++ test
   publish:
@@ -55,7 +55,7 @@ jobs:
           distribution: 'zulu'
           cache: sbt
       - name: Setup sbt
-        uses: sbt/setup-sbt@ff8af928d7f51afc14b66efead741d18b0f9928a
+        uses: sbt/setup-sbt@f2ca9b687ae89461830c9bf71427dad18d879b9e
       - run: sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
@@ -85,7 +85,7 @@ jobs:
           distribution: 'zulu'
           cache: sbt
       - name: Install sbt
-        uses: sbt/setup-sbt@ff8af928d7f51afc14b66efead741d18b0f9928a
+        uses: sbt/setup-sbt@f2ca9b687ae89461830c9bf71427dad18d879b9e
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c
       - run: sbt website
