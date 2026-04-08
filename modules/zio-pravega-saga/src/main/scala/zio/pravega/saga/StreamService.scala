@@ -24,4 +24,6 @@ trait StreamService {
     .mapZIO(m => handler(m))
     .runDrain
 
+  def test(i: Int): ZIO[Any, Nothing, Unit] = ZIO.succeed(println(i))
+
 }
