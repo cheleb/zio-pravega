@@ -162,7 +162,7 @@ lazy val docs = project // new documentation project
     plantUMLSource           := (root / baseDirectory).value / "docs" / "_docs",
     Compile / plantUMLTarget := "mdoc/_assets/images"
   )
-  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.33")
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.34")
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test / scalafmt")
 addCommandAlias(
