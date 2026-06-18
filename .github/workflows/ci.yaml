@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest   
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup Graphviz
         uses: ts-graphviz/setup-graphviz@b1de5da23ed0a6d14e0aeee8ed52fdd87af2363c
       - name: Set up JDK 23
