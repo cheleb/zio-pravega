@@ -25,7 +25,7 @@ inThisBuild(
     crossScalaVersions := allScala,
     scalacOptions ++= Seq(
 //      "-deprecation",
-      "-Xfatal-warnings",
+      "-Werror",
       "-rewrite",
       "-source",
       "3.7-migration"

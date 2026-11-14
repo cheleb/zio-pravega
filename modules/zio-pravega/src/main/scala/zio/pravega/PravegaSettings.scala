@@ -31,7 +31,6 @@ object PravegaClientConfig {
 }
 
 class ReaderSettingsBuilder(
-  config: Config,
   readerConfigBuilder: ReaderConfigBuilder,
   readerConfigCustomizer: Option[ReaderConfigBuilder => ReaderConfigBuilder] = None,
   timeout: Duration,
@@ -57,7 +56,7 @@ class ReaderSettingsBuilder(
     readerConfigCustomizer: Option[ReaderConfigBuilder => ReaderConfigBuilder] = readerConfigCustomizer,
     timeout: Duration = timeout,
     readerId: Option[String] = readerId
-  ) = new ReaderSettingsBuilder(config, readerConfigBuilder, readerConfigCustomizer, timeout, readerId)
+  ) = new ReaderSettingsBuilder(readerConfigBuilder, readerConfigCustomizer, timeout, readerId)
 }
 
 /**
@@ -99,13 +98,12 @@ object ReaderSettingsBuilder {
 
     val readerConfigBuilder = ConfigHelper.buildReaderConfig(config)
 
-    new ReaderSettingsBuilder(config, readerConfigBuilder, None, readerBasicSetting.timeout, None)
+    new ReaderSettingsBuilder(readerConfigBuilder, None, readerBasicSetting.timeout, None)
 
   }
 }
 
 class WriterSettingsBuilder[Message](
-  config: Config,
   eventWriterConfigBuilder: EventWriterConfigBuilder,
   eventWriterConfigCustomizer: Option[EventWriterConfigBuilder => EventWriterConfigBuilder] = None,
   maximumInflightMessages: Int,
@@ -127,7 +125,6 @@ class WriterSettingsBuilder[Message](
     maximumInflightMessages: Int = maximumInflightMessages,
     keyExtractor: Option[Message => String] = keyExtractor
   ): WriterSettingsBuilder[Message] = new WriterSettingsBuilder(
-    config,
     eventWriterConfigBuilder,
     eventWriterConfigCustomizer,
     maximumInflightMessages,
@@ -160,7 +157,6 @@ object WriterSettingsBuilder {
    */
   def apply[Message](config: Config): WriterSettingsBuilder[Message] =
     new WriterSettingsBuilder(
-      config,
       eventWriterConfig(config),
       None,
       config.getInt(PravegaClientConfig.`maximum-inflight-messages`),
@@ -185,7 +181,6 @@ object WriterSettingsBuilder {
 }
 
 class TableReaderSettingsBuilder[K, V](
-  config: Config,
   keySerializer: Serializer[K],
   valueSerializer: Serializer[V],
   tableKeyExtractor: Option[K => TableKey],
@@ -212,7 +207,6 @@ class TableReaderSettingsBuilder[K, V](
     maximumInflightMessages: Int = maximumInflightMessages,
     maxEntriesAtOnce: Int = maxEntriesAtOnce
   ): TableReaderSettingsBuilder[K, V] = new TableReaderSettingsBuilder(
-    config,
     keySerializer,
     valueSerializer,
     tableKeyExtractor,
@@ -261,7 +255,6 @@ object TableReaderSettingsBuilder {
     keySerializer: Serializer[K],
     valueSerializer: Serializer[V]
   ): TableReaderSettingsBuilder[K, V] = new TableReaderSettingsBuilder(
-    config,
     keySerializer,
     valueSerializer,
     None,
@@ -287,7 +280,6 @@ object TableReaderSettingsBuilder {
 }
 
 class TableWriterSettingsBuilder[K, V](
-  config: Config,
   keySerializer: Serializer[K],
   valueSerializer: Serializer[V],
   tableKeyExtractor: Option[K => TableKey],
@@ -311,7 +303,6 @@ class TableWriterSettingsBuilder[K, V](
     ] = configurationCustomizer,
     maximumInflightMessages: Int = maximumInflightMessages
   ): TableWriterSettingsBuilder[K, V] = new TableWriterSettingsBuilder(
-    config,
     keySerializer,
     valueSerializer,
     tableKeyExtractor,
@@ -357,7 +348,6 @@ object TableWriterSettingsBuilder {
     keySerializer: Serializer[K],
     valueSerializer: Serializer[V]
   ): TableWriterSettingsBuilder[K, V] = new TableWriterSettingsBuilder(
-    config,
     keySerializer,
     valueSerializer,
     None,
