@@ -124,8 +124,8 @@ lazy val pravega =
       libraryDependencies ++= Seq(
         "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.78.0-1"  % "protobuf",
         "com.thesamet.scalapb.common-protos" %% "proto-google-common-protos-scalapb_0.11" % "2.78.0-1"  % Test,
-        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11"                  % "0.6.13-0" % "protobuf",
-        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11"                  % "0.6.13-0" % Test
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11"                  % "1.3.3-1" % "protobuf",
+        "com.thesamet.scalapb.common-protos" %% "pgv-proto-scalapb_0.11"                  % "1.3.3-1" % Test
       ),
       Test / PB.targets := Seq(
         scalapb.gen(scala3Sources = true) -> (Test / sourceManaged).value / "scalapb"
