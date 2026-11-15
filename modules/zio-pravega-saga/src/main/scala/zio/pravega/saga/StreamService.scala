@@ -6,6 +6,7 @@ import zio.pravega._
 
 /**
  * A stream service is a service that is implemented as a stream of events.
+ * Experimental.
  */
 trait StreamService {
 
