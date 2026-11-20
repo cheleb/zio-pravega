@@ -3,7 +3,7 @@
 addSbtPlugin("ch.epfl.scala"                   % "sbt-scalafix"     % "0.14.10")
 addSbtPlugin("com.eed3si9n"                    % "sbt-buildinfo"    % "0.14.0")
 addSbtPlugin("com.github.sbt"                  % "sbt-ci-release"   % "1.12.1")
-addSbtPlugin("com.github.sbt"                  % "sbt-dynver"       % "5.1.1")
+addSbtPlugin("com.github.sbt"                  % "sbt-dynver"       % "5.2.0")
 addSbtPlugin("com.github.sbt"                  % "sbt-ghpages"      % "0.10.0")
 addSbtPlugin("com.github.sbt"                  % "sbt-git"          % "2.2.0")
 addSbtPlugin("com.github.sbt"                  % "sbt-site-paradox" % "1.8.0")
